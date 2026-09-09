@@ -9,12 +9,14 @@
 <body>
 
 <header>
-  <div class="logo">Mueble Zulia</div>
+  <div class="logo-group">
+    <img src="img/logo.png" alt="Mueble Zulia">
+    <span>MUEBLE ZULIA</span>
+  </div>
   <nav>
     <ul>
-      <li><a href="index.html">Inicio</a></li>
       <li><a href="catalogo.html">Catálogo</a></li>
-      <li><a href="index.html#ubicacion">Ubicación</a></li>
+      <li><a href="fabricacion.html">Fabricación</a></li>
       <li><a href="index.html#contacto">Contacto</a></li>
     </ul>
   </nav>
@@ -22,8 +24,11 @@
 </header>
 
 <section>
-  <h2 class="section-title">Nuestro Catálogo</h2>
-  <div class="grid" id="catalog-grid"></div>
+  <h2 class="section-title" style="margin-bottom:10px;">¿Cuál te Llevas a Casa?</h2>
+  <p style="text-align:center;color:var(--gris);margin-bottom:40px;">
+    Explora nuestro catálogo por categoría, o consulta abajo el detalle de cada línea.
+  </p>
+  <div id="catalog-por-categoria"></div>
 </section>
 
 <div class="modal-overlay" id="custom-modal">
@@ -43,10 +48,9 @@
 
 <footer id="contacto">
   <div class="footer-grid">
-    <div id="ubicacion">
+    <div>
       <h4>Ubicación</h4>
-      <p>Av. Principal, Maracaibo, Zulia, Venezuela</p>
-      <div class="map-placeholder">[ Mapa conceptual — Google Maps embed aquí ]</div>
+      <p>Av. 15 Delicias, frente al Alicorp — Maracaibo, Zulia</p>
     </div>
     <div>
       <h4>Contacto</h4>

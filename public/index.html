@@ -3,18 +3,20 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mueble Zulia — Muebles a tu medida</title>
+<title>Mueble Zulia — La Mueblería de la Familia Zuliana</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <header>
-  <div class="logo">Mueble Zulia</div>
+  <div class="logo-group">
+    <img src="img/logo.png" alt="Mueble Zulia">
+    <span>MUEBLE ZULIA</span>
+  </div>
   <nav>
     <ul>
-      <li><a href="index.html">Inicio</a></li>
       <li><a href="catalogo.html">Catálogo</a></li>
-      <li><a href="index.html#ubicacion">Ubicación</a></li>
+      <li><a href="fabricacion.html">Fabricación</a></li>
       <li><a href="index.html#contacto">Contacto</a></li>
     </ul>
   </nav>
@@ -22,37 +24,78 @@
 </header>
 
 <section class="hero">
-  <h1>Muebles a tu medida, para tu hogar</h1>
-  <p>Calidad, diseño y personalización — hechos en Zulia.</p>
-  <a href="catalogo.html" class="btn">Ver Catálogo</a>
+  <h1>LA MUEBLERÍA DE<br>LA FAMILIA ZULIANA</h1>
+  <p class="tagline">Llevando confort a los hogares del Zulia</p>
+  <div class="hero-actions">
+    <a href="catalogo.html" class="btn">NUESTRO CATÁLOGO</a>
+    <a href="index.html#contacto" class="btn btn-outline">CONTÁCTANOS</a>
+  </div>
 </section>
 
 <section>
-  <h2 class="section-title">Catálogo destacado</h2>
-  <div class="grid" id="catalog-grid"></div>
+  <h2 class="section-title">¿Cuál te Llevas a Casa?</h2>
+  <div class="grid">
+    <a class="cat-card" href="catalogo.html#modulares">
+      <img src="https://placehold.co/400x300/2a2a2a/F2B90C?text=Modulares" alt="Modulares">
+      <div class="cat-label">Modulares</div>
+    </a>
+    <a class="cat-card" href="catalogo.html#comedores">
+      <img src="https://placehold.co/400x300/2a2a2a/F2B90C?text=Comedores" alt="Comedores">
+      <div class="cat-label">Comedores</div>
+    </a>
+    <a class="cat-card" href="catalogo.html#dormitorios">
+      <img src="https://placehold.co/400x300/2a2a2a/F2B90C?text=Dormitorios" alt="Dormitorios">
+      <div class="cat-label">Dormitorios</div>
+    </a>
+    <a class="cat-card" href="catalogo.html#mesa-centro">
+      <img src="https://placehold.co/400x300/2a2a2a/F2B90C?text=Mesa+de+Centro" alt="Mesa de Centro">
+      <div class="cat-label">Mesa de Centro</div>
+    </a>
+    <a class="cat-card" href="catalogo.html#reflejos">
+      <img src="https://placehold.co/400x300/2a2a2a/F2B90C?text=Colecci%C3%B3n+de+Reflejos" alt="Colección de Reflejos">
+      <div class="cat-label">Colección de Reflejos</div>
+    </a>
+    <a class="cat-card" href="catalogo.html#mueble-tv">
+      <img src="https://placehold.co/400x300/2a2a2a/F2B90C?text=Mueble+TV" alt="Mueble TV">
+      <div class="cat-label">Mueble TV</div>
+    </a>
+  </div>
 </section>
 
-<div class="modal-overlay" id="custom-modal">
-  <div class="modal">
-    <span class="modal-close" onclick="closeCustomModal()">✕</span>
-    <h3 id="custom-modal-title">Personaliza tu producto</h3>
-    <label>Largo (cm)</label>
-    <input type="number" id="input-largo" placeholder="Ej: 180">
-    <label>Ancho (cm)</label>
-    <input type="number" id="input-ancho" placeholder="Ej: 90">
-    <label>Alto (cm)</label>
-    <input type="number" id="input-alto" placeholder="Ej: 75">
-    <a href="#" target="_blank" class="whatsapp-link" id="whatsapp-consulta">📱 Consultar personalización por WhatsApp</a>
-    <button class="btn" style="width:100%" onclick="addCustomToCart()">Añadir al carrito</button>
+<section id="nuestra-sede" style="background:#151515;">
+  <h2 class="section-title">Nuestra Sede</h2>
+  <div class="sede-grid">
+    <img src="img/fachada.png" alt="Fachada de Mueble Zulia">
+    <div class="map-placeholder">[ Mapa conceptual — Google Maps embed aquí: Av. 15 Delicias, frente al ILICIT ]</div>
   </div>
-</div>
+  <p style="text-align:center;margin-top:20px;" class="destacado">
+    ¡Te esperamos en Mueble Zulia! Un vistazo a nuestra tienda es el primer paso para transformar tu hogar.
+  </p>
+</section>
+
+<section id="manufactura">
+  <h2 class="section-title">Excelencia en Manufactura</h2>
+  <div class="manufactura-grid">
+    <div class="manufactura-card">
+      <img src="https://placehold.co/500x300/2a2a2a/F2B90C?text=Pasi%C3%B3n+por+el+Detalle" alt="Nuestro taller">
+      <div class="manufactura-body">
+        <h3 class="destacado">Pasión por el Detalle</h3>
+        <p class="text" style="color:var(--gris);margin-top:8px;">
+          En Mueble Zulia, la excelencia no es negociable. Supervisamos manualmente cada mueble para garantizar que trabajen con el mismo nivel de detalle para lograr los acabados impecables que tú mereces.
+        </p>
+      </div>
+    </div>
+  </div>
+  <div style="text-align:center;margin-top:26px;">
+    <a href="fabricacion.html" class="btn btn-terracota">Ver cómo fabricamos</a>
+  </div>
+</section>
 
 <footer id="contacto">
   <div class="footer-grid">
     <div id="ubicacion">
       <h4>Ubicación</h4>
-      <p>Av. Principal, Maracaibo, Zulia, Venezuela</p>
-      <div class="map-placeholder">[ Mapa conceptual — Google Maps embed aquí ]</div>
+      <p>Av. 15 Delicias, frente al Alicorp — Maracaibo, Zulia</p>
     </div>
     <div>
       <h4>Contacto</h4>

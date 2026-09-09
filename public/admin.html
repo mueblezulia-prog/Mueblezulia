@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panel de Administración — Mueble Zulia</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+  <div class="logo-group">
+    <img src="img/logo.png" alt="Mueble Zulia">
+    <span>MUEBLE ZULIA — ADMIN</span>
+  </div>
+  <div id="admin-logout" style="display:none;">
+    <button class="btn btn-outline" onclick="cerrarSesion()">Cerrar sesión</button>
+  </div>
+</header>
+
+<!-- Pantalla de login -->
+<div class="admin-login" id="login-box">
+  <h2 class="section-title" style="margin-bottom:20px;">Acceso Administrador</h2>
+  <form class="admin-form" onsubmit="iniciarSesion(event)">
+    <label>Contraseña</label>
+    <input type="password" id="admin-password" required>
+    <button type="submit" class="btn">Entrar</button>
+    <p id="login-error" style="color:var(--terracota);font-size:0.85rem;"></p>
+  </form>
+</div>
+
+<!-- Panel principal (oculto hasta iniciar sesión) -->
+<div id="panel" style="display:none;">
+  <section>
+    <div class="admin-wrap">
+      <h2 class="section-title">Añadir mueble nuevo</h2>
+      <form class="admin-form" onsubmit="crearProducto(event)">
+        <label>Nombre del mueble</label>
+        <input type="text" id="f-nombre" required>
+
+        <label>Categoría</label>
+        <select id="f-categoria" required>
+          <option value="modulares">Modulares</option>
+          <option value="comedores">Comedores</option>
+          <option value="dormitorios">Dormitorios</option>
+          <option value="mesa-centro">Mesa de Centro</option>
+          <option value="reflejos">Colección de Reflejos</option>
+          <option value="mueble-tv">Mueble TV</option>
+        </select>
+
+        <label>Descripción breve</label>
+        <input type="text" id="f-desc">
+
+        <label>Precio (USD)</label>
+        <input type="number" id="f-precio" required>
+
+        <label>URL de la imagen (opcional)</label>
+        <input type="text" id="f-imagen" placeholder="https://...">
+
+        <button type="submit" class="btn">Añadir mueble</button>
+        <p id="form-msg" style="font-size:0.85rem;"></p>
+      </form>
+    </div>
+  </section>
+
+  <section style="background:#151515;">
+    <div class="admin-wrap">
+      <h2 class="section-title">Muebles en el catálogo</h2>
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Nombre</th><th>Categoría</th><th>Precio</th><th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="tabla-productos"></tbody>
+      </table>
+    </div>
+  </section>
+</div>
+
+<script src="admin.js"></script>
+</body>
+</html>
