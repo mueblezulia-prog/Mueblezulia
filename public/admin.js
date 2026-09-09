@@ -66,7 +66,7 @@ async function crearProducto(event) {
   const body = {
     nombre: document.getElementById("f-nombre").value,
     categoria: document.getElementById("f-categoria").value,
-    desc: document.getElementById("f-desc").value,
+    descripcion: document.getElementById("f-desc").value,
     precio: Number(document.getElementById("f-precio").value),
     imagen: document.getElementById("f-imagen").value,
   };
@@ -101,7 +101,7 @@ async function crearProducto(event) {
 function editarProducto(p) {
   document.getElementById("f-nombre").value = p.nombre;
   document.getElementById("f-categoria").value = p.categoria;
-  document.getElementById("f-desc").value = p.desc || "";
+  document.getElementById("f-desc").value = p.descripcion || "";
   document.getElementById("f-precio").value = p.precio;
   document.getElementById("f-imagen").value = p.imagen || "";
   const form = document.querySelector("form.admin-form");

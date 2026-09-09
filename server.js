@@ -55,10 +55,10 @@ app.get("/api/productos", async (req, res) => {
 // ---------- Catálogo — administración ----------
 app.post("/api/admin/productos", requireAdmin, async (req, res) => {
   if (!supabase) return res.status(500).json({ ok: false, error: "Supabase no está configurado" });
-  const { nombre, categoria, desc, precio, imagen } = req.body;
+  const { nombre, categoria, descripcion, precio, imagen } = req.body;
   const { data, error } = await supabase
     .from("productos")
-    .insert([{ nombre, categoria, desc, precio, imagen }])
+    .insert([{ nombre, categoria, descripcion, precio, imagen }])
     .select();
   if (error) return res.status(500).json({ ok: false, error: error.message });
   res.json({ ok: true, producto: data[0] });
@@ -66,10 +66,10 @@ app.post("/api/admin/productos", requireAdmin, async (req, res) => {
 
 app.put("/api/admin/productos/:id", requireAdmin, async (req, res) => {
   if (!supabase) return res.status(500).json({ ok: false, error: "Supabase no está configurado" });
-  const { nombre, categoria, desc, precio, imagen } = req.body;
+  const { nombre, categoria, descripcion, precio, imagen } = req.body;
   const { error } = await supabase
     .from("productos")
-    .update({ nombre, categoria, desc, precio, imagen })
+    .update({ nombre, categoria, descripcion, precio, imagen })
     .eq("id", req.params.id);
   if (error) return res.status(500).json({ ok: false, error: error.message });
   res.json({ ok: true });

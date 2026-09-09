@@ -20,7 +20,7 @@ create table if not exists productos (
   creado_en timestamp with time zone default now(),
   nombre text not null,
   categoria text not null,           -- modulares | comedores | dormitorios | mesa-centro | reflejos | mueble-tv
-  desc text,
+  descripcion text,
   precio numeric not null,
   imagen text                        -- URL de la imagen del producto
 );

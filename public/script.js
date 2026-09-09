@@ -12,12 +12,12 @@ const CATEGORIAS = [
 ];
 
 const PRODUCTOS_EJEMPLO = [
-  { id: "sofa-x", nombre: "Sofá Zulia Confort", categoria: "modulares", desc: "Sofá de 3 puestos, tapizado premium.", precio: 480, imagen: "" },
-  { id: "mesa-y", nombre: "Mesa Comedor Roble", categoria: "comedores", desc: "Mesa para 6 personas en madera de roble.", precio: 350, imagen: "" },
-  { id: "cama-z", nombre: "Cama Matrimonial Nova", categoria: "dormitorios", desc: "Cama tapizada con cabecero acolchado.", precio: 300, imagen: "" },
-  { id: "centro-w", nombre: "Mesa de Centro Mármol", categoria: "mesa-centro", desc: "Base metálica, tope de mármol.", precio: 180, imagen: "" },
-  { id: "reflejo-v", nombre: "Puerta Colección Reflejos", categoria: "reflejos", desc: "Acabado espejado con marco decorativo.", precio: 220, imagen: "" },
-  { id: "tv-u", nombre: "Mueble TV Line", categoria: "mueble-tv", desc: "Mueble suspendido con luz LED integrada.", precio: 260, imagen: "" },
+  { id: "sofa-x", nombre: "Sofá Zulia Confort", categoria: "modulares", descripcion: "Sofá de 3 puestos, tapizado premium.", precio: 480, imagen: "" },
+  { id: "mesa-y", nombre: "Mesa Comedor Roble", categoria: "comedores", descripcion: "Mesa para 6 personas en madera de roble.", precio: 350, imagen: "" },
+  { id: "cama-z", nombre: "Cama Matrimonial Nova", categoria: "dormitorios", descripcion: "Cama tapizada con cabecero acolchado.", precio: 300, imagen: "" },
+  { id: "centro-w", nombre: "Mesa de Centro Mármol", categoria: "mesa-centro", descripcion: "Base metálica, tope de mármol.", precio: 180, imagen: "" },
+  { id: "reflejo-v", nombre: "Puerta Colección Reflejos", categoria: "reflejos", descripcion: "Acabado espejado con marco decorativo.", precio: 220, imagen: "" },
+  { id: "tv-u", nombre: "Mueble TV Line", categoria: "mueble-tv", descripcion: "Mueble suspendido con luz LED integrada.", precio: 260, imagen: "" },
 ];
 
 const WHATSAPP_NUM = "584120000000"; // reemplazar con el número real de Mueble Zulia
@@ -118,7 +118,7 @@ function productCardHTML(p) {
       <img src="${img}" alt="${p.nombre}">
       <div class="card-body">
         <h3>${p.nombre}</h3>
-        <p class="desc">${p.desc || ""}</p>
+        <p class="desc">${p.descripcion || ""}</p>
         <div class="price">$${p.precio}</div>
         <div class="card-actions">
           <button class="btn" onclick="addStandardToCart('${p.id}')">Comprar Ahora</button>
