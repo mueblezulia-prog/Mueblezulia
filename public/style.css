@@ -69,13 +69,23 @@ nav a:hover { opacity: 0.85; }
   background: var(--negro);
   overflow: hidden;
 }
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: -20px;
+  background-image: url('img/fachada.png');
+  background-size: cover;
+  background-position: center 30%;
+  filter: blur(6px) brightness(0.35);
+  z-index: 0;
+}
 .hero .watermark {
   position: absolute;
   top: 50%; left: 50%;
   transform: translate(-50%, -50%);
   font-size: 7vw;
   font-weight: 800;
-  color: rgba(242, 185, 12, 0.08);
+  color: rgba(242, 185, 12, 0.10);
   white-space: nowrap;
   z-index: 0;
   pointer-events: none;

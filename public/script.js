@@ -20,7 +20,7 @@ const PRODUCTOS_EJEMPLO = [
   { id: "tv-u", nombre: "Mueble TV Line", categoria: "mueble-tv", descripcion: "Mueble suspendido con luz LED integrada.", precio: 260, imagen: "" },
 ];
 
-const WHATSAPP_NUM = "584120000000"; // reemplazar con el número real de Mueble Zulia
+const WHATSAPP_NUM = "584127519141"; // Mueble Zulia
 
 let PRODUCTOS = [];
 let CATEGORIAS = [];
