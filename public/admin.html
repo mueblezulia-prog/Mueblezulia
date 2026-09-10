@@ -35,8 +35,10 @@
   <section style="padding-bottom:0;">
     <div class="admin-tabs">
       <button class="tab-btn active" data-tab="tab-stats" onclick="cambiarTab('tab-stats')">📊 Estadísticas</button>
+      <button class="tab-btn" data-tab="tab-pedidos" onclick="cambiarTab('tab-pedidos')">📦 Pedidos</button>
       <button class="tab-btn" data-tab="tab-muebles" onclick="cambiarTab('tab-muebles')">🛋️ Muebles</button>
       <button class="tab-btn" data-tab="tab-categorias" onclick="cambiarTab('tab-categorias')">🗂️ Categorías</button>
+      <button class="tab-btn" data-tab="tab-config" onclick="cambiarTab('tab-config')">⚙️ Configuración</button>
     </div>
   </section>
 
@@ -62,6 +64,26 @@
     </div>
   </section>
 
+  <!-- PEDIDOS -->
+  <section id="tab-pedidos" class="admin-tab-content">
+    <div class="admin-wrap">
+      <h2 class="section-title">Pedidos recibidos</h2>
+      <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
+        <input type="text" id="buscar-pedidos" placeholder="Buscar por nombre o teléfono..." oninput="filtrarPedidos()" style="max-width:280px;">
+        <select id="filtro-estado-pedido" onchange="filtrarPedidos()" style="max-width:200px;">
+          <option value="">Todos los estados</option>
+          <option value="pendiente">Pendiente</option>
+          <option value="confirmado">Confirmado</option>
+          <option value="entregado">Entregado</option>
+        </select>
+      </div>
+      <table class="admin-table">
+        <thead><tr><th>Fecha</th><th>Cliente</th><th>Teléfono</th><th>Total</th><th>Estado</th><th>Detalle</th></tr></thead>
+        <tbody id="tabla-pedidos"></tbody>
+      </table>
+    </div>
+  </section>
+
   <!-- MUEBLES -->
   <section id="tab-muebles" class="admin-tab-content">
     <div class="admin-wrap">
@@ -82,13 +104,23 @@
         <label>URL de la imagen (opcional)</label>
         <input type="text" id="f-imagen" placeholder="https://...">
 
+        <div style="display:flex;gap:20px;">
+          <label style="display:flex;align-items:center;gap:8px;font-weight:400;">
+            <input type="checkbox" id="f-destacado" style="width:auto;"> Destacado en el inicio
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;font-weight:400;">
+            <input type="checkbox" id="f-disponible" checked style="width:auto;"> Disponible (en stock)
+          </label>
+        </div>
+
         <button type="submit" class="btn">Añadir mueble</button>
         <p id="form-msg" style="font-size:0.85rem;"></p>
       </form>
 
       <h2 class="section-title" style="margin-top:40px;">Muebles en el catálogo</h2>
+      <input type="text" id="buscar-productos" placeholder="Buscar mueble por nombre..." oninput="filtrarProductos()" style="max-width:320px;margin-bottom:10px;">
       <table class="admin-table">
-        <thead><tr><th>Nombre</th><th>Categoría</th><th>Precio</th><th>Acciones</th></tr></thead>
+        <thead><tr><th>Nombre</th><th>Categoría</th><th>Precio</th><th>Estado</th><th>Acciones</th></tr></thead>
         <tbody id="tabla-productos"></tbody>
       </table>
     </div>
@@ -117,6 +149,38 @@
         <thead><tr><th>Nombre</th><th>Slug</th><th>Orden</th><th>Acciones</th></tr></thead>
         <tbody id="tabla-categorias"></tbody>
       </table>
+    </div>
+  </section>
+
+  <!-- CONFIGURACIÓN -->
+  <section id="tab-config" class="admin-tab-content">
+    <div class="admin-wrap">
+      <h2 class="section-title">Configuración del sitio</h2>
+      <p style="text-align:center;color:var(--gris);margin-bottom:20px;">
+        Estos datos se muestran en el footer y los botones de contacto de todo el sitio.
+      </p>
+      <form class="admin-form" onsubmit="guardarConfiguracion(event)">
+        <label>Teléfono</label>
+        <input type="text" id="cfg-telefono" placeholder="+58 412-7519141">
+
+        <label>Dirección</label>
+        <input type="text" id="cfg-direccion" placeholder="Av. ...">
+
+        <label>Link de Google Maps</label>
+        <input type="text" id="cfg-maps" placeholder="https://maps.app.goo.gl/...">
+
+        <label>Link de WhatsApp</label>
+        <input type="text" id="cfg-whatsapp" placeholder="https://wa.me/584...">
+
+        <label>Instagram</label>
+        <input type="text" id="cfg-instagram" placeholder="https://instagram.com/...">
+
+        <label>TikTok</label>
+        <input type="text" id="cfg-tiktok" placeholder="https://tiktok.com/@...">
+
+        <button type="submit" class="btn">Guardar configuración</button>
+        <p id="cfg-msg" style="font-size:0.85rem;"></p>
+      </form>
     </div>
   </section>
 

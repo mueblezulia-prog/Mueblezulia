@@ -1,7 +1,7 @@
 // Mueble Zulia — servidor backend (Railway)
-// Sirve el sitio, recibe pedidos y expone el catálogo (tabla "productos" en Supabase).
-// El panel de administración usa una contraseña simple (ADMIN_PASSWORD) enviada
-// en el header "x-admin-password" en cada petición a /api/admin/*.
+// Sirve el sitio y expone la API usada por el catálogo y el panel de administración.
+// El panel usa una contraseña simple (ADMIN_PASSWORD) enviada en el header
+// "x-admin-password" en cada petición a /api/admin/*.
 
 const express = require("express");
 const path = require("path");
@@ -29,19 +29,39 @@ function requireAdmin(req, res, next) {
   next();
 }
 
-// ---------- Login del panel ----------
+// ================= LOGIN =================
 app.post("/api/admin/login", (req, res) => {
   const { password } = req.body;
   if (!process.env.ADMIN_PASSWORD) {
     return res.status(500).json({ ok: false, error: "ADMIN_PASSWORD no está configurada en el servidor" });
   }
-  if (password === process.env.ADMIN_PASSWORD) {
-    return res.json({ ok: true });
-  }
+  if (password === process.env.ADMIN_PASSWORD) return res.json({ ok: true });
   res.status(401).json({ ok: false, error: "Contraseña incorrecta" });
 });
 
-// ---------- Categorías públicas ----------
+// ================= CONFIGURACIÓN DEL SITIO =================
+app.get("/api/configuracion", async (req, res) => {
+  if (!supabase) return res.json({});
+  const { data, error } = await supabase.from("configuracion").select("*").eq("id", 1).single();
+  if (error) {
+    console.error("Error leyendo configuración:", error.message);
+    return res.json({});
+  }
+  res.json(data);
+});
+
+app.put("/api/admin/configuracion", requireAdmin, async (req, res) => {
+  if (!supabase) return res.status(500).json({ ok: false, error: "Supabase no está configurado" });
+  const { telefono, direccion, google_maps_url, instagram_url, tiktok_url, whatsapp_url } = req.body;
+  const { error } = await supabase
+    .from("configuracion")
+    .update({ telefono, direccion, google_maps_url, instagram_url, tiktok_url, whatsapp_url })
+    .eq("id", 1);
+  if (error) return res.status(500).json({ ok: false, error: error.message });
+  res.json({ ok: true });
+});
+
+// ================= CATEGORÍAS =================
 app.get("/api/categorias", async (req, res) => {
   if (!supabase) return res.json([]);
   const { data, error } = await supabase.from("categorias").select("*").order("orden", { ascending: true });
@@ -52,7 +72,6 @@ app.get("/api/categorias", async (req, res) => {
   res.json(data);
 });
 
-// ---------- Categorías — administración ----------
 app.post("/api/admin/categorias", requireAdmin, async (req, res) => {
   if (!supabase) return res.status(500).json({ ok: false, error: "Supabase no está configurado" });
   const { nombre, slug, orden, imagen } = req.body;
@@ -79,7 +98,7 @@ app.delete("/api/admin/categorias/:id", requireAdmin, async (req, res) => {
   res.json({ ok: true });
 });
 
-// ---------- Catálogo público ----------
+// ================= PRODUCTOS (CATÁLOGO) =================
 app.get("/api/productos", async (req, res) => {
   if (!supabase) return res.json([]);
   const { data, error } = await supabase.from("productos").select("*").order("id", { ascending: true });
@@ -90,13 +109,12 @@ app.get("/api/productos", async (req, res) => {
   res.json(data);
 });
 
-// ---------- Catálogo — administración ----------
 app.post("/api/admin/productos", requireAdmin, async (req, res) => {
   if (!supabase) return res.status(500).json({ ok: false, error: "Supabase no está configurado" });
-  const { nombre, categoria, descripcion, precio, imagen } = req.body;
+  const { nombre, categoria, descripcion, precio, imagen, destacado, disponible } = req.body;
   const { data, error } = await supabase
     .from("productos")
-    .insert([{ nombre, categoria, descripcion, precio, imagen }])
+    .insert([{ nombre, categoria, descripcion, precio, imagen, destacado: !!destacado, disponible: disponible !== false }])
     .select();
   if (error) return res.status(500).json({ ok: false, error: error.message });
   res.json({ ok: true, producto: data[0] });
@@ -104,10 +122,10 @@ app.post("/api/admin/productos", requireAdmin, async (req, res) => {
 
 app.put("/api/admin/productos/:id", requireAdmin, async (req, res) => {
   if (!supabase) return res.status(500).json({ ok: false, error: "Supabase no está configurado" });
-  const { nombre, categoria, descripcion, precio, imagen } = req.body;
+  const { nombre, categoria, descripcion, precio, imagen, destacado, disponible } = req.body;
   const { error } = await supabase
     .from("productos")
-    .update({ nombre, categoria, descripcion, precio, imagen })
+    .update({ nombre, categoria, descripcion, precio, imagen, destacado: !!destacado, disponible: disponible !== false })
     .eq("id", req.params.id);
   if (error) return res.status(500).json({ ok: false, error: error.message });
   res.json({ ok: true });
@@ -120,126 +138,7 @@ app.delete("/api/admin/productos/:id", requireAdmin, async (req, res) => {
   res.json({ ok: true });
 });
 
-// ---------- Categorías públicas ----------
-app.get("/api/categorias", async (req, res) => {
-  if (!supabase) return res.json([]);
-  const { data, error } = await supabase.from("categorias").select("*").order("orden", { ascending: true });
-  if (error) {
-    console.error("Error leyendo categorias:", error.message);
-    return res.status(500).json([]);
-  }
-  res.json(data);
-});
-
-// ---------- Categorías — administración ----------
-app.post("/api/admin/categorias", requireAdmin, async (req, res) => {
-  if (!supabase) return res.status(500).json({ ok: false, error: "Supabase no está configurado" });
-  const { nombre, slug, imagen, orden } = req.body;
-  const { data, error } = await supabase
-    .from("categorias")
-    .insert([{ nombre, slug, imagen, orden: orden || 0 }])
-    .select();
-  if (error) return res.status(500).json({ ok: false, error: error.message });
-  res.json({ ok: true, categoria: data[0] });
-});
-
-app.put("/api/admin/categorias/:id", requireAdmin, async (req, res) => {
-  if (!supabase) return res.status(500).json({ ok: false, error: "Supabase no está configurado" });
-  const { nombre, slug, imagen, orden } = req.body;
-  const { error } = await supabase
-    .from("categorias")
-    .update({ nombre, slug, imagen, orden })
-    .eq("id", req.params.id);
-  if (error) return res.status(500).json({ ok: false, error: error.message });
-  res.json({ ok: true });
-});
-
-app.delete("/api/admin/categorias/:id", requireAdmin, async (req, res) => {
-  if (!supabase) return res.status(500).json({ ok: false, error: "Supabase no está configurado" });
-  const { error } = await supabase.from("categorias").delete().eq("id", req.params.id);
-  if (error) return res.status(500).json({ ok: false, error: error.message });
-  res.json({ ok: true });
-});
-
-// ---------- Estadísticas de venta (panel admin) ----------
-app.get("/api/admin/estadisticas", requireAdmin, async (req, res) => {
-  if (!supabase) return res.status(500).json({ ok: false, error: "Supabase no está configurado" });
-  const { data: pedidos, error } = await supabase
-    .from("pedidos")
-    .select("*")
-    .order("creado_en", { ascending: false });
-  if (error) return res.status(500).json({ ok: false, error: error.message });
-
-  const totalPedidos = pedidos.length;
-  const totalVentas = pedidos.reduce((sum, p) => sum + Number(p.total || 0), 0);
-
-  const porMetodoPago = {};
-  pedidos.forEach((p) => {
-    const metodo = p.metodo_pago || "no-especificado";
-    porMetodoPago[metodo] = (porMetodoPago[metodo] || 0) + 1;
-  });
-
-  const hoy = new Date().toISOString().slice(0, 10);
-  const ventasHoy = pedidos.filter((p) => (p.creado_en || "").slice(0, 10) === hoy);
-
-  res.json({
-    ok: true,
-    totalPedidos,
-    totalVentas,
-    pedidosHoy: ventasHoy.length,
-    ventasHoy: ventasHoy.reduce((sum, p) => sum + Number(p.total || 0), 0),
-    porMetodoPago,
-    ultimosPedidos: pedidos.slice(0, 15),
-  });
-});
-
-// ---------- Estadísticas de ventas (admin) ----------
-app.get("/api/admin/estadisticas", requireAdmin, async (req, res) => {
-  if (!supabase) return res.status(500).json({ ok: false, error: "Supabase no está configurado" });
-  const { data: pedidos, error } = await supabase.from("pedidos").select("*");
-  if (error) return res.status(500).json({ ok: false, error: error.message });
-
-  const totalPedidos = pedidos.length;
-  const totalVentas = pedidos.reduce((sum, p) => sum + Number(p.total || 0), 0);
-  const ticketPromedio = totalPedidos > 0 ? totalVentas / totalPedidos : 0;
-
-  // Contar cuántas veces se vendió cada mueble (por nombre) sumando los items de cada pedido
-  const conteoProductos = {};
-  pedidos.forEach((p) => {
-    (p.items || []).forEach((item) => {
-      conteoProductos[item.nombre] = (conteoProductos[item.nombre] || 0) + 1;
-    });
-  });
-  const masVendidos = Object.entries(conteoProductos)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 5)
-    .map(([nombre, cantidad]) => ({ nombre, cantidad }));
-
-  // Ventas de los últimos 7 días
-  const hoy = new Date();
-  const ventasPorDia = {};
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date(hoy);
-    d.setDate(d.getDate() - i);
-    const key = d.toISOString().slice(0, 10);
-    ventasPorDia[key] = 0;
-  }
-  pedidos.forEach((p) => {
-    const key = (p.creado_en || "").slice(0, 10);
-    if (key in ventasPorDia) ventasPorDia[key] += Number(p.total || 0);
-  });
-
-  res.json({
-    ok: true,
-    totalPedidos,
-    totalVentas,
-    ticketPromedio,
-    masVendidos,
-    ventasPorDia,
-  });
-});
-
-// ---------- Pedidos ----------
+// ================= PEDIDOS =================
 app.post("/api/pedido", async (req, res) => {
   const pedido = req.body;
   console.log("Nuevo pedido recibido:", JSON.stringify(pedido, null, 2));
@@ -255,6 +154,7 @@ app.post("/api/pedido", async (req, res) => {
           metodo_pago: pedido.metodoPago,
           items: pedido.items,
           total: pedido.total,
+          estado: "pendiente",
         },
       ]);
       if (error) console.error("Error guardando en Supabase:", error.message);
@@ -280,6 +180,72 @@ Ubicación GPS: ${pedido.ubicacion ? `https://maps.google.com/?q=${pedido.ubicac
     console.error("Error procesando el pedido:", err);
     res.status(500).json({ ok: false, error: "Error interno" });
   }
+});
+
+app.get("/api/admin/pedidos", requireAdmin, async (req, res) => {
+  if (!supabase) return res.status(500).json({ ok: false, error: "Supabase no está configurado" });
+  const { data, error } = await supabase.from("pedidos").select("*").order("creado_en", { ascending: false });
+  if (error) return res.status(500).json({ ok: false, error: error.message });
+  res.json(data);
+});
+
+app.put("/api/admin/pedidos/:id", requireAdmin, async (req, res) => {
+  if (!supabase) return res.status(500).json({ ok: false, error: "Supabase no está configurado" });
+  const { estado } = req.body;
+  const { error } = await supabase.from("pedidos").update({ estado }).eq("id", req.params.id);
+  if (error) return res.status(500).json({ ok: false, error: error.message });
+  res.json({ ok: true });
+});
+
+// ================= ESTADÍSTICAS (admin) =================
+app.get("/api/admin/estadisticas", requireAdmin, async (req, res) => {
+  if (!supabase) return res.status(500).json({ ok: false, error: "Supabase no está configurado" });
+  const { data: pedidos, error } = await supabase.from("pedidos").select("*").order("creado_en", { ascending: false });
+  if (error) return res.status(500).json({ ok: false, error: error.message });
+
+  const totalPedidos = pedidos.length;
+  const totalVentas = pedidos.reduce((sum, p) => sum + Number(p.total || 0), 0);
+  const ticketPromedio = totalPedidos > 0 ? totalVentas / totalPedidos : 0;
+
+  const porEstado = {};
+  pedidos.forEach((p) => {
+    const e = p.estado || "pendiente";
+    porEstado[e] = (porEstado[e] || 0) + 1;
+  });
+
+  const conteoProductos = {};
+  pedidos.forEach((p) => {
+    (p.items || []).forEach((item) => {
+      conteoProductos[item.nombre] = (conteoProductos[item.nombre] || 0) + 1;
+    });
+  });
+  const masVendidos = Object.entries(conteoProductos)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([nombre, cantidad]) => ({ nombre, cantidad }));
+
+  const hoy = new Date();
+  const ventasPorDia = {};
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(hoy);
+    d.setDate(d.getDate() - i);
+    ventasPorDia[d.toISOString().slice(0, 10)] = 0;
+  }
+  pedidos.forEach((p) => {
+    const key = (p.creado_en || "").slice(0, 10);
+    if (key in ventasPorDia) ventasPorDia[key] += Number(p.total || 0);
+  });
+
+  res.json({
+    ok: true,
+    totalPedidos,
+    totalVentas,
+    ticketPromedio,
+    porEstado,
+    masVendidos,
+    ventasPorDia,
+    ultimosPedidos: pedidos.slice(0, 10),
+  });
 });
 
 app.get("/health", (req, res) => res.send("ok"));

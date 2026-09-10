@@ -101,16 +101,21 @@ Railway detecta el push y despliega automáticamente.
 
 1. Ve a `https://tu-sitio.up.railway.app/admin.html`
 2. Entra con la contraseña que pusiste en `ADMIN_PASSWORD`
-3. El panel tiene 3 pestañas:
+3. El panel tiene 5 pestañas:
    - **📊 Estadísticas**: pedidos totales, ventas totales, ticket promedio,
-     muebles más vendidos y ventas de los últimos 7 días — todo calculado
-     en vivo desde la tabla `pedidos` de Supabase.
-   - **🛋️ Muebles**: añade, edita o borra muebles del catálogo (nombre,
-     categoría, descripción, precio, imagen).
-   - **🗂️ Categorías**: crea tus propias secciones del catálogo (nombre,
-     slug y orden de aparición) — ya no están fijas en el código. El "slug"
-     es el identificador interno (sin espacios ni acentos, ej: `sillones-reclinables`)
-     que conecta cada mueble con su categoría.
+     muebles más vendidos y ventas de los últimos 7 días.
+   - **📦 Pedidos**: lista de todos los pedidos recibidos, con buscador y filtro
+     por estado. Puedes cambiar el estado (Pendiente / Confirmado / Entregado)
+     desde un menú desplegable, y ver el detalle de cada pedido (muebles,
+     medidas personalizadas, dirección, método de pago).
+   - **🛋️ Muebles**: añade, edita o borra muebles. Cada mueble puede marcarse
+     como **Destacado** (aparece en la sección "Productos Destacados" del
+     inicio) y como **Disponible/Agotado** (si está agotado, se muestra el
+     aviso "Agotado" y no se puede comprar). Tiene buscador por nombre.
+   - **🗂️ Categorías**: crea tus propias secciones del catálogo.
+   - **⚙️ Configuración**: edita teléfono, dirección, y los links de Google
+     Maps, WhatsApp, Instagram y TikTok — se actualizan automáticamente en
+     el footer y los botones de contacto de todo el sitio sin tocar código.
 
 **Sobre las imágenes:** por ahora el panel pide una *URL* de imagen (por ejemplo,
 subes la foto a Google Drive, Imgur, o cualquier servicio de imágenes, la haces

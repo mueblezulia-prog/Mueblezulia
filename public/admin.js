@@ -42,6 +42,8 @@ function mostrarPanel() {
   cargarTablaProductos();
   cargarTablaCategorias();
   cargarEstadisticas();
+  cargarTablaPedidos();
+  cargarConfiguracion();
 }
 
 function cambiarTab(tabId) {
@@ -140,21 +142,36 @@ async function borrarCategoria(id) {
 
 // ---------------- MUEBLES ----------------
 
+let PRODUCTOS_ADMIN = [];
+
 async function cargarTablaProductos() {
   const res = await fetch("/api/productos");
-  const productos = await res.json();
+  PRODUCTOS_ADMIN = await res.json();
+  pintarTablaProductos(PRODUCTOS_ADMIN);
+}
+
+function pintarTablaProductos(lista) {
   const tbody = document.getElementById("tabla-productos");
-  tbody.innerHTML = productos.map(p => `
+  tbody.innerHTML = lista.map(p => `
     <tr>
       <td>${p.nombre}</td>
       <td>${p.categoria}</td>
       <td>$${p.precio}</td>
+      <td>
+        ${p.destacado ? '⭐ Destacado ' : ''}${p.disponible === false ? '<span style="color:var(--terracota);">Agotado</span>' : '<span style="color:#34c759;">Disponible</span>'}
+      </td>
       <td class="admin-actions">
         <button class="btn btn-outline" onclick='editarProducto(${JSON.stringify(p).replace(/'/g, "&apos;")})'>Editar</button>
         <button class="btn btn-terracota" onclick="borrarProducto(${p.id})">Borrar</button>
       </td>
     </tr>
-  `).join("");
+  `).join("") || `<tr><td colspan="5">No hay muebles que coincidan.</td></tr>`;
+}
+
+function filtrarProductos() {
+  const q = document.getElementById("buscar-productos").value.trim().toLowerCase();
+  const filtrados = PRODUCTOS_ADMIN.filter(p => p.nombre.toLowerCase().includes(q));
+  pintarTablaProductos(filtrados);
 }
 
 async function crearProducto(event) {
@@ -168,6 +185,8 @@ async function crearProducto(event) {
     descripcion: document.getElementById("f-desc").value,
     precio: Number(document.getElementById("f-precio").value),
     imagen: document.getElementById("f-imagen").value,
+    destacado: document.getElementById("f-destacado").checked,
+    disponible: document.getElementById("f-disponible").checked,
   };
 
   const url = editId ? `/api/admin/productos/${editId}` : "/api/admin/productos";
@@ -203,6 +222,8 @@ function editarProducto(p) {
   document.getElementById("f-desc").value = p.descripcion || "";
   document.getElementById("f-precio").value = p.precio;
   document.getElementById("f-imagen").value = p.imagen || "";
+  document.getElementById("f-destacado").checked = !!p.destacado;
+  document.getElementById("f-disponible").checked = p.disponible !== false;
   const form = document.querySelector('form[onsubmit="crearProducto(event)"]');
   form.dataset.editId = p.id;
   form.querySelector("button[type=submit]").textContent = "Guardar cambios";
@@ -248,6 +269,117 @@ async function cargarEstadisticas() {
       .map(([fecha, total]) => `<tr><td>${fecha}</td><td>$${Number(total).toFixed(2)}</td></tr>`).join("");
   } catch (err) {
     grid.innerHTML = `<div class="stat-card"><div class="stat-value">—</div><div class="stat-label">No se pudo conectar con el servidor</div></div>`;
+  }
+}
+
+// ---------------- PEDIDOS ----------------
+
+let PEDIDOS_ADMIN = [];
+
+async function cargarTablaPedidos() {
+  try {
+    const res = await fetch("/api/admin/pedidos", { headers: { "x-admin-password": getPassword() } });
+    const data = await res.json();
+    PEDIDOS_ADMIN = Array.isArray(data) ? data : [];
+    pintarTablaPedidos(PEDIDOS_ADMIN);
+  } catch (err) {
+    document.getElementById("tabla-pedidos").innerHTML = `<tr><td colspan="6">No se pudo cargar los pedidos.</td></tr>`;
+  }
+}
+
+function pintarTablaPedidos(lista) {
+  const tbody = document.getElementById("tabla-pedidos");
+  tbody.innerHTML = lista.map(p => `
+    <tr>
+      <td>${(p.creado_en || "").slice(0, 10)}</td>
+      <td>${p.nombre || "-"}</td>
+      <td>${p.telefono || "-"}</td>
+      <td>$${Number(p.total || 0).toFixed(2)}</td>
+      <td>
+        <select onchange="cambiarEstadoPedido(${p.id}, this.value)">
+          <option value="pendiente" ${p.estado === "pendiente" ? "selected" : ""}>Pendiente</option>
+          <option value="confirmado" ${p.estado === "confirmado" ? "selected" : ""}>Confirmado</option>
+          <option value="entregado" ${p.estado === "entregado" ? "selected" : ""}>Entregado</option>
+        </select>
+      </td>
+      <td><button class="btn btn-outline" onclick='verDetallePedido(${JSON.stringify(p).replace(/'/g, "&apos;")})'>Ver items</button></td>
+    </tr>
+  `).join("") || `<tr><td colspan="6">Todavía no hay pedidos.</td></tr>`;
+}
+
+function filtrarPedidos() {
+  const q = document.getElementById("buscar-pedidos").value.trim().toLowerCase();
+  const estado = document.getElementById("filtro-estado-pedido").value;
+  const filtrados = PEDIDOS_ADMIN.filter(p => {
+    const coincideTexto = (p.nombre || "").toLowerCase().includes(q) || (p.telefono || "").includes(q);
+    const coincideEstado = !estado || p.estado === estado;
+    return coincideTexto && coincideEstado;
+  });
+  pintarTablaPedidos(filtrados);
+}
+
+async function cambiarEstadoPedido(id, estado) {
+  const res = await fetch(`/api/admin/pedidos/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", "x-admin-password": getPassword() },
+    body: JSON.stringify({ estado }),
+  });
+  const data = await res.json();
+  if (!data.ok) alert(data.error || "No se pudo actualizar el estado");
+}
+
+function verDetallePedido(p) {
+  const items = (p.items || []).map(i =>
+    `• ${i.nombre}${i.personalizado ? ` (personalizado: ${i.medidas?.largo}x${i.medidas?.ancho}x${i.medidas?.alto} cm)` : ""} — $${i.precio}`
+  ).join("\n");
+  alert(`Pedido de ${p.nombre}\nDirección: ${p.direccion || "no especificada"}\nMétodo de pago: ${p.metodo_pago || p.metodoPago || "-"}\n\nMuebles:\n${items}`);
+}
+
+// ---------------- CONFIGURACIÓN ----------------
+
+async function cargarConfiguracion() {
+  try {
+    const res = await fetch("/api/configuracion");
+    const c = await res.json();
+    document.getElementById("cfg-telefono").value = c.telefono || "";
+    document.getElementById("cfg-direccion").value = c.direccion || "";
+    document.getElementById("cfg-maps").value = c.google_maps_url || "";
+    document.getElementById("cfg-whatsapp").value = c.whatsapp_url || "";
+    document.getElementById("cfg-instagram").value = c.instagram_url || "";
+    document.getElementById("cfg-tiktok").value = c.tiktok_url || "";
+  } catch (err) {
+    console.warn("No se pudo cargar la configuración", err);
+  }
+}
+
+async function guardarConfiguracion(event) {
+  event.preventDefault();
+  const msg = document.getElementById("cfg-msg");
+  const body = {
+    telefono: document.getElementById("cfg-telefono").value,
+    direccion: document.getElementById("cfg-direccion").value,
+    google_maps_url: document.getElementById("cfg-maps").value,
+    whatsapp_url: document.getElementById("cfg-whatsapp").value,
+    instagram_url: document.getElementById("cfg-instagram").value,
+    tiktok_url: document.getElementById("cfg-tiktok").value,
+  };
+  try {
+    const res = await fetch("/api/admin/configuracion", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", "x-admin-password": getPassword() },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.ok) {
+      msg.style.color = "var(--terracota)";
+      msg.textContent = data.error || "Error al guardar";
+      return;
+    }
+    msg.style.color = "#34c759";
+    msg.textContent = "Configuración guardada ✅. Los cambios se verán en el sitio al recargar.";
+  } catch (err) {
+    msg.style.color = "var(--terracota)";
+    msg.textContent = "No se pudo conectar con el servidor.";
   }
 }
 

@@ -24,6 +24,41 @@ const WHATSAPP_NUM = "584127519141"; // Mueble Zulia
 
 let PRODUCTOS = [];
 let CATEGORIAS = [];
+let CONFIG = {};
+
+async function cargarConfiguracion() {
+  try {
+    const res = await fetch("/api/configuracion");
+    CONFIG = await res.json();
+  } catch (err) {
+    console.warn("No se pudo cargar /api/configuracion.", err);
+    CONFIG = {};
+  }
+  aplicarConfiguracion();
+}
+
+function aplicarConfiguracion() {
+  const whatsappHref = CONFIG.whatsapp_url || `https://wa.me/${WHATSAPP_NUM}`;
+
+  document.querySelectorAll("[data-config='telefono']").forEach(el => { el.textContent = CONFIG.telefono || el.textContent; });
+  document.querySelectorAll("[data-config='direccion']").forEach(el => { el.textContent = CONFIG.direccion || el.textContent; });
+  document.querySelectorAll("[data-config='maps-url']").forEach(el => { el.href = CONFIG.google_maps_url || el.href; });
+  document.querySelectorAll("[data-config='instagram-url']").forEach(el => { el.href = CONFIG.instagram_url || el.href; });
+  document.querySelectorAll("[data-config='tiktok-url']").forEach(el => { el.href = CONFIG.tiktok_url || el.href; });
+  document.querySelectorAll("[data-config='whatsapp-url']").forEach(el => { el.href = whatsappHref; });
+
+  // Botón flotante de WhatsApp (se agrega una sola vez por página)
+  if (!document.getElementById("whatsapp-float")) {
+    const btn = document.createElement("a");
+    btn.id = "whatsapp-float";
+    btn.href = whatsappHref;
+    btn.target = "_blank";
+    btn.className = "whatsapp-float";
+    btn.innerHTML = "💬";
+    btn.title = "Escríbenos por WhatsApp";
+    document.body.appendChild(btn);
+  }
+}
 
 async function cargarCategorias() {
   try {
@@ -126,19 +161,35 @@ function removeFromCart(index) {
 
 function productCardHTML(p) {
   const img = p.imagen ? p.imagen : `https://placehold.co/400x300/2a2a2a/F2B90C?text=${encodeURIComponent(p.nombre)}`;
+  const agotado = p.disponible === false;
   return `
     <div class="card">
-      <img src="${img}" alt="${p.nombre}">
+      <div style="position:relative;">
+        <img src="${img}" alt="${p.nombre}">
+        ${agotado ? '<div class="badge-agotado">Agotado</div>' : ""}
+      </div>
       <div class="card-body">
         <h3>${p.nombre}</h3>
         <p class="desc">${p.descripcion || ""}</p>
         <div class="price">$${p.precio}</div>
         <div class="card-actions">
-          <button class="btn" onclick="addStandardToCart('${p.id}')">Comprar Ahora</button>
-          <button class="btn btn-outline" onclick="openCustomModal('${p.id}')">Compra Personalizada</button>
+          <button class="btn" ${agotado ? "disabled" : ""} onclick="addStandardToCart('${p.id}')">${agotado ? "No disponible" : "Comprar Ahora"}</button>
+          <button class="btn btn-outline" ${agotado ? "disabled" : ""} onclick="openCustomModal('${p.id}')">Compra Personalizada</button>
         </div>
       </div>
     </div>`;
+}
+
+// Productos destacados (home)
+function renderDestacados() {
+  const wrap = document.getElementById("productos-destacados");
+  if (!wrap) return;
+  const destacados = PRODUCTOS.filter(p => p.destacado);
+  if (destacados.length === 0) {
+    wrap.closest("section").style.display = "none";
+    return;
+  }
+  wrap.innerHTML = destacados.map(productCardHTML).join("");
 }
 
 // Tarjetas de categoría — para index.html y catalogo.html (arriba de todo)
@@ -210,9 +261,11 @@ function detectarUbicacion() {
 
 document.addEventListener("DOMContentLoaded", async () => {
   updateCartCount();
+  await cargarConfiguracion();
   await cargarCategorias();
   await cargarProductos();
   renderCategoryCards();
   renderCatalogPorCategoria();
+  renderDestacados();
   renderCart();
 });
