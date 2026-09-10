@@ -198,10 +198,10 @@ function renderDestacados() {
 function renderCategoryCards() {
   document.querySelectorAll(".category-cards-slot").forEach(wrap => {
     wrap.innerHTML = CATEGORIAS.map(cat => {
-      const imagen = cat.imagen || `https://placehold.co/400x300/2a2a2a/F2B90C?text=${encodeURIComponent(cat.nombre)}`;
+      const tieneFoto = !!cat.imagen;
+      const estiloFondo = tieneFoto ? ` style="background-image:url('${cat.imagen}')"` : "";
       return `
-      <a class="cat-card" href="catalogo.html#${cat.slug}">
-        <img src="${imagen}" alt="${cat.nombre}" loading="lazy">
+      <a class="cat-card${tieneFoto ? " has-image" : ""}" href="catalogo.html#${cat.slug}"${estiloFondo}>
         <div class="cat-label">${cat.nombre}</div>
       </a>`;
     }).join("");
