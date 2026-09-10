@@ -76,20 +76,15 @@ nav a:hover { opacity: 0.85; }
   background-image: url('img/fachada.png');
   background-size: cover;
   background-position: center 30%;
-  filter: blur(6px) brightness(0.35);
+  filter: brightness(0.55);
   z-index: 0;
 }
-.hero .watermark {
+.hero::after {
+  content: "";
   position: absolute;
-  top: 50%; left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 7vw;
-  font-weight: 800;
-  color: rgba(242, 185, 12, 0.10);
-  white-space: nowrap;
+  inset: -20px;
+  background: linear-gradient(180deg, rgba(30,30,30,.65), rgba(30,30,30,.85));
   z-index: 0;
-  pointer-events: none;
-  letter-spacing: 2px;
 }
 .hero > * { position: relative; z-index: 1; }
 .hero .hero-icon { font-size: 3rem; margin-bottom: 14px; }
