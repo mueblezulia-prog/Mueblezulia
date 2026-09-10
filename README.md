@@ -117,11 +117,17 @@ Railway detecta el push y despliega automáticamente.
      Maps, WhatsApp, Instagram y TikTok — se actualizan automáticamente en
      el footer y los botones de contacto de todo el sitio sin tocar código.
 
-**Sobre las imágenes:** por ahora el panel pide una *URL* de imagen (por ejemplo,
-subes la foto a Google Drive, Imgur, o cualquier servicio de imágenes, la haces
-pública, y pegas ese link). Si más adelante quieres subir la foto directo desde
-tu computadora sin usar un link externo, se puede añadir soporte para eso —
-dime cuando quieras esa mejora.
+**Sobre las imágenes:** ahora se suben directo desde tu computadora (ya no piden
+un link). Para que funcione, necesitas crear un bucket de almacenamiento en
+Supabase (una sola vez):
+
+1. Corre el `supabase.sql` actualizado — al final tiene el código para crear
+   el bucket `productos-imagenes` automáticamente.
+2. Si esa parte del SQL da error (a veces Supabase restringe crear buckets por
+   SQL), créalo a mano: en el panel de Supabase, ve a **Storage → New bucket**,
+   nómbralo `productos-imagenes` y activa **Public bucket**.
+3. Listo — desde el panel admin, en "Foto del mueble", eliges el archivo de tu
+   computadora y se sube solo al guardar.
 
 ---
 

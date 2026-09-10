@@ -174,17 +174,59 @@ function filtrarProductos() {
   pintarTablaProductos(filtrados);
 }
 
+function previsualizarImagen() {
+  const fileInput = document.getElementById("f-imagen-file");
+  const preview = document.getElementById("f-imagen-preview");
+  const file = fileInput.files[0];
+  if (!file) { preview.style.display = "none"; return; }
+  preview.src = URL.createObjectURL(file);
+  preview.style.display = "block";
+}
+
+async function subirImagenSiHayArchivo() {
+  const fileInput = document.getElementById("f-imagen-file");
+  const status = document.getElementById("upload-status");
+  const file = fileInput.files[0];
+  if (!file) return document.getElementById("f-imagen").value; // sin archivo nuevo, deja la url actual (si la hay)
+
+  status.textContent = "Subiendo imagen...";
+  const formData = new FormData();
+  formData.append("imagen", file);
+
+  const res = await fetch("/api/admin/upload", {
+    method: "POST",
+    headers: { "x-admin-password": getPassword() },
+    body: formData,
+  });
+  const data = await res.json();
+  if (!res.ok || !data.ok) {
+    status.textContent = "";
+    throw new Error(data.error || "No se pudo subir la imagen");
+  }
+  status.textContent = "Imagen subida ✅";
+  return data.url;
+}
+
 async function crearProducto(event) {
   event.preventDefault();
   const msg = document.getElementById("form-msg");
   const editId = event.target.dataset.editId;
+
+  let imagenUrl;
+  try {
+    imagenUrl = await subirImagenSiHayArchivo();
+  } catch (err) {
+    msg.style.color = "var(--terracota)";
+    msg.textContent = err.message;
+    return;
+  }
 
   const body = {
     nombre: document.getElementById("f-nombre").value,
     categoria: document.getElementById("f-categoria").value,
     descripcion: document.getElementById("f-desc").value,
     precio: Number(document.getElementById("f-precio").value),
-    imagen: document.getElementById("f-imagen").value,
+    imagen: imagenUrl || "",
     destacado: document.getElementById("f-destacado").checked,
     disponible: document.getElementById("f-disponible").checked,
   };
@@ -207,6 +249,9 @@ async function crearProducto(event) {
     msg.style.color = "#34c759";
     msg.textContent = editId ? "Mueble actualizado ✅" : "Mueble añadido ✅";
     event.target.reset();
+    document.getElementById("f-imagen-preview").style.display = "none";
+    document.getElementById("f-imagen").value = "";
+    document.getElementById("upload-status").textContent = "";
     delete event.target.dataset.editId;
     event.target.querySelector("button[type=submit]").textContent = "Añadir mueble";
     cargarTablaProductos();
@@ -222,6 +267,10 @@ function editarProducto(p) {
   document.getElementById("f-desc").value = p.descripcion || "";
   document.getElementById("f-precio").value = p.precio;
   document.getElementById("f-imagen").value = p.imagen || "";
+  document.getElementById("f-imagen-file").value = "";
+  const preview = document.getElementById("f-imagen-preview");
+  if (p.imagen) { preview.src = p.imagen; preview.style.display = "block"; }
+  else { preview.style.display = "none"; }
   document.getElementById("f-destacado").checked = !!p.destacado;
   document.getElementById("f-disponible").checked = p.disponible !== false;
   const form = document.querySelector('form[onsubmit="crearProducto(event)"]');

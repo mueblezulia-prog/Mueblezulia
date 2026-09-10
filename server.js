@@ -5,6 +5,8 @@
 
 const express = require("express");
 const path = require("path");
+const multer = require("multer");
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } }); // 5MB máx
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -59,6 +61,24 @@ app.put("/api/admin/configuracion", requireAdmin, async (req, res) => {
     .eq("id", 1);
   if (error) return res.status(500).json({ ok: false, error: error.message });
   res.json({ ok: true });
+});
+
+// ================= SUBIDA DE IMÁGENES =================
+app.post("/api/admin/upload", requireAdmin, upload.single("imagen"), async (req, res) => {
+  if (!supabase) return res.status(500).json({ ok: false, error: "Supabase no está configurado" });
+  if (!req.file) return res.status(400).json({ ok: false, error: "No se recibió ninguna imagen" });
+
+  const ext = (req.file.originalname.split(".").pop() || "jpg").toLowerCase();
+  const filename = `producto-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+
+  const { error } = await supabase.storage
+    .from("productos-imagenes")
+    .upload(filename, req.file.buffer, { contentType: req.file.mimetype, upsert: false });
+
+  if (error) return res.status(500).json({ ok: false, error: error.message });
+
+  const { data } = supabase.storage.from("productos-imagenes").getPublicUrl(filename);
+  res.json({ ok: true, url: data.publicUrl });
 });
 
 // ================= CATEGORÍAS =================

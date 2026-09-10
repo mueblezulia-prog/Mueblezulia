@@ -101,9 +101,11 @@
         <label>Precio (USD)</label>
         <input type="number" id="f-precio" required>
 
-        <label>URL de la imagen (opcional)</label>
-        <input type="text" id="f-imagen" placeholder="https://...">
-
+        <label>Foto del mueble</label>
+        <input type="file" id="f-imagen-file" accept="image/*" onchange="previsualizarImagen()">
+        <img id="f-imagen-preview" style="display:none;max-height:140px;border-radius:8px;margin-top:8px;">
+        <input type="hidden" id="f-imagen">
+        <p id="upload-status" style="font-size:0.8rem;color:var(--gris);"></p>
         <div style="display:flex;gap:20px;">
           <label style="display:flex;align-items:center;gap:8px;font-weight:400;">
             <input type="checkbox" id="f-destacado" style="width:auto;"> Destacado en el inicio

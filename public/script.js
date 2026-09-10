@@ -160,12 +160,14 @@ function removeFromCart(index) {
 }
 
 function productCardHTML(p) {
-  const img = p.imagen ? p.imagen : `https://placehold.co/400x300/2a2a2a/F2B90C?text=${encodeURIComponent(p.nombre)}`;
   const agotado = p.disponible === false;
+  const imgHTML = p.imagen
+    ? `<img src="${p.imagen}" alt="${p.nombre}" loading="lazy">`
+    : `<div class="sin-imagen">Sin foto todavía</div>`;
   return `
     <div class="card">
-      <div style="position:relative;">
-        <img src="${img}" alt="${p.nombre}">
+      <div class="card-img-wrap" style="position:relative;">
+        ${imgHTML}
         ${agotado ? '<div class="badge-agotado">Agotado</div>' : ""}
       </div>
       <div class="card-body">

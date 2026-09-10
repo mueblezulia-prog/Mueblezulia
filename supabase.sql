@@ -73,3 +73,22 @@ values
   ('Colección de Reflejos', 'reflejos', 5),
   ('Mueble TV', 'mueble-tv', 6)
 on conflict (slug) do nothing;
+
+-- ============================================================
+-- BUCKET DE IMÁGENES (para que el panel admin pueda subir fotos)
+-- Si el INSERT de abajo da error, créalo manualmente:
+-- Panel de Supabase -> Storage -> New bucket -> nombre: productos-imagenes -> Public bucket: ACTIVADO
+-- ============================================================
+insert into storage.buckets (id, name, public)
+values ('productos-imagenes', 'productos-imagenes', true)
+on conflict (id) do nothing;
+
+-- Permite que cualquiera vea las imágenes (necesario para que se muestren en el sitio)
+create policy if not exists "Lectura pública de imágenes de productos"
+on storage.objects for select
+using (bucket_id = 'productos-imagenes');
+
+-- Permite subir imágenes (el panel admin ya está protegido por contraseña a nivel de servidor)
+create policy if not exists "Subida de imágenes de productos"
+on storage.objects for insert
+with check (bucket_id = 'productos-imagenes');
