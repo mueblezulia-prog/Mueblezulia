@@ -19,7 +19,7 @@
     <img src="img/logo.png" alt="Mueble Zulia">
     <span>MUEBLE ZULIA</span>
   </div>
-  <nav>
+  <nav id="main-nav">
     <ul>
       <li><a href="index.html">Inicio</a></li>
       <li><a href="catalogo.html">Catálogo</a></li>
@@ -27,10 +27,16 @@
       <li><a href="index.html#contacto">Contacto</a></li>
     </ul>
   </nav>
-  <a href="carrito.html" class="cart-icon">🛒<span class="cart-count" id="cart-count">0</span></a>
+  <div class="header-right">
+    <a href="carrito.html" class="cart-icon">🛒<span class="cart-count" id="cart-count">0</span></a>
+    <button class="nav-toggle" id="nav-toggle" aria-label="Abrir menú" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
 </header>
 
 <section class="hero">
+  <div class="hero-icon">🛋️</div>
   <h1>LA MUEBLERÍA DE<br>LA FAMILIA ZULIANA</h1>
   <p class="tagline">Llevando confort a los hogares del Zulia</p>
   <div class="hero-actions">
@@ -54,34 +60,40 @@
   <h2 class="section-title">Nuestra Sede</h2>
   <div class="sede-grid">
     <img src="img/fachada.jpg" alt="Fachada de Mueble Zulia">
-    <div>
+    <div class="sede-info">
+      <div>
+        <p class="destacado" style="color:var(--amarillo);">¡Te esperamos en Mueble Zulia! 📍</p>
+        <p>Ven a conocer la calidad y el diseño que cambiarán tu hogar.</p>
+        <p style="margin-top:6px;" data-config="direccion">Av. 15 Delicias, frente al Alicorp — Maracaibo, Zulia</p>
+      </div>
       <iframe
         src="https://www.google.com/maps?q=Muebles+Zulia&output=embed"
-        style="width:100%;height:220px;border:0;border-radius:10px;"
+        style="width:100%;border:0;border-radius:10px;"
         loading="lazy"
         referrerpolicy="no-referrer-when-downgrade">
       </iframe>
-      <a href="https://maps.app.goo.gl/c7ACGX1BsV4BrxxLA" target="_blank" class="btn btn-outline" style="display:block;margin-top:12px;text-align:center;">
-        📍 Abrir en Google Maps
-      </a>
     </div>
   </div>
-  <p style="text-align:center;margin-top:20px;" class="destacado">
-    ¡Te esperamos en Mueble Zulia! Un vistazo a nuestra tienda es el primer paso para transformar tu hogar.
-  </p>
+  <div style="text-align:center;margin-top:20px;">
+    <a href="https://maps.app.goo.gl/c7ACGX1BsV4BrxxLA" target="_blank" class="btn btn-outline" data-config="maps-url">
+      📍 Abrir en Google Maps
+    </a>
+  </div>
 </section>
 
 <section id="manufactura">
   <h2 class="section-title">Excelencia en Manufactura</h2>
   <div class="manufactura-grid">
-    <div class="manufactura-card">
-      <img src="https://placehold.co/500x300/2a2a2a/F2B90C?text=Pasi%C3%B3n+por+el+Detalle" alt="Nuestro taller">
-      <div class="manufactura-body">
-        <h3 class="destacado">Pasión por el Detalle</h3>
-        <p class="text" style="color:var(--gris);margin-top:8px;">
-          En Mueble Zulia, la excelencia no es negociable. Supervisamos manualmente cada mueble para garantizar que trabajen con el mismo nivel de detalle para lograr los acabados impecables que tú mereces.
-        </p>
-      </div>
+    <div class="manufactura-collage">
+      <img class="foto-principal" src="https://placehold.co/700x480/2a2a2a/F2B90C?text=Nuestro+Taller" alt="Artesano trabajando en el taller de Mueble Zulia">
+      <img class="foto-secundaria" src="https://placehold.co/350x350/2a2a2a/F2B90C?text=Detalle" alt="Detalle de fabricación">
+      <img class="foto-secundaria" src="https://placehold.co/350x350/2a2a2a/F2B90C?text=Acabados" alt="Acabados de fabricación">
+    </div>
+    <div>
+      <h3 class="destacado" style="color:var(--amarillo);font-size:1.3rem;">Pasión por el Detalle</h3>
+      <p class="text" style="color:var(--gris);margin-top:10px;">
+        En Mueble Zulia, la excelencia no es negociable. Supervisamos rigurosamente cada etapa de la confección, asegurándonos de que manos expertas trabajen con los mejores materiales para lograr los acabados impecables que tu hogar merece.
+      </p>
     </div>
   </div>
   <div style="text-align:center;margin-top:26px;">

@@ -32,16 +32,19 @@ header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 6%;
+  gap: 10px;
+  padding: 12px 6%;
   background: var(--negro);
   border-bottom: 1px solid var(--borde);
   position: sticky;
   top: 0;
   z-index: 50;
 }
-.logo-group { display: flex; align-items: center; gap: 10px; }
-.logo-group img { height: 34px; }
-.logo-group span { font-weight: 800; font-size: 1.1rem; letter-spacing: 0.5px; }
+.logo-group { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.logo-group img { height: 34px; flex-shrink: 0; }
+.logo-group span { font-weight: 800; font-size: 1.1rem; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.header-right { display: flex; align-items: center; gap: 14px; }
 
 nav ul { display: flex; gap: 10px; list-style: none; }
 nav a {
@@ -51,15 +54,34 @@ nav a {
   color: var(--negro);
   padding: 8px 18px;
   border-radius: 20px;
+  display: block;
 }
 nav a:hover { opacity: 0.85; }
 
-.cart-icon { position: relative; font-size: 1.4rem; cursor: pointer; }
+.cart-icon { position: relative; font-size: 1.4rem; cursor: pointer; flex-shrink: 0; }
 .cart-count {
   position: absolute; top: -8px; right: -10px;
   background: var(--terracota); color: #fff;
   font-size: 0.7rem; border-radius: 50%; padding: 2px 6px;
 }
+
+/* Menú hamburguesa (solo visible en móvil) */
+.nav-toggle {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  width: 34px;
+  height: 34px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.nav-toggle span { width: 100%; height: 3px; background: var(--amarillo); border-radius: 2px; transition: transform .2s, opacity .2s; }
+.nav-toggle.active span:nth-child(1) { transform: translateY(8px) rotate(45deg); }
+.nav-toggle.active span:nth-child(2) { opacity: 0; }
+.nav-toggle.active span:nth-child(3) { transform: translateY(-8px) rotate(-45deg); }
 
 /* HERO estilo mockup: fondo negro plano + marca de agua del nombre detrás del texto */
 .hero {
@@ -117,23 +139,29 @@ h2.section-title { text-align: center; color: var(--amarillo); margin-bottom: 34
 
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 22px; }
 
+.category-cards-slot { grid-template-columns: repeat(2, 1fr); }
+
 .cat-card {
   position: relative;
   border-radius: var(--radio);
   overflow: hidden;
-  height: 110px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  aspect-ratio: 4 / 3;
+  display: block;
   background: #262626;
   border: 1px solid var(--borde);
-  transition: background .2s, transform .15s;
+  transition: transform .15s;
 }
-.cat-card:hover { background: #2f2f2f; transform: translateY(-2px); }
+.cat-card:hover { transform: translateY(-2px); }
+.cat-card img {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; display: block;
+}
 .cat-card .cat-label {
-  position: relative; z-index: 2; width: 100%; padding: 12px;
-  text-align: center; font-weight: 800; color: var(--amarillo);
-  text-transform: uppercase; font-size: 0.95rem;
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 2;
+  background: rgba(17,17,17,.85);
+  padding: 10px 8px;
+  text-align: center; font-weight: 800; color: var(--blanco);
+  font-size: 0.9rem;
 }
 
 .card { background: #2a2a2a; border: 1px solid var(--borde); border-radius: var(--radio); overflow: hidden; display: flex; flex-direction: column; }
@@ -150,14 +178,30 @@ h2.section-title { text-align: center; color: var(--amarillo); margin-bottom: 34
 .card-actions { display: flex; flex-direction: column; gap: 8px; }
 .card-actions .btn { text-align: center; }
 
-.sede-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: center; }
-.sede-grid img { width: 100%; border-radius: var(--radio); }
+.sede-grid { display: grid; grid-template-columns: 1.1fr 1fr; gap: 16px; align-items: stretch; }
+.sede-grid img { width: 100%; height: 100%; min-height: 180px; object-fit: cover; border-radius: var(--radio); }
+.sede-grid .sede-info { display: flex; flex-direction: column; gap: 10px; }
+.sede-grid .sede-info p { color: var(--gris); font-size: 0.9rem; }
+.sede-grid .sede-info iframe { flex: 1; min-height: 140px; }
 .map-placeholder {
   background: #2a2a2a; border: 1px solid var(--borde); border-radius: var(--radio); height: 220px;
   display: flex; align-items: center; justify-content: center; color: var(--gris); font-size: 0.85rem;
 }
 
-.manufactura-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 22px; }
+/* Manufactura: colage de fotos + texto, como en el mockup */
+.manufactura-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 26px; align-items: center; }
+.manufactura-collage {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto auto;
+  gap: 10px;
+}
+.manufactura-collage img {
+  width: 100%; height: 100%; object-fit: cover; border-radius: var(--radio);
+  border: 1px solid var(--borde);
+}
+.manufactura-collage .foto-principal { grid-column: 1 / 3; aspect-ratio: 16 / 11; }
+.manufactura-collage .foto-secundaria { aspect-ratio: 1 / 1; }
 .manufactura-card { background: #2a2a2a; border: 1px solid var(--borde); border-radius: var(--radio); overflow: hidden; }
 .manufactura-card img { width: 100%; height: 200px; object-fit: cover; }
 .manufactura-card .manufactura-body { padding: 16px; }
@@ -217,9 +261,42 @@ form input, form textarea, form select {
 .stat-card .stat-label { font-size: 0.85rem; color: var(--gris); margin-top: 6px; }
 
 @media (max-width: 700px) {
-  nav ul { display: none; }
-  h1 { font-size: 28px; line-height: 34px; }
-  .sede-grid { grid-template-columns: 1fr; }
+  .nav-toggle { display: flex; }
+  nav {
+    position: fixed; top: 63px; left: 0; right: 0;
+    background: var(--negro); border-bottom: 1px solid var(--borde);
+    max-height: 0; overflow: hidden; transition: max-height .25s ease;
+    z-index: 49;
+  }
+  nav.open { max-height: 320px; }
+  nav ul { flex-direction: column; gap: 0; padding: 8px 6% 16px; }
+  nav ul li { width: 100%; }
+  nav a { border-radius: 8px; text-align: center; padding: 12px 18px; }
+
+  h1 { font-size: 26px; line-height: 32px; }
+  .hero { padding: 60px 6% 46px; }
+  .hero-actions { width: 100%; }
+  .hero-actions .btn { width: 100%; }
+
+  section { padding: 40px 6%; }
+  h2.section-title { font-size: 22px; line-height: 28px; margin-bottom: 24px; }
+
+  .grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; }
+  .cat-card .cat-label { font-size: 0.78rem; padding: 8px 6px; }
+
+  .sede-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .sede-grid img { min-height: 140px; }
+  .sede-grid .sede-info iframe { min-height: 140px; }
+
+  .manufactura-grid { grid-template-columns: 1fr; gap: 20px; }
+
+  footer .footer-grid { grid-template-columns: 1fr; text-align: center; }
+  footer .social { display: flex; flex-direction: column; align-items: center; }
+}
+
+@media (max-width: 420px) {
+  .grid { grid-template-columns: repeat(2, 1fr); }
+  .logo-group span { font-size: 0.95rem; }
 }
 
 /* Botón flotante de WhatsApp */

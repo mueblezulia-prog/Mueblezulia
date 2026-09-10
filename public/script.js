@@ -197,10 +197,33 @@ function renderDestacados() {
 // Tarjetas de categoría — para index.html y catalogo.html (arriba de todo)
 function renderCategoryCards() {
   document.querySelectorAll(".category-cards-slot").forEach(wrap => {
-    wrap.innerHTML = CATEGORIAS.map(cat => `
+    wrap.innerHTML = CATEGORIAS.map(cat => {
+      const imagen = cat.imagen || `https://placehold.co/400x300/2a2a2a/F2B90C?text=${encodeURIComponent(cat.nombre)}`;
+      return `
       <a class="cat-card" href="catalogo.html#${cat.slug}">
+        <img src="${imagen}" alt="${cat.nombre}" loading="lazy">
         <div class="cat-label">${cat.nombre}</div>
-      </a>`).join("");
+      </a>`;
+    }).join("");
+  });
+}
+
+// Menú hamburguesa (móvil)
+function initNavToggle() {
+  const toggle = document.getElementById("nav-toggle");
+  const nav = document.getElementById("main-nav");
+  if (!toggle || !nav) return;
+  toggle.addEventListener("click", () => {
+    const abierto = nav.classList.toggle("open");
+    toggle.classList.toggle("active", abierto);
+    toggle.setAttribute("aria-expanded", abierto ? "true" : "false");
+  });
+  nav.querySelectorAll("a").forEach(a => {
+    a.addEventListener("click", () => {
+      nav.classList.remove("open");
+      toggle.classList.remove("active");
+      toggle.setAttribute("aria-expanded", "false");
+    });
   });
 }
 
@@ -262,6 +285,7 @@ function detectarUbicacion() {
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
+  initNavToggle();
   updateCartCount();
   await cargarConfiguracion();
   await cargarCategorias();

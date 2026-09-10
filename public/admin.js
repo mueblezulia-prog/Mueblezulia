@@ -68,6 +68,7 @@ async function cargarTablaCategorias() {
   const tbody = document.getElementById("tabla-categorias");
   tbody.innerHTML = categorias.map(c => `
     <tr>
+      <td>${c.imagen ? `<img src="${c.imagen}" alt="${c.nombre}" style="width:50px;height:38px;object-fit:cover;border-radius:4px;">` : "—"}</td>
       <td>${c.nombre}</td>
       <td>${c.slug}</td>
       <td>${c.orden ?? 0}</td>
@@ -89,6 +90,7 @@ async function crearCategoria(event) {
     nombre: document.getElementById("c-nombre").value,
     slug: document.getElementById("c-slug").value.trim().toLowerCase(),
     orden: Number(document.getElementById("c-orden").value) || 0,
+    imagen: document.getElementById("c-imagen").value.trim(),
   };
 
   const url = editId ? `/api/admin/categorias/${editId}` : "/api/admin/categorias";
@@ -123,6 +125,7 @@ function editarCategoria(c) {
   document.getElementById("c-nombre").value = c.nombre;
   document.getElementById("c-slug").value = c.slug;
   document.getElementById("c-orden").value = c.orden ?? 0;
+  document.getElementById("c-imagen").value = c.imagen ?? "";
   const form = document.querySelector('form[onsubmit="crearCategoria(event)"]');
   form.dataset.editId = c.id;
   form.querySelector("button[type=submit]").textContent = "Guardar cambios";

@@ -19,7 +19,7 @@
     <img src="img/logo.png" alt="Mueble Zulia">
     <span>MUEBLE ZULIA</span>
   </div>
-  <nav>
+  <nav id="main-nav">
     <ul>
       <li><a href="index.html">Inicio</a></li>
       <li><a href="catalogo.html">Catálogo</a></li>
@@ -27,7 +27,12 @@
       <li><a href="index.html#contacto">Contacto</a></li>
     </ul>
   </nav>
-  <a href="carrito.html" class="cart-icon">🛒<span class="cart-count" id="cart-count">0</span></a>
+  <div class="header-right">
+    <a href="carrito.html" class="cart-icon">🛒<span class="cart-count" id="cart-count">0</span></a>
+    <button class="nav-toggle" id="nav-toggle" aria-label="Abrir menú" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
 </header>
 
 <section>
@@ -36,6 +41,7 @@
     Explora nuestro catálogo por categoría, o consulta abajo el detalle de cada línea.
   </p>
   <div class="grid category-cards-slot" style="margin-bottom:50px;"></div>
+  <h2 class="section-title" style="margin-bottom:30px;">Nuestras Categorías</h2>
   <div id="catalog-por-categoria"></div>
 </section>
 
