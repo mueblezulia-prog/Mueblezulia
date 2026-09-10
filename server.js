@@ -41,6 +41,44 @@ app.post("/api/admin/login", (req, res) => {
   res.status(401).json({ ok: false, error: "Contraseña incorrecta" });
 });
 
+// ---------- Categorías públicas ----------
+app.get("/api/categorias", async (req, res) => {
+  if (!supabase) return res.json([]);
+  const { data, error } = await supabase.from("categorias").select("*").order("orden", { ascending: true });
+  if (error) {
+    console.error("Error leyendo categorías:", error.message);
+    return res.status(500).json([]);
+  }
+  res.json(data);
+});
+
+// ---------- Categorías — administración ----------
+app.post("/api/admin/categorias", requireAdmin, async (req, res) => {
+  if (!supabase) return res.status(500).json({ ok: false, error: "Supabase no está configurado" });
+  const { nombre, slug, orden, imagen } = req.body;
+  const { data, error } = await supabase
+    .from("categorias")
+    .insert([{ nombre, slug, orden: orden || 0, imagen }])
+    .select();
+  if (error) return res.status(500).json({ ok: false, error: error.message });
+  res.json({ ok: true, categoria: data[0] });
+});
+
+app.put("/api/admin/categorias/:id", requireAdmin, async (req, res) => {
+  if (!supabase) return res.status(500).json({ ok: false, error: "Supabase no está configurado" });
+  const { nombre, slug, orden, imagen } = req.body;
+  const { error } = await supabase.from("categorias").update({ nombre, slug, orden, imagen }).eq("id", req.params.id);
+  if (error) return res.status(500).json({ ok: false, error: error.message });
+  res.json({ ok: true });
+});
+
+app.delete("/api/admin/categorias/:id", requireAdmin, async (req, res) => {
+  if (!supabase) return res.status(500).json({ ok: false, error: "Supabase no está configurado" });
+  const { error } = await supabase.from("categorias").delete().eq("id", req.params.id);
+  if (error) return res.status(500).json({ ok: false, error: error.message });
+  res.json({ ok: true });
+});
+
 // ---------- Catálogo público ----------
 app.get("/api/productos", async (req, res) => {
   if (!supabase) return res.json([]);
@@ -80,6 +118,125 @@ app.delete("/api/admin/productos/:id", requireAdmin, async (req, res) => {
   const { error } = await supabase.from("productos").delete().eq("id", req.params.id);
   if (error) return res.status(500).json({ ok: false, error: error.message });
   res.json({ ok: true });
+});
+
+// ---------- Categorías públicas ----------
+app.get("/api/categorias", async (req, res) => {
+  if (!supabase) return res.json([]);
+  const { data, error } = await supabase.from("categorias").select("*").order("orden", { ascending: true });
+  if (error) {
+    console.error("Error leyendo categorias:", error.message);
+    return res.status(500).json([]);
+  }
+  res.json(data);
+});
+
+// ---------- Categorías — administración ----------
+app.post("/api/admin/categorias", requireAdmin, async (req, res) => {
+  if (!supabase) return res.status(500).json({ ok: false, error: "Supabase no está configurado" });
+  const { nombre, slug, imagen, orden } = req.body;
+  const { data, error } = await supabase
+    .from("categorias")
+    .insert([{ nombre, slug, imagen, orden: orden || 0 }])
+    .select();
+  if (error) return res.status(500).json({ ok: false, error: error.message });
+  res.json({ ok: true, categoria: data[0] });
+});
+
+app.put("/api/admin/categorias/:id", requireAdmin, async (req, res) => {
+  if (!supabase) return res.status(500).json({ ok: false, error: "Supabase no está configurado" });
+  const { nombre, slug, imagen, orden } = req.body;
+  const { error } = await supabase
+    .from("categorias")
+    .update({ nombre, slug, imagen, orden })
+    .eq("id", req.params.id);
+  if (error) return res.status(500).json({ ok: false, error: error.message });
+  res.json({ ok: true });
+});
+
+app.delete("/api/admin/categorias/:id", requireAdmin, async (req, res) => {
+  if (!supabase) return res.status(500).json({ ok: false, error: "Supabase no está configurado" });
+  const { error } = await supabase.from("categorias").delete().eq("id", req.params.id);
+  if (error) return res.status(500).json({ ok: false, error: error.message });
+  res.json({ ok: true });
+});
+
+// ---------- Estadísticas de venta (panel admin) ----------
+app.get("/api/admin/estadisticas", requireAdmin, async (req, res) => {
+  if (!supabase) return res.status(500).json({ ok: false, error: "Supabase no está configurado" });
+  const { data: pedidos, error } = await supabase
+    .from("pedidos")
+    .select("*")
+    .order("creado_en", { ascending: false });
+  if (error) return res.status(500).json({ ok: false, error: error.message });
+
+  const totalPedidos = pedidos.length;
+  const totalVentas = pedidos.reduce((sum, p) => sum + Number(p.total || 0), 0);
+
+  const porMetodoPago = {};
+  pedidos.forEach((p) => {
+    const metodo = p.metodo_pago || "no-especificado";
+    porMetodoPago[metodo] = (porMetodoPago[metodo] || 0) + 1;
+  });
+
+  const hoy = new Date().toISOString().slice(0, 10);
+  const ventasHoy = pedidos.filter((p) => (p.creado_en || "").slice(0, 10) === hoy);
+
+  res.json({
+    ok: true,
+    totalPedidos,
+    totalVentas,
+    pedidosHoy: ventasHoy.length,
+    ventasHoy: ventasHoy.reduce((sum, p) => sum + Number(p.total || 0), 0),
+    porMetodoPago,
+    ultimosPedidos: pedidos.slice(0, 15),
+  });
+});
+
+// ---------- Estadísticas de ventas (admin) ----------
+app.get("/api/admin/estadisticas", requireAdmin, async (req, res) => {
+  if (!supabase) return res.status(500).json({ ok: false, error: "Supabase no está configurado" });
+  const { data: pedidos, error } = await supabase.from("pedidos").select("*");
+  if (error) return res.status(500).json({ ok: false, error: error.message });
+
+  const totalPedidos = pedidos.length;
+  const totalVentas = pedidos.reduce((sum, p) => sum + Number(p.total || 0), 0);
+  const ticketPromedio = totalPedidos > 0 ? totalVentas / totalPedidos : 0;
+
+  // Contar cuántas veces se vendió cada mueble (por nombre) sumando los items de cada pedido
+  const conteoProductos = {};
+  pedidos.forEach((p) => {
+    (p.items || []).forEach((item) => {
+      conteoProductos[item.nombre] = (conteoProductos[item.nombre] || 0) + 1;
+    });
+  });
+  const masVendidos = Object.entries(conteoProductos)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([nombre, cantidad]) => ({ nombre, cantidad }));
+
+  // Ventas de los últimos 7 días
+  const hoy = new Date();
+  const ventasPorDia = {};
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(hoy);
+    d.setDate(d.getDate() - i);
+    const key = d.toISOString().slice(0, 10);
+    ventasPorDia[key] = 0;
+  }
+  pedidos.forEach((p) => {
+    const key = (p.creado_en || "").slice(0, 10);
+    if (key in ventasPorDia) ventasPorDia[key] += Number(p.total || 0);
+  });
+
+  res.json({
+    ok: true,
+    totalPedidos,
+    totalVentas,
+    ticketPromedio,
+    masVendidos,
+    ventasPorDia,
+  });
 });
 
 // ---------- Pedidos ----------

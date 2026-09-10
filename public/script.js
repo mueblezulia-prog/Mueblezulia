@@ -1,8 +1,8 @@
 // Mueble Zulia — lógica de front-end
-// Los productos se piden a /api/productos (guardados en Supabase por el panel admin).
-// Si el backend no responde (ej. estás abriendo el HTML directo), se usa un catálogo de ejemplo.
+// Categorías y productos se piden a la API (guardados en Supabase por el panel admin).
+// Si el backend no responde, se usa un catálogo/categorías de ejemplo.
 
-const CATEGORIAS = [
+const CATEGORIAS_EJEMPLO = [
   { slug: "modulares", nombre: "Modulares" },
   { slug: "comedores", nombre: "Comedores" },
   { slug: "dormitorios", nombre: "Dormitorios" },
@@ -23,6 +23,19 @@ const PRODUCTOS_EJEMPLO = [
 const WHATSAPP_NUM = "584120000000"; // reemplazar con el número real de Mueble Zulia
 
 let PRODUCTOS = [];
+let CATEGORIAS = [];
+
+async function cargarCategorias() {
+  try {
+    const res = await fetch("/api/categorias");
+    if (!res.ok) throw new Error("sin respuesta");
+    CATEGORIAS = await res.json();
+    if (!Array.isArray(CATEGORIAS) || CATEGORIAS.length === 0) CATEGORIAS = CATEGORIAS_EJEMPLO;
+  } catch (err) {
+    console.warn("No se pudo cargar /api/categorias, usando categorías de ejemplo.", err);
+    CATEGORIAS = CATEGORIAS_EJEMPLO;
+  }
+}
 
 async function cargarProductos() {
   try {
@@ -128,6 +141,16 @@ function productCardHTML(p) {
     </div>`;
 }
 
+// Tarjetas de categoría — para index.html y catalogo.html (arriba de todo)
+function renderCategoryCards() {
+  document.querySelectorAll(".category-cards-slot").forEach(wrap => {
+    wrap.innerHTML = CATEGORIAS.map(cat => `
+      <a class="cat-card" href="catalogo.html#${cat.slug}">
+        <div class="cat-label">${cat.nombre}</div>
+      </a>`).join("");
+  });
+}
+
 // Catálogo agrupado por categoría (usado en catalogo.html)
 function renderCatalogPorCategoria() {
   const wrap = document.getElementById("catalog-por-categoria");
@@ -141,13 +164,6 @@ function renderCatalogPorCategoria() {
         <div class="grid">${productosCat.map(productCardHTML).join("")}</div>
       </div>`;
   }).join("");
-}
-
-// Cuadrícula simple (usada en index.html si se quisiera destacar productos)
-function renderCatalog() {
-  const grid = document.getElementById("catalog-grid");
-  if (!grid) return;
-  grid.innerHTML = PRODUCTOS.map(productCardHTML).join("");
 }
 
 async function submitOrder(event) {
@@ -194,8 +210,9 @@ function detectarUbicacion() {
 
 document.addEventListener("DOMContentLoaded", async () => {
   updateCartCount();
+  await cargarCategorias();
   await cargarProductos();
-  renderCatalog();
+  renderCategoryCards();
   renderCatalogPorCategoria();
   renderCart();
 });

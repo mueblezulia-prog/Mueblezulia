@@ -101,11 +101,16 @@ Railway detecta el push y despliega automáticamente.
 
 1. Ve a `https://tu-sitio.up.railway.app/admin.html`
 2. Entra con la contraseña que pusiste en `ADMIN_PASSWORD`
-3. Llena el formulario: nombre, categoría, descripción, precio y (opcional)
-   una URL de imagen del mueble
-4. Click **Añadir mueble** — aparecerá de inmediato en la tabla de abajo, y en
-   `catalogo.html` bajo la categoría que elegiste
-5. Puedes **Editar** o **Borrar** cualquier mueble desde la misma tabla
+3. El panel tiene 3 pestañas:
+   - **📊 Estadísticas**: pedidos totales, ventas totales, ticket promedio,
+     muebles más vendidos y ventas de los últimos 7 días — todo calculado
+     en vivo desde la tabla `pedidos` de Supabase.
+   - **🛋️ Muebles**: añade, edita o borra muebles del catálogo (nombre,
+     categoría, descripción, precio, imagen).
+   - **🗂️ Categorías**: crea tus propias secciones del catálogo (nombre,
+     slug y orden de aparición) — ya no están fijas en el código. El "slug"
+     es el identificador interno (sin espacios ni acentos, ej: `sillones-reclinables`)
+     que conecta cada mueble con su categoría.
 
 **Sobre las imágenes:** por ahora el panel pide una *URL* de imagen (por ejemplo,
 subes la foto a Google Drive, Imgur, o cualquier servicio de imágenes, la haces
@@ -115,19 +120,12 @@ dime cuando quieras esa mejora.
 
 ---
 
-## 5. Categorías disponibles
+## 5. Categorías
 
-Las categorías están fijas en `public/script.js` (constante `CATEGORIAS`) y en
-el `<select>` de `admin.html`:
-
-- `modulares` → Modulares
-- `comedores` → Comedores
-- `dormitorios` → Dormitorios
-- `mesa-centro` → Mesa de Centro
-- `reflejos` → Colección de Reflejos
-- `mueble-tv` → Mueble TV
-
-Si quieres agregar o cambiar categorías, dime y lo actualizamos en ambos lugares.
+Las categorías ya NO están fijas en el código — se crean, editan y borran desde
+la pestaña **🗂️ Categorías** del panel admin, y se guardan en la tabla
+`categorias` de Supabase (que ya viene con las 6 categorías iniciales: Modulares,
+Comedores, Dormitorios, Mesa de Centro, Colección de Reflejos, Mueble TV).
 
 ---
 

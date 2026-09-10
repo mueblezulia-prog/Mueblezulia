@@ -31,22 +31,47 @@
 
 <!-- Panel principal (oculto hasta iniciar sesión) -->
 <div id="panel" style="display:none;">
-  <section>
+
+  <section style="padding-bottom:0;">
+    <div class="admin-tabs">
+      <button class="tab-btn active" data-tab="tab-stats" onclick="cambiarTab('tab-stats')">📊 Estadísticas</button>
+      <button class="tab-btn" data-tab="tab-muebles" onclick="cambiarTab('tab-muebles')">🛋️ Muebles</button>
+      <button class="tab-btn" data-tab="tab-categorias" onclick="cambiarTab('tab-categorias')">🗂️ Categorías</button>
+    </div>
+  </section>
+
+  <!-- ESTADÍSTICAS -->
+  <section id="tab-stats" class="admin-tab-content active">
     <div class="admin-wrap">
-      <h2 class="section-title">Añadir mueble nuevo</h2>
+      <h2 class="section-title">Estadísticas de Ventas</h2>
+      <div class="stats-grid" id="stats-grid">
+        <div class="stat-card"><div class="stat-value">—</div><div class="stat-label">Cargando...</div></div>
+      </div>
+
+      <h3 class="destacado" style="margin-bottom:14px;">Muebles más vendidos</h3>
+      <table class="admin-table">
+        <thead><tr><th>Mueble</th><th>Cantidad vendida</th></tr></thead>
+        <tbody id="tabla-mas-vendidos"></tbody>
+      </table>
+
+      <h3 class="destacado" style="margin:30px 0 14px;">Ventas de los últimos 7 días</h3>
+      <table class="admin-table">
+        <thead><tr><th>Fecha</th><th>Total vendido</th></tr></thead>
+        <tbody id="tabla-ventas-dia"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- MUEBLES -->
+  <section id="tab-muebles" class="admin-tab-content">
+    <div class="admin-wrap">
+      <h2 class="section-title">Añadir / Editar mueble</h2>
       <form class="admin-form" onsubmit="crearProducto(event)">
         <label>Nombre del mueble</label>
         <input type="text" id="f-nombre" required>
 
         <label>Categoría</label>
-        <select id="f-categoria" required>
-          <option value="modulares">Modulares</option>
-          <option value="comedores">Comedores</option>
-          <option value="dormitorios">Dormitorios</option>
-          <option value="mesa-centro">Mesa de Centro</option>
-          <option value="reflejos">Colección de Reflejos</option>
-          <option value="mueble-tv">Mueble TV</option>
-        </select>
+        <select id="f-categoria" required></select>
 
         <label>Descripción breve</label>
         <input type="text" id="f-desc">
@@ -60,22 +85,41 @@
         <button type="submit" class="btn">Añadir mueble</button>
         <p id="form-msg" style="font-size:0.85rem;"></p>
       </form>
-    </div>
-  </section>
 
-  <section style="background:#151515;">
-    <div class="admin-wrap">
-      <h2 class="section-title">Muebles en el catálogo</h2>
+      <h2 class="section-title" style="margin-top:40px;">Muebles en el catálogo</h2>
       <table class="admin-table">
-        <thead>
-          <tr>
-            <th>Nombre</th><th>Categoría</th><th>Precio</th><th>Acciones</th>
-          </tr>
-        </thead>
+        <thead><tr><th>Nombre</th><th>Categoría</th><th>Precio</th><th>Acciones</th></tr></thead>
         <tbody id="tabla-productos"></tbody>
       </table>
     </div>
   </section>
+
+  <!-- CATEGORÍAS -->
+  <section id="tab-categorias" class="admin-tab-content">
+    <div class="admin-wrap">
+      <h2 class="section-title">Añadir / Editar categoría</h2>
+      <form class="admin-form" onsubmit="crearCategoria(event)">
+        <label>Nombre de la categoría</label>
+        <input type="text" id="c-nombre" required placeholder="Ej: Sillones Reclinables">
+
+        <label>Slug (identificador, sin espacios ni acentos)</label>
+        <input type="text" id="c-slug" required placeholder="Ej: sillones-reclinables">
+
+        <label>Orden (número, menor aparece primero)</label>
+        <input type="number" id="c-orden" value="0">
+
+        <button type="submit" class="btn">Añadir categoría</button>
+        <p id="cat-form-msg" style="font-size:0.85rem;"></p>
+      </form>
+
+      <h2 class="section-title" style="margin-top:40px;">Categorías actuales</h2>
+      <table class="admin-table">
+        <thead><tr><th>Nombre</th><th>Slug</th><th>Orden</th><th>Acciones</th></tr></thead>
+        <tbody id="tabla-categorias"></tbody>
+      </table>
+    </div>
+  </section>
+
 </div>
 
 <script src="admin.js"></script>
