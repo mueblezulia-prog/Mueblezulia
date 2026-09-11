@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Catálogo — Mueble Zulia</title>
+<link rel="icon" type="image/png" href="img/logo.png">
+<meta name="description" content="Mueble Zulia — Muebles de calidad hechos en el Zulia. Modulares, comedores, dormitorios y mas, con opcion de personalizacion a tu medida.">
+<meta property="og:title" content="Mueble Zulia">
+<meta property="og:description" content="La muebleria de la familia zuliana. Llevando confort a los hogares del Zulia.">
+<meta property="og:image" content="img/logo.png">
+<meta property="og:type" content="website">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+  <div class="logo-group">
+    <img src="img/logo.png" alt="Mueble Zulia">
+    <span>MUEBLE ZULIA</span>
+  </div>
+  <nav>
+    <ul>
+      <li><a href="index.html">Inicio</a></li>
+      <li><a href="catalogo.html">Catálogo</a></li>
+      <li><a href="fabricacion.html">Fabricación</a></li>
+      <li><a href="index.html#contacto">Contacto</a></li>
+    </ul>
+  </nav>
+  <a href="carrito.html" class="cart-icon">🛒<span class="cart-count" id="cart-count">0</span></a>
+</header>
+
+<section>
+  <h2 class="section-title" style="margin-bottom:10px;">¿Cuál te Llevas a Casa?</h2>
+  <p style="text-align:center;color:var(--gris);margin-bottom:30px;">
+    Explora nuestro catálogo por categoría, o consulta abajo el detalle de cada línea.
+  </p>
+  <div class="grid category-cards-slot" style="margin-bottom:50px;"></div>
+  <div id="catalog-por-categoria"></div>
+</section>
+
+<div class="modal-overlay" id="custom-modal">
+  <div class="modal">
+    <span class="modal-close" onclick="closeCustomModal()">✕</span>
+    <h3 id="custom-modal-title">Personaliza tu producto</h3>
+    <label>Largo (cm)</label>
+    <input type="number" id="input-largo" placeholder="Ej: 180">
+    <label>Ancho (cm)</label>
+    <input type="number" id="input-ancho" placeholder="Ej: 90">
+    <label>Alto (cm)</label>
+    <input type="number" id="input-alto" placeholder="Ej: 75">
+    <a href="#" target="_blank" class="whatsapp-link" id="whatsapp-consulta">📱 Consultar personalización por WhatsApp</a>
+    <button class="btn" style="width:100%" onclick="addCustomToCart()">Añadir al carrito</button>
+  </div>
+</div>
+
+<footer id="contacto">
+  <div class="footer-grid">
+    <div>
+      <h4>Ubicación</h4>
+      <p data-config="direccion">Av. 15 Delicias, frente al Alicorp — Maracaibo, Zulia</p>
+      <a href="https://maps.app.goo.gl/c7ACGX1BsV4BrxxLA" target="_blank" data-config="maps-url" style="color:var(--amarillo);font-weight:700;">Ver en Google Maps →</a>
+    </div>
+    <div>
+      <h4>Contacto</h4>
+      <p>📞 <span data-config="telefono">+58 412-7519141</span></p>
+      <div class="social">
+        <a href="https://wa.me/584127519141" target="_blank" data-config="whatsapp-url">WhatsApp</a>
+        <a href="https://www.instagram.com/muebleszuliapremium" target="_blank" data-config="instagram-url">Instagram</a>
+        <a href="https://www.tiktok.com/@muebleszulia" target="_blank" data-config="tiktok-url">TikTok</a>
+      </div>
+    </div>
+    <div>
+      <h4>Métodos de pago</h4>
+      <p>Pago móvil · Transferencia · Efectivo</p>
+    </div>
+  </div>
+  <div class="footer-bottom">© 2026 Mueble Zulia. Todos los derechos reservados.</div>
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>

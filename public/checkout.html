@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Finalizar Pedido — Mueble Zulia</title>
+<link rel="icon" type="image/png" href="img/logo.png">
+<meta name="description" content="Mueble Zulia — Muebles de calidad hechos en el Zulia. Modulares, comedores, dormitorios y mas, con opcion de personalizacion a tu medida.">
+<meta property="og:title" content="Mueble Zulia">
+<meta property="og:description" content="La muebleria de la familia zuliana. Llevando confort a los hogares del Zulia.">
+<meta property="og:image" content="img/logo.png">
+<meta property="og:type" content="website">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+  <div class="logo-group">
+    <img src="img/logo.png" alt="Mueble Zulia">
+    <span>MUEBLE ZULIA</span>
+  </div>
+  <nav>
+    <ul>
+      <li><a href="index.html">Inicio</a></li>
+      <li><a href="catalogo.html">Catálogo</a></li>
+      <li><a href="fabricacion.html">Fabricación</a></li>
+      <li><a href="index.html#contacto">Contacto</a></li>
+    </ul>
+  </nav>
+  <a href="carrito.html" class="cart-icon">🛒<span class="cart-count" id="cart-count">0</span></a>
+</header>
+
+<section>
+  <h2 class="section-title">Finalizar Pedido</h2>
+  <form class="checkout-form" onsubmit="submitOrder(event)">
+    <label>Nombre</label>
+    <input type="text" id="chk-nombre" required>
+
+    <label>Teléfono</label>
+    <input type="tel" id="chk-telefono" required>
+
+    <label>Correo</label>
+    <input type="email" id="chk-correo">
+
+    <label>Dirección (manual)</label>
+    <input type="text" id="chk-direccion" placeholder="Calle, sector, ciudad">
+
+    <div>
+      <button type="button" class="btn btn-outline" onclick="detectarUbicacion()">📍 Detectar mi Ubicación</button>
+      <p id="ubicacion-status" style="font-size:0.85rem;color:#6b6b6b;margin-top:6px;"></p>
+    </div>
+
+    <div>
+      <label>Método de pago</label>
+      <div class="payment-options">
+        <label class="btn-outline"><input type="radio" name="pago" value="pago-movil" checked> Pago Móvil</label>
+        <label class="btn-outline"><input type="radio" name="pago" value="transferencia"> Transferencia</label>
+        <label class="btn-outline"><input type="radio" name="pago" value="efectivo"> Efectivo</label>
+      </div>
+    </div>
+
+    <button type="submit" class="btn">Confirmar Pedido</button>
+  </form>
+</section>
+
+<footer>
+  <div class="footer-bottom">© 2026 Mueble Zulia. Todos los derechos reservados.</div>
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>
