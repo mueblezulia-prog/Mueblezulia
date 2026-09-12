@@ -1,5 +1,6 @@
-import { Routes, Route, Link, Navigate } from "react-router-dom";
+import { Routes, Route, Link, Navigate, useLocation } from "react-router-dom";
 import NavBar from "./components/NavBar";
+import AdminHeader from "./admin/AdminHeader";
 import Catalogo from "./pages/Catalogo";
 import ProductoDetalle from "./pages/ProductoDetalle";
 import Fabricacion from "./pages/Fabricacion";
@@ -7,9 +8,12 @@ import Contacto from "./pages/Contacto";
 import ProductForm from "./admin/ProductForm";
 
 export default function App() {
+  const { pathname } = useLocation();
+  const esAdmin = pathname.startsWith("/admin");
+
   return (
     <div className="min-h-screen bg-carbon">
-      <NavBar />
+      {esAdmin ? <AdminHeader /> : <NavBar />}
 
       <Routes>
         <Route path="/" element={<Catalogo />} />
