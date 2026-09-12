@@ -33,13 +33,6 @@ export default function NavBar() {
             </NavLink>
           ))}
         </nav>
-
-        <NavLink
-          to="/admin/productos/nuevo"
-          className="min-h-tap hidden sm:flex items-center px-4 rounded-control border border-carbon-border text-ink-muted text-sm font-semibold shrink-0 hover:text-ink"
-        >
-          Panel Admin
-        </NavLink>
       </div>
     </header>
   );
