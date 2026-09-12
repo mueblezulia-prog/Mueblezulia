@@ -3,8 +3,7 @@ import { NavLink } from "react-router-dom";
 const TABS = [
   { to: "/", label: "Catálogo", end: true },
   { to: "/fabricacion", label: "Fabricación" },
-  { to: "/metodos-pago", label: "Métodos de Pago" },
-  { to: "/ubicacion", label: "Ubicación" },
+  { to: "/contacto", label: "Contacto" },
 ];
 
 export default function NavBar() {

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 import ProductCard from "../components/ProductCard";
 import CategoriasGrid from "../components/CategoriasGrid";
+import Hero from "../components/Hero";
 
 export default function Catalogo() {
   const [productos, setProductos] = useState([]);
@@ -22,7 +23,9 @@ export default function Catalogo() {
           .eq("activo", true)
           .order("orden", { ascending: true });
 
-        if (categoriaId) query = query.eq("categoria_id", categoriaId);
+        if (categoriaId != null && Number.isFinite(Number(categoriaId))) {
+          query = query.eq("categoria_id", Number(categoriaId));
+        }
 
         const { data, error } = await query;
 
@@ -57,8 +60,11 @@ export default function Catalogo() {
   }
 
   return (
-    <div className="px-4 py-6 max-w-6xl mx-auto">
-      <CategoriasGrid onSeleccionar={setCategoriaId} categoriaActivaId={categoriaId} />
+    <div>
+      <Hero />
+
+      <div id="catalogo" className="px-4 py-6 max-w-6xl mx-auto scroll-mt-16">
+        <CategoriasGrid onSeleccionar={setCategoriaId} categoriaActivaId={categoriaId} />
 
       <h1 className="text-3xl font-extrabold text-ink mb-6">Catálogo</h1>
 
@@ -90,6 +96,7 @@ export default function Catalogo() {
           ))}
         </div>
       )}
+      </div>
     </div>
   );
 }

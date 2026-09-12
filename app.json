@@ -1,0 +1,29 @@
+{
+  "expo": {
+    "name": "El Calvito de Open",
+    "slug": "sraikuer",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "splash": {
+      "backgroundColor": "#0B0A10"
+    },
+    "android": {
+      "package": "com.yourname.teacherkatheryn",
+      "adaptiveIcon": {
+        "backgroundColor": "#0B0A10"
+      }
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.yourname.teacherkatheryn"
+    },
+    "owner": "sraikuers-team",
+    "extra": {
+      "eas": {
+        "projectId": "92bf491a-9808-4290-b30b-c85290a614e0"
+      }
+    }
+  }
+}

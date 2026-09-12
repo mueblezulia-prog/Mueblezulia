@@ -1,10 +1,9 @@
-import { Routes, Route, Link } from "react-router-dom";
+import { Routes, Route, Link, Navigate } from "react-router-dom";
 import NavBar from "./components/NavBar";
 import Catalogo from "./pages/Catalogo";
 import ProductoDetalle from "./pages/ProductoDetalle";
 import Fabricacion from "./pages/Fabricacion";
-import MetodosPago from "./pages/MetodosPago";
-import Ubicacion from "./pages/Ubicacion";
+import Contacto from "./pages/Contacto";
 import ProductForm from "./admin/ProductForm";
 
 export default function App() {
@@ -16,8 +15,10 @@ export default function App() {
         <Route path="/" element={<Catalogo />} />
         <Route path="/producto/:id" element={<ProductoDetalle />} />
         <Route path="/fabricacion" element={<Fabricacion />} />
-        <Route path="/metodos-pago" element={<MetodosPago />} />
-        <Route path="/ubicacion" element={<Ubicacion />} />
+        <Route path="/contacto" element={<Contacto />} />
+        {/* Rutas viejas: redirigen a /contacto para no romper enlaces guardados */}
+        <Route path="/ubicacion" element={<Navigate to="/contacto" replace />} />
+        <Route path="/metodos-pago" element={<Navigate to="/contacto" replace />} />
         <Route path="/admin/productos/nuevo" element={<ProductForm />} />
         <Route path="/admin/productos/:id/editar" element={<EditarProducto />} />
         <Route path="*" element={<NoEncontrado />} />
