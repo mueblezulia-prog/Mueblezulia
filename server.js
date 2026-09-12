@@ -8,6 +8,13 @@ const path = require("path");
 const multer = require("multer");
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } }); // 5MB máx
 
+// Railway usa Node 18, y las versiones recientes de @supabase/supabase-js
+// requieren WebSocket nativo (disponible solo desde Node 22+). Este parche
+// le da esa pieza que falta antes de crear el cliente de Supabase.
+if (typeof globalThis.WebSocket === "undefined") {
+  globalThis.WebSocket = require("ws");
+}
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
