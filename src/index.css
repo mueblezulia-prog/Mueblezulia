@@ -33,3 +33,15 @@
            text-ink text-base w-full;
   }
 }
+
+@layer utilities {
+  /* Oculta la barra de scroll horizontal del menú superior en móvil,
+     sin quitar la posibilidad de deslizar con el dedo. */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}

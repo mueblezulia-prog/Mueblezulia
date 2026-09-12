@@ -1,24 +1,23 @@
 import { Routes, Route, Link } from "react-router-dom";
+import NavBar from "./components/NavBar";
 import Catalogo from "./pages/Catalogo";
 import ProductoDetalle from "./pages/ProductoDetalle";
+import Fabricacion from "./pages/Fabricacion";
+import MetodosPago from "./pages/MetodosPago";
+import Ubicacion from "./pages/Ubicacion";
 import ProductForm from "./admin/ProductForm";
 
 export default function App() {
   return (
     <div className="min-h-screen bg-carbon">
-      <header className="flex items-center justify-between px-4 py-3 border-b border-carbon-border">
-        <Link to="/" className="text-lg font-extrabold text-ink">Mueble Zulia</Link>
-        <Link
-          to="/admin/productos/nuevo"
-          className="min-h-tap flex items-center px-4 rounded-control border border-carbon-border text-ink-muted text-sm font-semibold"
-        >
-          Panel Admin
-        </Link>
-      </header>
+      <NavBar />
 
       <Routes>
         <Route path="/" element={<Catalogo />} />
         <Route path="/producto/:id" element={<ProductoDetalle />} />
+        <Route path="/fabricacion" element={<Fabricacion />} />
+        <Route path="/metodos-pago" element={<MetodosPago />} />
+        <Route path="/ubicacion" element={<Ubicacion />} />
         <Route path="/admin/productos/nuevo" element={<ProductForm />} />
         <Route path="/admin/productos/:id/editar" element={<EditarProducto />} />
         <Route path="*" element={<NoEncontrado />} />
