@@ -3,27 +3,36 @@
 // El panel usa una contraseña simple (ADMIN_PASSWORD) enviada en el header
 // "x-admin-password" en cada petición a /api/admin/*.
 
-const express = require("express");
-const path = require("path");
-const multer = require("multer");
+import express from "express";
+import path from "path";
+import { fileURLToPath } from "url";
+import multer from "multer";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } }); // 5MB máx
 
 // Railway usa Node 18, y las versiones recientes de @supabase/supabase-js
 // requieren WebSocket nativo (disponible solo desde Node 22+). Este parche
 // le da esa pieza que falta antes de crear el cliente de Supabase.
 if (typeof globalThis.WebSocket === "undefined") {
-  globalThis.WebSocket = require("ws");
+  const { default: WebSocket } = await import("ws");
+  globalThis.WebSocket = WebSocket;
 }
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
-app.use(express.static(path.join(__dirname, "public")));
+// Sirve la app React ya compilada (npm run build -> dist/), que Railway
+// genera automáticamente antes de "npm start". No se sirve "public/"
+// porque ese es el sitio estático anterior, reemplazado por esta app.
+app.use(express.static(path.join(__dirname, "dist")));
 
 let supabase = null;
 if (process.env.SUPABASE_URL && process.env.SUPABASE_KEY) {
-  const { createClient } = require("@supabase/supabase-js");
+  const { createClient } = await import("@supabase/supabase-js");
   supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 }
 
@@ -276,6 +285,13 @@ app.get("/api/admin/estadisticas", requireAdmin, async (req, res) => {
 });
 
 app.get("/health", (req, res) => res.send("ok"));
+
+// Catch-all: cualquier ruta que no sea /api/* o /health devuelve el
+// index.html de la app React, para que funcionen las rutas del cliente
+// (ej. /producto/123) al recargar la página o entrar por link directo.
+app.get(/^(?!\/api|\/health).*/, (req, res) => {
+  res.sendFile(path.join(__dirname, "dist", "index.html"));
+});
 
 app.listen(PORT, () => {
   console.log(`Mueble Zulia corriendo en el puerto ${PORT}`);
