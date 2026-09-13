@@ -154,26 +154,28 @@ export default function ProductoDetalle() {
             </span>
           </>
         )}
+
+        {imagenes.length > 1 && (
+          <div className="absolute bottom-3 inset-x-0 flex justify-center gap-1.5">
+            {imagenes.map((_, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => irAImagen(i)}
+                aria-label={`Ir a la foto ${i + 1}`}
+                className={[
+                  "w-2 h-2 rounded-full transition-colors shadow shadow-black/40",
+                  i === indiceImagen ? "bg-gold" : "bg-white/50",
+                ].join(" ")}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
-      {imagenes.length > 1 && (
-        <div className="flex justify-center gap-1.5 py-3">
-          {imagenes.map((_, i) => (
-            <button
-              key={i}
-              type="button"
-              onClick={() => irAImagen(i)}
-              aria-label={`Ir a la foto ${i + 1}`}
-              className={[
-                "w-2 h-2 rounded-full transition-colors",
-                i === indiceImagen ? "bg-gold" : "bg-carbon-border",
-              ].join(" ")}
-            />
-          ))}
-        </div>
-      )}
-
-      <div className="relative px-4 py-5 flex flex-col gap-4 mt-3 overflow-hidden rounded-t-card">
+      {/* El panel de vidrio "sube" sobre la foto (margen negativo) para que
+          el efecto se vea encima de la imagen, no solo debajo de ella. */}
+      <div className="relative -mt-14 sm:-mt-16 px-4 pt-8 pb-5 flex flex-col gap-4 overflow-hidden rounded-t-card z-10">
         {imagenes[0] && (
           <>
             <div

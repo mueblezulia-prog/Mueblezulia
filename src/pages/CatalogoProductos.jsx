@@ -49,36 +49,48 @@ export default function CatalogoProductos() {
   }, []);
 
   return (
-    <div className="px-4 py-6 max-w-6xl mx-auto">
-      <h1 className="text-3xl font-extrabold text-ink mb-1">Catálogo</h1>
-      <p className="text-ink-muted mb-6">Explora todas nuestras líneas de muebles.</p>
+    <div className="relative min-h-screen">
+      {/* Fondo de toda la página de Catálogo: la foto de la tienda,
+          difuminada y con un velo blanco translúcido encima (efecto
+          vidrio "esmerilado"), fija detrás de categorías y productos. */}
+      <div
+        className="fixed inset-0 -z-10 bg-cover bg-center blur-md scale-110"
+        style={{ backgroundImage: "url(/assets/interior-tienda.jpg)" }}
+      />
+      <div className="fixed inset-0 -z-10 bg-white/10" />
+      <div className="fixed inset-0 -z-10 bg-carbon/70" />
 
-      <CategoriasGrid />
+      <div className="relative px-4 py-6 max-w-6xl mx-auto">
+        <h1 className="text-3xl font-extrabold text-ink mb-1 drop-shadow">Catálogo</h1>
+        <p className="text-ink-muted mb-6">Explora todas nuestras líneas de muebles.</p>
 
-      <div className="border-t border-carbon-border pt-6">
-        <h2 className="text-xl sm:text-2xl font-extrabold text-ink mb-4">Todos los productos</h2>
+        <CategoriasGrid />
 
-        {cargando && (
-          <p className="text-center text-ink-muted text-lg py-16">Cargando catálogo…</p>
-        )}
+        <div className="border-t border-white/10 pt-6">
+          <h2 className="text-xl sm:text-2xl font-extrabold text-ink mb-4">Todos los productos</h2>
 
-        {!cargando && error && (
-          <p className="text-center text-terracota text-lg py-16">
-            No se pudo cargar el catálogo: {error}
-          </p>
-        )}
+          {cargando && (
+            <p className="text-center text-ink-muted text-lg py-16">Cargando catálogo…</p>
+          )}
 
-        {!cargando && !error && productos.length === 0 && (
-          <p className="text-center text-ink-muted text-lg py-16">Todavía no hay productos cargados.</p>
-        )}
+          {!cargando && error && (
+            <p className="text-center text-terracota text-lg py-16">
+              No se pudo cargar el catálogo: {error}
+            </p>
+          )}
 
-        {!cargando && !error && productos.length > 0 && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-            {productos.map((producto) => (
-              <ProductCard key={producto.id} producto={producto} />
-            ))}
-          </div>
-        )}
+          {!cargando && !error && productos.length === 0 && (
+            <p className="text-center text-ink-muted text-lg py-16">Todavía no hay productos cargados.</p>
+          )}
+
+          {!cargando && !error && productos.length > 0 && (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+              {productos.map((producto) => (
+                <ProductCard key={producto.id} producto={producto} />
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

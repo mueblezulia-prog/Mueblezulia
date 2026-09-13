@@ -44,16 +44,16 @@ export default function CategoriasGrid({ titulo = "¿Cuál te llevas a Casa?" })
 
   return (
     <div className="mb-8">
-      {/* Encabezado con foto real de la tienda de fondo (difuminada) y
-          título flotando en un panel de vidrio dorado, para sensación
-          premium — mismo componente se usa en Home y en Catálogo. */}
-      <div className="relative rounded-card overflow-hidden mb-4 py-6 px-4 flex items-center justify-center">
+      {/* Encabezado con foto real de la tienda de fondo (difuminada) —
+          ahora TODO el cuadro es vidrio dorado (no solo el texto), para
+          que la foto se sienta "detrás del vidrio" en toda su superficie. */}
+      <div className="relative rounded-card overflow-hidden mb-4 py-8 px-4 flex items-center justify-center min-h-[110px]">
         <div
           className="absolute inset-0 bg-cover bg-center scale-110 blur-[3px]"
           style={{ backgroundImage: "url(/assets/interior-tienda.jpg)" }}
         />
-        <div className="absolute inset-0 bg-carbon/55" />
-        <h2 className="relative glass-gold text-ink font-extrabold text-xl sm:text-2xl text-center px-5 py-2.5 rounded-control">
+        <div className="absolute inset-0 glass-gold" />
+        <h2 className="relative text-ink font-extrabold text-xl sm:text-2xl text-center drop-shadow-md">
           {titulo}
         </h2>
       </div>
@@ -63,7 +63,7 @@ export default function CategoriasGrid({ titulo = "¿Cuál te llevas a Casa?" })
           <Link
             key={cat.id}
             to={`/categoria/${cat.slug}`}
-            className="group relative rounded-card overflow-hidden aspect-[4/3] flex items-end p-2.5 text-left
+            className="group relative rounded-card overflow-hidden aspect-[4/3] flex items-end text-left
                        border border-carbon-border shadow-sm
                        hover:border-gold/60 hover:shadow-lg hover:shadow-black/30 hover:-translate-y-0.5
                        transition-all duration-300 ease-out"
@@ -76,7 +76,9 @@ export default function CategoriasGrid({ titulo = "¿Cuál te llevas a Casa?" })
               />
             )}
             <span className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
-            <span className="relative glass text-ink font-bold text-sm sm:text-base leading-tight px-2.5 py-1.5 rounded-control group-hover:text-gold transition-colors duration-200">
+            {/* Etiqueta en barra completa (de borde a borde), no en pastilla
+                flotante — el vidrio cubre todo el ancho de la tarjeta. */}
+            <span className="relative w-full glass text-ink font-bold text-sm sm:text-base leading-tight px-3 py-2 group-hover:text-gold transition-colors duration-200">
               {cat.nombre}
             </span>
           </Link>
