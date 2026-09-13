@@ -21,16 +21,30 @@
 }
 
 @layer components {
+  /* Efecto vidrio (glassmorphism) — panel translúcido con blur, para dar
+     sensación premium sobre fotos. Variantes: neutro, oscuro y dorado. */
+  .glass {
+    @apply bg-white/10 backdrop-blur-md border border-white/15 shadow-lg shadow-black/20;
+  }
+  .glass-dark {
+    @apply bg-black/35 backdrop-blur-md border border-white/10 shadow-lg shadow-black/30;
+  }
+  .glass-gold {
+    @apply bg-gold/15 backdrop-blur-md border border-gold/40 shadow-lg shadow-black/20;
+  }
+
   /* Botón primario — usado en tarjeta de catálogo y detalle de producto */
   .btn-primary {
-    @apply w-full min-h-tap rounded-control bg-gold text-carbon font-bold text-lg
+    @apply w-full min-h-tap rounded-control bg-gold/90 backdrop-blur-sm text-carbon font-bold text-lg
+           border border-gold/50
            flex items-center justify-center
-           active:scale-[0.98] transition-transform;
+           shadow-lg shadow-black/25
+           hover:bg-gold active:scale-[0.98] transition-all duration-200;
   }
   /* Botón secundario — "Compra Personalizada" */
   .btn-secondary {
-    @apply w-full min-h-tap rounded-control bg-transparent text-ink font-bold text-lg
-           border-2 border-ink
+    @apply w-full min-h-tap rounded-control bg-white/5 backdrop-blur-md text-ink font-bold text-lg
+           border-2 border-ink/40
            flex items-center justify-center
            hover:bg-ink hover:text-carbon
            active:scale-[0.98] transition-all duration-200;

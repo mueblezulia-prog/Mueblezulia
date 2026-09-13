@@ -28,8 +28,8 @@ export default function NavBar() {
                 [
                   "min-h-tap flex items-center px-3 sm:px-4 rounded-control text-sm sm:text-base font-semibold whitespace-nowrap transition-all duration-200",
                   isActive
-                    ? "bg-gold text-carbon shadow-sm shadow-black/20"
-                    : "text-ink-muted hover:text-ink hover:bg-carbon-light",
+                    ? "glass-gold text-ink"
+                    : "text-ink-muted hover:text-ink hover:bg-white/5",
                 ].join(" ")
               }
             >

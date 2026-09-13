@@ -173,47 +173,58 @@ export default function ProductoDetalle() {
         </div>
       )}
 
-      <div className="px-4 py-4 flex flex-col gap-4">
-        <h1 className="text-3xl font-extrabold text-ink tracking-tight">{producto.titulo}</h1>
+      <div className="relative px-4 py-5 flex flex-col gap-4 mt-3 overflow-hidden rounded-t-card">
+        {imagenes[0] && (
+          <>
+            <div
+              className="absolute inset-0 bg-cover bg-center scale-110 blur-md opacity-40"
+              style={{ backgroundImage: `url(${imagenes[0]})` }}
+            />
+            <div className="absolute inset-0 bg-carbon/80" />
+          </>
+        )}
+        <div className="relative glass rounded-card p-4 flex flex-col gap-4">
+          <h1 className="text-3xl font-extrabold text-ink tracking-tight">{producto.titulo}</h1>
 
-        {/* Precio y medida con su ícono respectivo */}
-        <div className="flex flex-wrap items-center gap-3">
-          <span className="inline-flex items-center gap-2 text-price font-extrabold text-gold bg-gold/10 px-3 py-1 rounded-control">
-            💲 {Number(producto.precio).toLocaleString("es-VE")}
-          </span>
-          {producto.medida && (
-            <span className="inline-flex items-center gap-2 text-lg font-semibold text-ink-muted">
-              📏 {producto.medida}
+          {/* Precio y medida con su ícono respectivo */}
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="inline-flex items-center gap-2 text-price font-extrabold text-gold glass-gold px-3 py-1 rounded-control">
+              💲 {Number(producto.precio).toLocaleString("es-VE")}
             </span>
+            {producto.medida && (
+              <span className="inline-flex items-center gap-2 text-lg font-semibold text-ink-muted glass px-3 py-1 rounded-control">
+                📏 {producto.medida}
+              </span>
+            )}
+          </div>
+
+          {producto.descripcion_corta && (
+            <p className="text-ink-muted text-lg leading-relaxed">
+              {producto.descripcion_corta}
+            </p>
           )}
+
+          {producto.descripcion_larga && (
+            <p className="text-ink-muted text-base leading-relaxed">
+              {producto.descripcion_larga}
+            </p>
+          )}
+
+          <ColorSwatchSelector
+            colores={colores}
+            seleccionado={colorSeleccionado}
+            onSeleccionar={setColorSeleccionado}
+          />
         </div>
-
-        {producto.descripcion_corta && (
-          <p className="text-ink-muted text-lg leading-relaxed">
-            {producto.descripcion_corta}
-          </p>
-        )}
-
-        {producto.descripcion_larga && (
-          <p className="text-ink-muted text-base leading-relaxed">
-            {producto.descripcion_larga}
-          </p>
-        )}
-
-        <ColorSwatchSelector
-          colores={colores}
-          seleccionado={colorSeleccionado}
-          onSeleccionar={setColorSeleccionado}
-        />
       </div>
 
       {/* Barra de acciones fija abajo — siempre visible, fácil de alcanzar con el pulgar */}
-      <div className="fixed bottom-0 left-0 right-0 bg-carbon/95 backdrop-blur border-t border-carbon-border p-4 max-w-3xl mx-auto shadow-lg shadow-black/30">
+      <div className="fixed bottom-0 left-0 right-0 glass-dark p-4 max-w-3xl mx-auto">
         <a
           href={linkWhatsApp}
           target="_blank"
           rel="noreferrer"
-          className="btn-primary flex items-center justify-center gap-2 shadow-md shadow-black/20 hover:bg-gold-hover"
+          className="btn-primary flex items-center justify-center gap-2"
         >
           💬 Preguntar por WhatsApp
         </a>

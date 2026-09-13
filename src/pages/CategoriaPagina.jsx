@@ -87,9 +87,16 @@ export default function CategoriaPagina() {
         ← Volver al Catálogo
       </Link>
 
-      <div className="bg-gradient-to-r from-gold to-gold-hover text-carbon rounded-card px-5 py-4 mb-6 flex items-center gap-3 shadow-md shadow-black/20">
-        <span className="text-3xl leading-none">{bannerInfo.icono}</span>
-        <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight">{bannerInfo.banner}</h1>
+      <div className="relative rounded-card overflow-hidden mb-6 py-6 px-4 flex items-center justify-center">
+        <div
+          className="absolute inset-0 bg-cover bg-center scale-110 blur-[3px]"
+          style={{ backgroundImage: "url(/assets/interior-tienda.jpg)" }}
+        />
+        <div className="absolute inset-0 bg-carbon/50" />
+        <div className="relative glass-gold text-ink rounded-control px-5 py-3 flex items-center gap-3">
+          <span className="text-3xl leading-none">{bannerInfo.icono}</span>
+          <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight">{bannerInfo.banner}</h1>
+        </div>
       </div>
 
       {cargando && (
@@ -119,8 +126,8 @@ export default function CategoriaPagina() {
       <div className="text-center mt-8">
         <Link
           to="/catalogo"
-          className="min-h-tap inline-flex items-center justify-center px-6 rounded-control bg-gold text-carbon font-bold
-                     shadow-md shadow-black/20 hover:bg-gold-hover active:scale-[0.98] transition-all duration-200"
+          className="min-h-tap inline-flex items-center justify-center px-6 rounded-control glass-gold text-ink font-bold
+                     hover:bg-gold/25 active:scale-[0.98] transition-all duration-200"
         >
           Ver Catálogo Completo
         </Link>

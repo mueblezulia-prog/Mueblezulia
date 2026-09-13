@@ -29,15 +29,15 @@ export default function Hero() {
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <a
             href="#catalogo"
-            className="min-h-tap flex items-center justify-center px-6 rounded-control bg-gold text-carbon font-bold text-lg
-                       shadow-lg shadow-black/30 hover:bg-gold-hover active:scale-[0.98] transition-all duration-200"
+            className="min-h-tap flex items-center justify-center px-6 rounded-control glass-gold text-ink font-bold text-lg
+                       hover:bg-gold/25 active:scale-[0.98] transition-all duration-200"
           >
             Nuestro Catálogo
           </a>
           <Link
             to="/contacto"
-            className="min-h-tap flex items-center justify-center px-6 rounded-control border-2 border-ink text-ink font-bold text-lg
-                       hover:bg-ink hover:text-carbon active:scale-[0.98] transition-all duration-200"
+            className="min-h-tap flex items-center justify-center px-6 rounded-control glass text-ink font-bold text-lg
+                       hover:bg-white/15 active:scale-[0.98] transition-all duration-200"
           >
             Contáctanos
           </Link>

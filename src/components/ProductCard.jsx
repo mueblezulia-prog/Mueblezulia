@@ -11,8 +11,8 @@ export default function ProductCard({ producto }) {
   return (
     <Link
       to={`/producto/${id}`}
-      className="group bg-carbon-light border border-carbon-border rounded-card overflow-hidden flex flex-col
-                 shadow-sm hover:shadow-xl hover:shadow-black/30 hover:border-gold/60 hover:-translate-y-0.5
+      className="group relative rounded-card overflow-hidden flex flex-col
+                 glass hover:border-gold/50 hover:shadow-xl hover:shadow-black/40 hover:-translate-y-0.5
                  transition-all duration-300 ease-out"
     >
       <div className="relative aspect-[4/5] overflow-hidden bg-carbon">
@@ -27,11 +27,15 @@ export default function ProductCard({ producto }) {
           ${Number(precio).toLocaleString("es-VE")}
         </span>
       </div>
-      <div className="p-3 flex flex-col gap-0.5">
+      <div className="p-3 flex flex-col gap-1 bg-white/[0.03] backdrop-blur-sm border-t border-white/10">
         <h3 className="text-base sm:text-lg font-bold text-ink leading-snug line-clamp-2 group-hover:text-gold transition-colors duration-200">
           {titulo}
         </h3>
-        {medida && <p className="text-xs text-ink-muted">📏 {medida}</p>}
+        {medida && (
+          <span className="inline-flex items-center gap-1 self-start text-xs text-ink-muted bg-white/5 border border-white/10 rounded-control px-2 py-0.5">
+            📏 {medida}
+          </span>
+        )}
       </div>
     </Link>
   );
