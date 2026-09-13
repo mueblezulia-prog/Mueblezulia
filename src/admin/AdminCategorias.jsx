@@ -1,15 +1,26 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 
+const BUCKET = "productos"; // mismo bucket que ya usan las fotos de mueble
+
+async function subirImagenCategoria(file) {
+  const nombreArchivo = `categorias/${crypto.randomUUID()}.jpg`;
+  const { error } = await supabase.storage.from(BUCKET).upload(nombreArchivo, file);
+  if (error) throw error;
+  return supabase.storage.from(BUCKET).getPublicUrl(nombreArchivo).data.publicUrl;
+}
+
 export default function AdminCategorias() {
   const [categorias, setCategorias] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
   const [guardandoId, setGuardandoId] = useState(null);
+  const [subiendoId, setSubiendoId] = useState(null);
 
   const [nuevoNombre, setNuevoNombre] = useState("");
   const [nuevoSlug, setNuevoSlug] = useState("");
-  const [nuevaImagen, setNuevaImagen] = useState("");
+  const [nuevaImagenFile, setNuevaImagenFile] = useState(null);
+  const [nuevaImagenPreview, setNuevaImagenPreview] = useState(null);
   const [creando, setCreando] = useState(false);
   const [mensaje, setMensaje] = useState(null);
 
@@ -39,6 +50,21 @@ export default function AdminCategorias() {
     if (error) alert(`No se pudo guardar: ${error.message}`);
   }
 
+  async function subirImagenFila(categoria, file) {
+    if (!file) return;
+    setSubiendoId(categoria.id);
+    try {
+      const url = await subirImagenCategoria(file);
+      const { error } = await supabase.from("categorias").update({ imagen: url }).eq("id", categoria.id);
+      if (error) throw error;
+      actualizarLocal(categoria.id, { imagen: url });
+    } catch (err) {
+      alert(`No se pudo subir la imagen: ${err.message}`);
+    } finally {
+      setSubiendoId(null);
+    }
+  }
+
   async function borrarFila(categoria) {
     const confirmado = window.confirm(
       `¿Borrar "${categoria.nombre}"? Los productos de esta categoría quedarán sin categoría.`
@@ -60,26 +86,37 @@ export default function AdminCategorias() {
       .replace(/(^-|-$)/g, "");
   }
 
+  function handleSeleccionarImagenNueva(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setNuevaImagenFile(file);
+    setNuevaImagenPreview(URL.createObjectURL(file));
+  }
+
   async function handleCrear(e) {
     e.preventDefault();
     if (!nuevoNombre.trim()) return;
     setCreando(true);
     setMensaje(null);
-    const slug = nuevoSlug.trim() || slugificar(nuevoNombre);
-    const { data, error } = await supabase
-      .from("categorias")
-      .insert({ nombre: nuevoNombre.trim(), slug, imagen: nuevaImagen.trim() || null, orden: categorias.length })
-      .select()
-      .single();
-    setCreando(false);
-    if (error) {
-      setMensaje(`Error: ${error.message}`);
-      return;
+    try {
+      const slug = nuevoSlug.trim() || slugificar(nuevoNombre);
+      const imagenUrl = nuevaImagenFile ? await subirImagenCategoria(nuevaImagenFile) : null;
+      const { data, error } = await supabase
+        .from("categorias")
+        .insert({ nombre: nuevoNombre.trim(), slug, imagen: imagenUrl, orden: categorias.length })
+        .select()
+        .single();
+      if (error) throw error;
+      setCategorias((actual) => [...actual, data]);
+      setNuevoNombre("");
+      setNuevoSlug("");
+      setNuevaImagenFile(null);
+      setNuevaImagenPreview(null);
+    } catch (err) {
+      setMensaje(`Error: ${err.message}`);
+    } finally {
+      setCreando(false);
     }
-    setCategorias((actual) => [...actual, data]);
-    setNuevoNombre("");
-    setNuevoSlug("");
-    setNuevaImagen("");
   }
 
   return (
@@ -110,14 +147,15 @@ export default function AdminCategorias() {
                 className="campo-input w-40"
                 aria-label="Slug"
               />
-              <input
-                type="text"
-                value={cat.imagen ?? ""}
-                onChange={(e) => actualizarLocal(cat.id, { imagen: e.target.value })}
-                placeholder="URL de imagen"
-                className="campo-input flex-1 min-w-[160px]"
-                aria-label="URL de imagen"
-              />
+              <label className="min-h-tap px-3 flex items-center justify-center rounded-control border-2 border-dashed border-carbon-border text-ink-muted text-sm cursor-pointer">
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => subirImagenFila(cat, e.target.files?.[0])}
+                />
+                {subiendoId === cat.id ? "Subiendo…" : cat.imagen ? "Cambiar imagen" : "Subir imagen"}
+              </label>
               <button
                 type="button"
                 onClick={() => guardarFila(cat)}
@@ -160,14 +198,15 @@ export default function AdminCategorias() {
           />
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-sm text-ink-muted">URL de imagen (opcional)</label>
-          <input
-            type="text"
-            value={nuevaImagen}
-            onChange={(e) => setNuevaImagen(e.target.value)}
-            className="campo-input"
-          />
+          <label className="text-sm text-ink-muted">Imagen (opcional)</label>
+          <label className="min-h-tap px-4 flex items-center justify-center rounded-control border-2 border-dashed border-carbon-border text-ink-muted text-sm cursor-pointer">
+            <input type="file" accept="image/*" className="hidden" onChange={handleSeleccionarImagenNueva} />
+            {nuevaImagenPreview ? "Imagen lista ✓" : "Subir imagen"}
+          </label>
         </div>
+        {nuevaImagenPreview && (
+          <img src={nuevaImagenPreview} alt="Vista previa" className="w-14 h-14 object-cover rounded-control" />
+        )}
         <button type="submit" disabled={creando} className="min-h-tap px-5 rounded-control bg-gold text-carbon font-bold disabled:opacity-60">
           {creando ? "Creando…" : "+ Añadir categoría"}
         </button>
