@@ -1,20 +1,16 @@
-import { useNavigate, Link } from "react-router-dom";
+import { Link } from "react-router-dom";
 import Hero from "../components/Hero";
 import CategoriasGrid from "../components/CategoriasGrid";
 
 export default function Home() {
-  const navigate = useNavigate();
-
   return (
     <div>
       <Hero />
 
-      {/* Vitrina de categorías: aquí solo se navega al catálogo dedicado,
-          no se filtra en la misma página. */}
+      {/* Vitrina de categorías: cada tarjeta lleva directo a su página
+          dedicada /categoria/:slug (ver CategoriasGrid). */}
       <div id="catalogo" className="px-4 py-6 max-w-6xl mx-auto scroll-mt-16">
-        <CategoriasGrid
-          onCategoriaClick={(cat) => navigate(`/categoria/${cat.id}`)}
-        />
+        <CategoriasGrid />
         <div className="text-center">
           <Link
             to="/catalogo"

@@ -1,14 +1,16 @@
 import { useEffect, useState } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 import ProductCard from "../components/ProductCard";
 import CategoriasGrid from "../components/CategoriasGrid";
 
+/**
+ * Catálogo general: muestra TODOS los muebles activos. Para entrar a una
+ * línea específica (Modulares, Comedores, etc.) se usa la grilla de arriba,
+ * que lleva a su página dedicada /categoria/:slug (CategoriaPagina.jsx) —
+ * ahí es donde se filtra por categoría, así el comportamiento es el mismo
+ * sin importar desde qué pantalla del sitio se entre.
+ */
 export default function CatalogoProductos() {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const navigate = useNavigate();
-  const categoriaId = searchParams.get("categoria");
-
   const [productos, setProductos] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
@@ -20,17 +22,11 @@ export default function CatalogoProductos() {
       setCargando(true);
       setError(null);
       try {
-        let query = supabase
+        const { data, error } = await supabase
           .from("productos")
           .select("*")
           .eq("activo", true)
           .order("orden", { ascending: true });
-
-        if (categoriaId != null && Number.isFinite(Number(categoriaId))) {
-          query = query.eq("categoria_id", Number(categoriaId));
-        }
-
-        const { data, error } = await query;
 
         if (!activo) return;
         if (error) {
@@ -50,29 +46,13 @@ export default function CatalogoProductos() {
     return () => {
       activo = false;
     };
-  }, [categoriaId]);
-
-  function alHacerClicCategoria(cat) {
-    // Categorías reales de Supabase (id numérico): filtran la grilla de
-    // productos en esta misma página. Categorías de ejemplo (slug de texto,
-    // sin productos reales todavía): llevan a su página de presentación.
-    if (Number.isFinite(Number(cat.id))) {
-      const yaActiva = String(categoriaId) === String(cat.id);
-      if (yaActiva) {
-        setSearchParams({});
-      } else {
-        setSearchParams({ categoria: cat.id });
-      }
-    } else {
-      navigate(`/categoria/${cat.id}`);
-    }
-  }
+  }, []);
 
   return (
     <div className="px-4 py-6 max-w-6xl mx-auto">
       <h1 className="text-3xl font-extrabold text-ink mb-6">Catálogo</h1>
 
-      <CategoriasGrid onCategoriaClick={alHacerClicCategoria} categoriaActivaId={categoriaId} />
+      <CategoriasGrid />
 
       {cargando && (
         <p className="text-center text-ink-muted text-lg py-16">Cargando catálogo…</p>
@@ -85,9 +65,7 @@ export default function CatalogoProductos() {
       )}
 
       {!cargando && !error && productos.length === 0 && (
-        <p className="text-center text-ink-muted text-lg py-16">
-          Todavía no hay productos {categoriaId ? "en esta categoría" : "cargados"}.
-        </p>
+        <p className="text-center text-ink-muted text-lg py-16">Todavía no hay productos cargados.</p>
       )}
 
       {!cargando && !error && productos.length > 0 && (

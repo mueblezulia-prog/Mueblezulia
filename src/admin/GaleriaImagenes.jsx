@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { getCroppedImageBlob } from "../lib/cropImage";
+import { convertirSiEsHeic } from "../lib/heic";
 import ImageCropModule from "./ImageCropModule";
 
 const BUCKET = "productos";
@@ -22,13 +23,18 @@ export default function GaleriaImagenes({ fotos, onChange }) {
   const [subiendo, setSubiendo] = useState(false);
   const [error, setError] = useState(null);
 
-  function handleSeleccionarArchivo(e) {
+  async function handleSeleccionarArchivo(e) {
     const file = e.target.files?.[0];
     if (!file) return;
-    setError(null);
-    setEditando({ id: crypto.randomUUID(), file, originalUrl: URL.createObjectURL(file) });
-    setCropState({ crop: { x: 0, y: 0 }, zoom: 1, croppedAreaPixels: null, aspecto: 4 / 5 });
     e.target.value = ""; // permite volver a elegir el mismo archivo después
+    setError(null);
+    try {
+      const fileListo = await convertirSiEsHeic(file);
+      setEditando({ id: crypto.randomUUID(), file: fileListo, originalUrl: URL.createObjectURL(fileListo) });
+      setCropState({ crop: { x: 0, y: 0 }, zoom: 1, croppedAreaPixels: null, aspecto: 4 / 5 });
+    } catch (err) {
+      setError(`No se pudo procesar la foto: ${err.message}`);
+    }
   }
 
   async function handleAplicarRecorte() {
@@ -122,7 +128,7 @@ export default function GaleriaImagenes({ fotos, onChange }) {
         </div>
       ) : (
         <label className="min-h-tap flex items-center justify-center rounded-control border-2 border-dashed border-carbon-border text-ink-muted cursor-pointer w-fit px-5">
-          <input type="file" accept="image/*" onChange={handleSeleccionarArchivo} className="hidden" />
+          <input type="file" accept="image/*,.heic,.heif" onChange={handleSeleccionarArchivo} className="hidden" />
           + Agregar foto a la galería
         </label>
       )}

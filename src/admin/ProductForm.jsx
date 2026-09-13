@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 import { getCroppedImageBlob } from "../lib/cropImage";
+import { convertirSiEsHeic } from "../lib/heic";
 import ImageCropModule from "./ImageCropModule";
 import GaleriaImagenes from "./GaleriaImagenes";
 import SelectorTelas from "./SelectorTelas";
@@ -82,11 +83,19 @@ export default function ProductForm({ productoExistente, onGuardado }) {
     };
   }, [productoExistente?.id]);
 
-  function handleSubirImagen(e) {
+  const [errorImagen, setErrorImagen] = useState(null);
+
+  async function handleSubirImagen(e) {
     const file = e.target.files?.[0];
     if (!file) return;
-    setImagenOriginalFile(file);
-    setImagenOriginalUrl(URL.createObjectURL(file));
+    setErrorImagen(null);
+    try {
+      const fileListo = await convertirSiEsHeic(file);
+      setImagenOriginalFile(fileListo);
+      setImagenOriginalUrl(URL.createObjectURL(fileListo));
+    } catch (err) {
+      setErrorImagen(`No se pudo procesar la foto: ${err.message}`);
+    }
   }
 
   async function subirOriginalSiHaceFalta() {
@@ -249,9 +258,10 @@ export default function ProductForm({ productoExistente, onGuardado }) {
         {/* Columna izquierda: imagen y recorte */}
         <div className="flex flex-col gap-4">
           <label className="min-h-tap flex items-center justify-center rounded-control border-2 border-dashed border-carbon-border text-ink-muted cursor-pointer">
-            <input type="file" accept="image/*" onChange={handleSubirImagen} className="hidden" />
+            <input type="file" accept="image/*,.heic,.heif" onChange={handleSubirImagen} className="hidden" />
             {imagenOriginalUrl ? "Cambiar foto" : "Subir foto del mueble"}
           </label>
+          {errorImagen && <p className="text-terracota text-sm">{errorImagen}</p>}
 
           <ImageCropModule
             imagenOriginalUrl={imagenOriginalUrl}

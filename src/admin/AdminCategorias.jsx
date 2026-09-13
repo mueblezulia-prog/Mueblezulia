@@ -1,13 +1,23 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { convertirSiEsHeic } from "../lib/heic";
 
 const BUCKET = "productos"; // mismo bucket que ya usan las fotos de mueble
 
 async function subirImagenCategoria(file) {
+  const fileListo = await convertirSiEsHeic(file);
   const nombreArchivo = `categorias/${crypto.randomUUID()}.jpg`;
-  const { error } = await supabase.storage.from(BUCKET).upload(nombreArchivo, file);
+  const { error } = await supabase.storage.from(BUCKET).upload(nombreArchivo, fileListo);
   if (error) throw error;
   return supabase.storage.from(BUCKET).getPublicUrl(nombreArchivo).data.publicUrl;
+}
+
+function slugificar(texto) {
+  return texto
+    .toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // quita acentos
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
 }
 
 export default function AdminCategorias() {
@@ -16,13 +26,7 @@ export default function AdminCategorias() {
   const [error, setError] = useState(null);
   const [guardandoId, setGuardandoId] = useState(null);
   const [subiendoId, setSubiendoId] = useState(null);
-
-  const [nuevoNombre, setNuevoNombre] = useState("");
-  const [nuevoSlug, setNuevoSlug] = useState("");
-  const [nuevaImagenFile, setNuevaImagenFile] = useState(null);
-  const [nuevaImagenPreview, setNuevaImagenPreview] = useState(null);
-  const [creando, setCreando] = useState(false);
-  const [mensaje, setMensaje] = useState(null);
+  const [mostrarForm, setMostrarForm] = useState(false);
 
   async function cargar() {
     setCargando(true);
@@ -78,140 +82,205 @@ export default function AdminCategorias() {
     setCategorias((actual) => actual.filter((c) => c.id !== categoria.id));
   }
 
-  function slugificar(texto) {
-    return texto
-      .toLowerCase()
-      .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // quita acentos
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/(^-|-$)/g, "");
-  }
+  return (
+    <div className="max-w-5xl mx-auto p-6 flex flex-col gap-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-extrabold text-ink">Categorías</h1>
+          <p className="text-sm text-ink-muted mt-0.5">Se muestran en el catálogo en este orden.</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setMostrarForm((v) => !v)}
+          className="min-h-tap px-4 rounded-control bg-gold text-carbon font-bold text-sm"
+        >
+          {mostrarForm ? "Cancelar" : "+ Nueva categoría"}
+        </button>
+      </div>
 
-  function handleSeleccionarImagenNueva(e) {
+      {mostrarForm && (
+        <NuevaCategoriaCard
+          ordenSiguiente={categorias.length}
+          onCreada={(cat) => {
+            setCategorias((actual) => [...actual, cat]);
+            setMostrarForm(false);
+          }}
+        />
+      )}
+
+      {cargando && <p className="text-ink-muted text-lg">Cargando…</p>}
+      {error && <p className="text-terracota text-lg">Error: {error}</p>}
+
+      {!cargando && !error && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+          {categorias.map((cat) => (
+            <TarjetaCategoria
+              key={cat.id}
+              categoria={cat}
+              guardando={guardandoId === cat.id}
+              subiendo={subiendoId === cat.id}
+              onCambiar={(cambios) => actualizarLocal(cat.id, cambios)}
+              onGuardar={() => guardarFila(cat)}
+              onSubirImagen={(file) => subirImagenFila(cat, file)}
+              onBorrar={() => borrarFila(cat)}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TarjetaCategoria({ categoria, guardando, subiendo, onCambiar, onGuardar, onSubirImagen, onBorrar }) {
+  return (
+    <div className="group rounded-card overflow-hidden border border-carbon-border bg-carbon-light flex flex-col">
+      <label
+        className="relative aspect-[4/3] flex items-center justify-center cursor-pointer bg-carbon"
+        style={
+          categoria.imagen
+            ? { backgroundImage: `url(${categoria.imagen})`, backgroundSize: "cover", backgroundPosition: "center" }
+            : undefined
+        }
+      >
+        <input
+          type="file"
+          accept="image/*,.heic,.heif"
+          className="hidden"
+          onChange={(e) => onSubirImagen(e.target.files?.[0])}
+        />
+        <span
+          className={[
+            "absolute inset-0 flex items-center justify-center text-xs font-semibold text-white transition-opacity",
+            categoria.imagen
+              ? "bg-black/0 group-hover:bg-black/50 opacity-0 group-hover:opacity-100"
+              : "bg-carbon text-ink-muted opacity-100",
+          ].join(" ")}
+        >
+          {subiendo ? "Subiendo…" : categoria.imagen ? "Cambiar imagen" : "+ Subir imagen"}
+        </span>
+      </label>
+
+      <div className="p-3 flex flex-col gap-2">
+        <input
+          type="text"
+          value={categoria.nombre}
+          onChange={(e) => onCambiar({ nombre: e.target.value })}
+          className="bg-transparent text-ink font-bold text-base outline-none border-b border-transparent focus:border-carbon-border pb-0.5"
+          aria-label="Nombre"
+        />
+        <input
+          type="text"
+          value={categoria.slug}
+          onChange={(e) => onCambiar({ slug: e.target.value })}
+          className="bg-transparent text-ink-muted text-xs outline-none border-b border-transparent focus:border-carbon-border pb-0.5"
+          aria-label="Slug"
+        />
+
+        <div className="flex items-center justify-between pt-1">
+          <button
+            type="button"
+            onClick={onBorrar}
+            className="min-h-tap text-terracota text-xs font-semibold"
+          >
+            Borrar
+          </button>
+          <button
+            type="button"
+            onClick={onGuardar}
+            disabled={guardando}
+            className="min-h-tap px-3 rounded-control bg-gold text-carbon text-xs font-bold disabled:opacity-60"
+          >
+            {guardando ? "…" : "Guardar"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function NuevaCategoriaCard({ ordenSiguiente, onCreada }) {
+  const [nombre, setNombre] = useState("");
+  const [slug, setSlug] = useState("");
+  const [imagenFile, setImagenFile] = useState(null);
+  const [imagenPreview, setImagenPreview] = useState(null);
+  const [procesandoImagen, setProcesandoImagen] = useState(false);
+  const [creando, setCreando] = useState(false);
+  const [error, setError] = useState(null);
+
+  async function handleSeleccionarImagen(e) {
     const file = e.target.files?.[0];
     if (!file) return;
-    setNuevaImagenFile(file);
-    setNuevaImagenPreview(URL.createObjectURL(file));
+    setProcesandoImagen(true);
+    try {
+      const fileListo = await convertirSiEsHeic(file);
+      setImagenFile(fileListo);
+      setImagenPreview(URL.createObjectURL(fileListo));
+    } catch (err) {
+      setError(`No se pudo procesar la imagen: ${err.message}`);
+    } finally {
+      setProcesandoImagen(false);
+    }
   }
 
   async function handleCrear(e) {
     e.preventDefault();
-    if (!nuevoNombre.trim()) return;
+    if (!nombre.trim()) return;
     setCreando(true);
-    setMensaje(null);
+    setError(null);
     try {
-      const slug = nuevoSlug.trim() || slugificar(nuevoNombre);
-      const imagenUrl = nuevaImagenFile ? await subirImagenCategoria(nuevaImagenFile) : null;
+      const slugFinal = slug.trim() || slugificar(nombre);
+      const imagenUrl = imagenFile ? await subirImagenCategoria(imagenFile) : null;
       const { data, error } = await supabase
         .from("categorias")
-        .insert({ nombre: nuevoNombre.trim(), slug, imagen: imagenUrl, orden: categorias.length })
+        .insert({ nombre: nombre.trim(), slug: slugFinal, imagen: imagenUrl, orden: ordenSiguiente })
         .select()
         .single();
       if (error) throw error;
-      setCategorias((actual) => [...actual, data]);
-      setNuevoNombre("");
-      setNuevoSlug("");
-      setNuevaImagenFile(null);
-      setNuevaImagenPreview(null);
+      onCreada(data);
     } catch (err) {
-      setMensaje(`Error: ${err.message}`);
+      setError(err.message);
     } finally {
       setCreando(false);
     }
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6 flex flex-col gap-8">
-      <h1 className="text-2xl font-extrabold text-ink">Categorías</h1>
+    <form
+      onSubmit={handleCrear}
+      className="rounded-card border border-dashed border-carbon-border bg-carbon-light p-4 flex flex-wrap items-end gap-3"
+    >
+      <label className="w-16 h-16 shrink-0 rounded-control border border-carbon-border overflow-hidden flex items-center justify-center text-ink-muted text-xs cursor-pointer bg-carbon text-center"
+        style={imagenPreview ? { backgroundImage: `url(${imagenPreview})`, backgroundSize: "cover", backgroundPosition: "center" } : undefined}
+      >
+        <input type="file" accept="image/*,.heic,.heif" className="hidden" onChange={handleSeleccionarImagen} />
+        {!imagenPreview && (procesandoImagen ? "…" : "Foto")}
+      </label>
 
-      {cargando && <p className="text-ink-muted text-lg">Cargando…</p>}
-      {error && <p className="text-terracota text-lg">Error: {error}</p>}
+      <div className="flex flex-col gap-1 flex-1 min-w-[140px]">
+        <label className="text-xs text-ink-muted">Nombre</label>
+        <input
+          type="text"
+          value={nombre}
+          onChange={(e) => setNombre(e.target.value)}
+          placeholder="Ej: Cocinas"
+          className="campo-input"
+        />
+      </div>
+      <div className="flex flex-col gap-1 w-32">
+        <label className="text-xs text-ink-muted">Slug (opcional)</label>
+        <input
+          type="text"
+          value={slug}
+          onChange={(e) => setSlug(e.target.value)}
+          placeholder="cocinas"
+          className="campo-input"
+        />
+      </div>
+      <button type="submit" disabled={creando} className="min-h-tap px-5 rounded-control bg-gold text-carbon font-bold disabled:opacity-60">
+        {creando ? "Creando…" : "Crear"}
+      </button>
 
-      {!cargando && !error && (
-        <div className="flex flex-col gap-3">
-          {categorias.map((cat) => (
-            <div key={cat.id} className="bg-carbon-light border border-carbon-border rounded-card p-3 flex flex-wrap items-center gap-3">
-              {cat.imagen && (
-                <img src={cat.imagen} alt={cat.nombre} className="w-14 h-14 object-cover rounded-control shrink-0" />
-              )}
-              <input
-                type="text"
-                value={cat.nombre}
-                onChange={(e) => actualizarLocal(cat.id, { nombre: e.target.value })}
-                className="campo-input flex-1 min-w-[140px]"
-                aria-label="Nombre"
-              />
-              <input
-                type="text"
-                value={cat.slug}
-                onChange={(e) => actualizarLocal(cat.id, { slug: e.target.value })}
-                className="campo-input w-40"
-                aria-label="Slug"
-              />
-              <label className="min-h-tap px-3 flex items-center justify-center rounded-control border-2 border-dashed border-carbon-border text-ink-muted text-sm cursor-pointer">
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => subirImagenFila(cat, e.target.files?.[0])}
-                />
-                {subiendoId === cat.id ? "Subiendo…" : cat.imagen ? "Cambiar imagen" : "Subir imagen"}
-              </label>
-              <button
-                type="button"
-                onClick={() => guardarFila(cat)}
-                disabled={guardandoId === cat.id}
-                className="min-h-tap px-4 rounded-control bg-gold text-carbon font-bold disabled:opacity-60"
-              >
-                {guardandoId === cat.id ? "Guardando…" : "Guardar"}
-              </button>
-              <button
-                type="button"
-                onClick={() => borrarFila(cat)}
-                className="min-h-tap px-4 rounded-control border-2 border-terracota text-terracota font-bold"
-              >
-                Borrar
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
-
-      <form onSubmit={handleCrear} className="flex flex-wrap items-end gap-3 border-t border-carbon-border pt-6">
-        <div className="flex flex-col gap-1">
-          <label className="text-sm text-ink-muted">Nombre</label>
-          <input
-            type="text"
-            value={nuevoNombre}
-            onChange={(e) => setNuevoNombre(e.target.value)}
-            placeholder="Ej: Cocinas"
-            className="campo-input"
-          />
-        </div>
-        <div className="flex flex-col gap-1">
-          <label className="text-sm text-ink-muted">Slug (opcional)</label>
-          <input
-            type="text"
-            value={nuevoSlug}
-            onChange={(e) => setNuevoSlug(e.target.value)}
-            placeholder="cocinas"
-            className="campo-input w-36"
-          />
-        </div>
-        <div className="flex flex-col gap-1">
-          <label className="text-sm text-ink-muted">Imagen (opcional)</label>
-          <label className="min-h-tap px-4 flex items-center justify-center rounded-control border-2 border-dashed border-carbon-border text-ink-muted text-sm cursor-pointer">
-            <input type="file" accept="image/*" className="hidden" onChange={handleSeleccionarImagenNueva} />
-            {nuevaImagenPreview ? "Imagen lista ✓" : "Subir imagen"}
-          </label>
-        </div>
-        {nuevaImagenPreview && (
-          <img src={nuevaImagenPreview} alt="Vista previa" className="w-14 h-14 object-cover rounded-control" />
-        )}
-        <button type="submit" disabled={creando} className="min-h-tap px-5 rounded-control bg-gold text-carbon font-bold disabled:opacity-60">
-          {creando ? "Creando…" : "+ Añadir categoría"}
-        </button>
-      </form>
-      {mensaje && <p className="text-terracota">{mensaje}</p>}
-    </div>
+      {error && <p className="text-terracota text-sm w-full">{error}</p>}
+    </form>
   );
 }
