@@ -97,21 +97,20 @@ export default function ProductoDetalle() {
 
   return (
     <div className="max-w-3xl mx-auto pb-28">
-      <div className="sticky top-0 z-10 bg-carbon/90 backdrop-blur px-4 py-3 border-b border-carbon-border/60">
-        <button
-          type="button"
-          onClick={() => navigate(-1)}
-          className="min-h-tap min-w-tap flex items-center gap-2 text-ink text-lg font-bold hover:text-gold transition-colors"
-        >
-          ← Volver
-        </button>
-      </div>
-
       {/* Galería deslizable: si el mueble tiene varias fotos (cargadas
           desde el Panel Admin en producto_imagenes), aquí se pueden
           deslizar con el dedo o usar las flechas. Los puntos de abajo
           indican cuál se ve. */}
       <div className="relative">
+        <button
+          type="button"
+          onClick={() => navigate(-1)}
+          aria-label="Volver"
+          className="absolute left-3 top-3 z-20 w-10 h-10 rounded-full glass-dark text-ink flex items-center justify-center text-xl"
+        >
+          ←
+        </button>
+
         <div
           ref={scrollRef}
           onScroll={alHacerScroll}
@@ -173,19 +172,21 @@ export default function ProductoDetalle() {
         )}
       </div>
 
-      {/* El panel de vidrio "sube" sobre la foto (margen negativo) para que
-          el efecto se vea encima de la imagen, no solo debajo de ella. */}
-      <div className="relative -mt-14 sm:-mt-16 px-4 pt-8 pb-5 flex flex-col gap-4 overflow-hidden rounded-t-card z-10">
+      {/* Panel de vidrio: una sola superficie translúcida que "sube" sobre
+          la foto (margen negativo) y va de borde a borde de la pantalla,
+          sin esquinas redondeadas abajo, para que llegue hasta la barra
+          fija de WhatsApp sin dejar huecos a los lados ni abajo. */}
+      <div className="relative -mt-14 sm:-mt-16 overflow-hidden rounded-t-3xl z-10">
         {imagenes[0] && (
           <>
             <div
               className="absolute inset-0 bg-cover bg-center scale-110 blur-md opacity-40"
               style={{ backgroundImage: `url(${imagenes[0]})` }}
             />
-            <div className="absolute inset-0 bg-carbon/80" />
+            <div className="absolute inset-0 bg-carbon/85" />
           </>
         )}
-        <div className="relative glass rounded-card p-4 flex flex-col gap-4">
+        <div className="relative glass px-5 pt-8 pb-8 flex flex-col gap-4 border-x-0">
           <h1 className="text-3xl font-extrabold text-ink tracking-tight">{producto.titulo}</h1>
 
           {/* Precio y medida con su ícono respectivo */}

@@ -79,15 +79,20 @@ export default function CategoriaPagina() {
   const nombreCategoria = categoria?.nombre ?? bannerInfo.banner;
 
   return (
-    <div className="px-4 py-6 max-w-5xl mx-auto">
-      <Link
-        to="/catalogo"
-        className="min-h-tap inline-flex items-center gap-2 text-ink-muted hover:text-ink text-base font-bold mb-4 transition-colors"
-      >
-        ← Volver al Catálogo
-      </Link>
+    <div className="py-6">
+      <div className="px-4 max-w-5xl mx-auto">
+        <Link
+          to="/catalogo"
+          className="min-h-tap inline-flex items-center gap-2 text-ink-muted hover:text-ink text-base font-bold mb-4 transition-colors"
+        >
+          ← Volver al Catálogo
+        </Link>
+      </div>
 
-      <div className="relative rounded-card overflow-hidden mb-6 py-6 px-4 flex items-center justify-center">
+      {/* Banner de borde a borde: el truco "left-1/2 -mx-[50vw] w-screen"
+          hace que este bloque ocupe todo el ancho de la pantalla sin
+          importar el max-w/padding del contenedor de arriba. */}
+      <div className="relative left-1/2 right-1/2 -mx-[50vw] w-screen overflow-hidden mb-6 py-8 px-4 flex items-center justify-center">
         <div
           className="absolute inset-0 bg-cover bg-center scale-110 blur-[3px]"
           style={{ backgroundImage: "url(/assets/interior-tienda.jpg)" }}
@@ -99,6 +104,7 @@ export default function CategoriaPagina() {
         </div>
       </div>
 
+      <div className="px-4 max-w-5xl mx-auto">
       {cargando && (
         <p className="text-center text-ink-muted text-lg py-16">Cargando…</p>
       )}
@@ -131,6 +137,7 @@ export default function CategoriaPagina() {
         >
           Ver Catálogo Completo
         </Link>
+      </div>
       </div>
     </div>
   );

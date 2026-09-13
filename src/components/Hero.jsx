@@ -27,13 +27,13 @@ export default function Hero() {
           Llevando confort a los hogares del Zulia
         </p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <a
-            href="#catalogo"
+          <Link
+            to="/catalogo"
             className="min-h-tap flex items-center justify-center px-6 rounded-control glass-gold text-ink font-bold text-lg
                        hover:bg-gold/25 active:scale-[0.98] transition-all duration-200"
           >
             Nuestro Catálogo
-          </a>
+          </Link>
           <Link
             to="/contacto"
             className="min-h-tap flex items-center justify-center px-6 rounded-control glass text-ink font-bold text-lg
