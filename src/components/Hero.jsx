@@ -14,9 +14,13 @@ export default function Hero() {
       {/* Overlay oscuro para que el texto blanco siempre se lea bien,
           sin importar qué tan clara sea la foto de fondo. */}
       <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/70 to-carbon" />
+      <div className="absolute inset-0 bg-gradient-to-t from-carbon via-transparent to-transparent" />
 
-      <div className="relative px-4 py-14 sm:py-20 max-w-4xl mx-auto text-center">
-        <h1 className="text-3xl sm:text-5xl font-extrabold text-ink leading-tight mb-3">
+      <div className="relative px-4 py-16 sm:py-24 max-w-4xl mx-auto text-center">
+        <span className="inline-block text-gold text-xs sm:text-sm font-bold uppercase tracking-[0.2em] mb-3">
+          Calidad · Tradición · Confort
+        </span>
+        <h1 className="text-3xl sm:text-5xl font-extrabold text-ink leading-tight mb-3 drop-shadow-sm">
           La Mueblería de la Familia Zuliana
         </h1>
         <p className="text-ink-muted text-lg sm:text-xl mb-8">
@@ -25,13 +29,15 @@ export default function Hero() {
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <a
             href="#catalogo"
-            className="min-h-tap flex items-center justify-center px-6 rounded-control bg-gold text-carbon font-bold text-lg"
+            className="min-h-tap flex items-center justify-center px-6 rounded-control bg-gold text-carbon font-bold text-lg
+                       shadow-lg shadow-black/30 hover:bg-gold-hover active:scale-[0.98] transition-all duration-200"
           >
             Nuestro Catálogo
           </a>
           <Link
             to="/contacto"
-            className="min-h-tap flex items-center justify-center px-6 rounded-control border-2 border-ink text-ink font-bold text-lg"
+            className="min-h-tap flex items-center justify-center px-6 rounded-control border-2 border-ink text-ink font-bold text-lg
+                       hover:bg-ink hover:text-carbon active:scale-[0.98] transition-all duration-200"
           >
             Contáctanos
           </Link>

@@ -14,7 +14,8 @@ export default function Home() {
         <div className="text-center">
           <Link
             to="/catalogo"
-            className="min-h-tap inline-flex items-center justify-center px-6 rounded-control bg-gold text-carbon font-bold"
+            className="min-h-tap inline-flex items-center justify-center px-6 rounded-control bg-gold text-carbon font-bold
+                       shadow-md shadow-black/20 hover:bg-gold-hover active:scale-[0.98] transition-all duration-200"
           >
             Ver Catálogo Completo
           </Link>
@@ -23,7 +24,7 @@ export default function Home() {
 
       {/* NUESTRA SEDE (resumen — la versión completa vive en /contacto) */}
       <section className="pb-10 max-w-5xl mx-auto border-t border-carbon-border">
-        <div className="bg-gold py-3 mb-6">
+        <div className="bg-gradient-to-r from-gold to-gold-hover py-3 mb-6 shadow-sm shadow-black/20">
           <h2 className="text-center text-carbon font-extrabold text-xl uppercase tracking-wide">
             Nuestra Sede
           </h2>
@@ -32,7 +33,7 @@ export default function Home() {
           <img
             src="/assets/ubicacion.jpg"
             alt="Fachada de Muebles Zulia"
-            className="w-full h-56 sm:h-72 object-cover rounded-card border border-carbon-border"
+            className="w-full h-56 sm:h-72 object-cover rounded-card border border-carbon-border shadow-md shadow-black/20"
           />
           <div>
             <h3 className="text-xl font-bold text-ink mb-2">¡Te esperamos en Muebles Zulia! 📍</h3>
@@ -42,7 +43,8 @@ export default function Home() {
             <p className="text-ink font-semibold mb-4">Av. 15 Delicias, frente a Alkosto.</p>
             <Link
               to="/contacto"
-              className="min-h-tap inline-flex items-center px-5 rounded-control border-2 border-ink text-ink font-bold"
+              className="min-h-tap inline-flex items-center px-5 rounded-control border-2 border-ink text-ink font-bold
+                         hover:bg-ink hover:text-carbon active:scale-[0.98] transition-all duration-200"
             >
               Ver mapa y métodos de pago
             </Link>
@@ -61,7 +63,7 @@ export default function Home() {
           <img
             src="/assets/taller.jpg"
             alt="Artesano trabajando en el taller de Muebles Zulia"
-            className="w-full h-56 sm:h-72 object-cover rounded-card border border-carbon-border"
+            className="w-full h-56 sm:h-72 object-cover rounded-card border border-carbon-border shadow-md shadow-black/20"
           />
           <div>
             <h3 className="text-xl font-bold text-gold mb-2">Pasión por el Detalle</h3>
@@ -71,7 +73,8 @@ export default function Home() {
             </p>
             <Link
               to="/fabricacion"
-              className="min-h-tap inline-flex items-center px-5 rounded-control border-2 border-ink text-ink font-bold"
+              className="min-h-tap inline-flex items-center px-5 rounded-control border-2 border-ink text-ink font-bold
+                         hover:bg-ink hover:text-carbon active:scale-[0.98] transition-all duration-200"
             >
               Conocer nuestro proceso
             </Link>

@@ -50,15 +50,20 @@ export default function CategoriasGrid({ titulo = "¿Cuál te llevas a Casa?" })
           <Link
             key={cat.id}
             to={`/categoria/${cat.slug}`}
-            className="relative rounded-card overflow-hidden aspect-[4/3] flex items-end p-3 text-left border border-carbon-border hover:border-ink-muted transition-colors"
-            style={
-              cat.imagen
-                ? { backgroundImage: `url(${cat.imagen})`, backgroundSize: "cover", backgroundPosition: "center" }
-                : { backgroundColor: "#2A2A2A" }
-            }
+            className="group relative rounded-card overflow-hidden aspect-[4/3] flex items-end p-3 text-left
+                       border border-carbon-border shadow-sm
+                       hover:border-gold/60 hover:shadow-lg hover:shadow-black/30 hover:-translate-y-0.5
+                       transition-all duration-300 ease-out"
+            style={!cat.imagen ? { backgroundColor: "#2A2A2A" } : undefined}
           >
-            <span className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-            <span className="relative text-ink font-bold text-sm sm:text-base leading-tight">
+            {cat.imagen && (
+              <span
+                className="absolute inset-0 bg-cover bg-center transition-transform duration-500 ease-out group-hover:scale-110"
+                style={{ backgroundImage: `url(${cat.imagen})` }}
+              />
+            )}
+            <span className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
+            <span className="relative text-ink font-bold text-sm sm:text-base leading-tight group-hover:text-gold transition-colors duration-200">
               {cat.nombre}
             </span>
           </Link>

@@ -50,31 +50,36 @@ export default function CatalogoProductos() {
 
   return (
     <div className="px-4 py-6 max-w-6xl mx-auto">
-      <h1 className="text-3xl font-extrabold text-ink mb-6">Catálogo</h1>
+      <h1 className="text-3xl font-extrabold text-ink mb-1">Catálogo</h1>
+      <p className="text-ink-muted mb-6">Explora todas nuestras líneas de muebles.</p>
 
       <CategoriasGrid />
 
-      {cargando && (
-        <p className="text-center text-ink-muted text-lg py-16">Cargando catálogo…</p>
-      )}
+      <div className="border-t border-carbon-border pt-6">
+        <h2 className="text-xl sm:text-2xl font-extrabold text-ink mb-4">Todos los productos</h2>
 
-      {!cargando && error && (
-        <p className="text-center text-terracota text-lg py-16">
-          No se pudo cargar el catálogo: {error}
-        </p>
-      )}
+        {cargando && (
+          <p className="text-center text-ink-muted text-lg py-16">Cargando catálogo…</p>
+        )}
 
-      {!cargando && !error && productos.length === 0 && (
-        <p className="text-center text-ink-muted text-lg py-16">Todavía no hay productos cargados.</p>
-      )}
+        {!cargando && error && (
+          <p className="text-center text-terracota text-lg py-16">
+            No se pudo cargar el catálogo: {error}
+          </p>
+        )}
 
-      {!cargando && !error && productos.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-          {productos.map((producto) => (
-            <ProductCard key={producto.id} producto={producto} />
-          ))}
-        </div>
-      )}
+        {!cargando && !error && productos.length === 0 && (
+          <p className="text-center text-ink-muted text-lg py-16">Todavía no hay productos cargados.</p>
+        )}
+
+        {!cargando && !error && productos.length > 0 && (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+            {productos.map((producto) => (
+              <ProductCard key={producto.id} producto={producto} />
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

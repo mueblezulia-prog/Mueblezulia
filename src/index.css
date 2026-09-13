@@ -11,6 +11,13 @@
     @apply bg-carbon text-ink;
     font-family: "Inter", system-ui, -apple-system, sans-serif;
   }
+  a, button {
+    -webkit-tap-highlight-color: transparent;
+  }
+  a:focus-visible, button:focus-visible {
+    outline: 2px solid theme("colors.gold.DEFAULT");
+    outline-offset: 2px;
+  }
 }
 
 @layer components {
@@ -25,7 +32,8 @@
     @apply w-full min-h-tap rounded-control bg-transparent text-ink font-bold text-lg
            border-2 border-ink
            flex items-center justify-center
-           active:scale-[0.98] transition-transform;
+           hover:bg-ink hover:text-carbon
+           active:scale-[0.98] transition-all duration-200;
   }
   /* Input estándar de los formularios del panel admin */
   .campo-input {

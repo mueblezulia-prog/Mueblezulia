@@ -82,14 +82,14 @@ export default function CategoriaPagina() {
     <div className="px-4 py-6 max-w-5xl mx-auto">
       <Link
         to="/catalogo"
-        className="min-h-tap inline-flex items-center gap-2 text-ink text-lg font-bold mb-4"
+        className="min-h-tap inline-flex items-center gap-2 text-ink-muted hover:text-ink text-base font-bold mb-4 transition-colors"
       >
         ← Volver al Catálogo
       </Link>
 
-      <div className="bg-gold text-carbon rounded-control px-5 py-3 mb-6 flex items-center gap-3">
-        <span className="text-2xl">{bannerInfo.icono}</span>
-        <h1 className="text-xl sm:text-2xl font-extrabold">{bannerInfo.banner}</h1>
+      <div className="bg-gradient-to-r from-gold to-gold-hover text-carbon rounded-card px-5 py-4 mb-6 flex items-center gap-3 shadow-md shadow-black/20">
+        <span className="text-3xl leading-none">{bannerInfo.icono}</span>
+        <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight">{bannerInfo.banner}</h1>
       </div>
 
       {cargando && (
@@ -119,7 +119,8 @@ export default function CategoriaPagina() {
       <div className="text-center mt-8">
         <Link
           to="/catalogo"
-          className="min-h-tap inline-flex items-center justify-center px-6 rounded-control bg-gold text-carbon font-bold"
+          className="min-h-tap inline-flex items-center justify-center px-6 rounded-control bg-gold text-carbon font-bold
+                     shadow-md shadow-black/20 hover:bg-gold-hover active:scale-[0.98] transition-all duration-200"
         >
           Ver Catálogo Completo
         </Link>

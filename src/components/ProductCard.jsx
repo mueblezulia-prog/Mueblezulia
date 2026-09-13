@@ -12,22 +12,25 @@ export default function ProductCard({ producto }) {
     <Link
       to={`/producto/${id}`}
       className="group bg-carbon-light border border-carbon-border rounded-card overflow-hidden flex flex-col
-                 shadow-sm hover:shadow-lg hover:border-gold/60 transition-all duration-200"
+                 shadow-sm hover:shadow-xl hover:shadow-black/30 hover:border-gold/60 hover:-translate-y-0.5
+                 transition-all duration-300 ease-out"
     >
       <div className="relative aspect-[4/5] overflow-hidden bg-carbon">
         <img
           src={imagen_recortada_url}
           alt={titulo}
-          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+          className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.07]"
           loading="lazy"
         />
-        <span className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/70 to-transparent" />
-        <span className="absolute bottom-2 left-2 bg-gold text-carbon text-sm sm:text-base font-extrabold px-2.5 py-1 rounded-control shadow">
+        <span className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/75 via-black/10 to-transparent" />
+        <span className="absolute bottom-2.5 left-2.5 bg-gold text-carbon text-sm sm:text-base font-extrabold px-2.5 py-1 rounded-control shadow-md shadow-black/30">
           ${Number(precio).toLocaleString("es-VE")}
         </span>
       </div>
       <div className="p-3 flex flex-col gap-0.5">
-        <h3 className="text-base sm:text-lg font-bold text-ink leading-snug line-clamp-2">{titulo}</h3>
+        <h3 className="text-base sm:text-lg font-bold text-ink leading-snug line-clamp-2 group-hover:text-gold transition-colors duration-200">
+          {titulo}
+        </h3>
         {medida && <p className="text-xs text-ink-muted">📏 {medida}</p>}
       </div>
     </Link>

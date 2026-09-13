@@ -97,11 +97,11 @@ export default function ProductoDetalle() {
 
   return (
     <div className="max-w-3xl mx-auto pb-28">
-      <div className="sticky top-0 z-10 bg-carbon/90 backdrop-blur px-4 py-3">
+      <div className="sticky top-0 z-10 bg-carbon/90 backdrop-blur px-4 py-3 border-b border-carbon-border/60">
         <button
           type="button"
           onClick={() => navigate(-1)}
-          className="min-h-tap min-w-tap flex items-center gap-2 text-ink text-lg font-bold"
+          className="min-h-tap min-w-tap flex items-center gap-2 text-ink text-lg font-bold hover:text-gold transition-colors"
         >
           ← Volver
         </button>
@@ -134,7 +134,7 @@ export default function ProductoDetalle() {
                 type="button"
                 onClick={() => irAImagen(indiceImagen - 1)}
                 aria-label="Foto anterior"
-                className="absolute left-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/50 text-white flex items-center justify-center text-xl backdrop-blur"
+                className="absolute left-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/50 hover:bg-black/70 text-white flex items-center justify-center text-xl backdrop-blur shadow-md transition-colors"
               >
                 ‹
               </button>
@@ -144,7 +144,7 @@ export default function ProductoDetalle() {
                 type="button"
                 onClick={() => irAImagen(indiceImagen + 1)}
                 aria-label="Foto siguiente"
-                className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/50 text-white flex items-center justify-center text-xl backdrop-blur"
+                className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/50 hover:bg-black/70 text-white flex items-center justify-center text-xl backdrop-blur shadow-md transition-colors"
               >
                 ›
               </button>
@@ -174,11 +174,11 @@ export default function ProductoDetalle() {
       )}
 
       <div className="px-4 py-4 flex flex-col gap-4">
-        <h1 className="text-3xl font-extrabold text-ink">{producto.titulo}</h1>
+        <h1 className="text-3xl font-extrabold text-ink tracking-tight">{producto.titulo}</h1>
 
         {/* Precio y medida con su ícono respectivo */}
-        <div className="flex flex-wrap gap-4">
-          <span className="inline-flex items-center gap-2 text-price font-extrabold text-gold">
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="inline-flex items-center gap-2 text-price font-extrabold text-gold bg-gold/10 px-3 py-1 rounded-control">
             💲 {Number(producto.precio).toLocaleString("es-VE")}
           </span>
           {producto.medida && (
@@ -208,12 +208,12 @@ export default function ProductoDetalle() {
       </div>
 
       {/* Barra de acciones fija abajo — siempre visible, fácil de alcanzar con el pulgar */}
-      <div className="fixed bottom-0 left-0 right-0 bg-carbon border-t border-carbon-border p-4 max-w-3xl mx-auto">
+      <div className="fixed bottom-0 left-0 right-0 bg-carbon/95 backdrop-blur border-t border-carbon-border p-4 max-w-3xl mx-auto shadow-lg shadow-black/30">
         <a
           href={linkWhatsApp}
           target="_blank"
           rel="noreferrer"
-          className="btn-primary flex items-center justify-center gap-2"
+          className="btn-primary flex items-center justify-center gap-2 shadow-md shadow-black/20 hover:bg-gold-hover"
         >
           💬 Preguntar por WhatsApp
         </a>
