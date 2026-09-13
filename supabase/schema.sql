@@ -146,3 +146,43 @@ create policy "producto_colores: escritura temporal anon"
   on producto_colores for all
   using (true)
   with check (true);
+
+-- ============================================================
+-- FASE 1.1 — Galería de varias fotos + campo "medida"
+-- Agregado para: (1) permitir varias fotos por mueble que el cliente
+-- pueda deslizar en el detalle, y (2) mostrar la medida del mueble
+-- (ej. "180cm x 90cm") con su propio ícono en el detalle.
+-- Ejecuta este bloque en el SQL Editor de Supabase (es seguro correrlo
+-- de nuevo si ya lo corriste antes — usa IF NOT EXISTS).
+-- PENDIENTE (próxima sesión): el Panel Admin (ProductForm.jsx) todavía
+-- solo sube UNA foto por mueble (imagen_recortada_url). Falta agregarle
+-- un módulo para subir varias fotos y guardarlas en producto_imagenes,
+-- y un campo de texto para "medida". El detalle del cliente (
+-- ProductoDetalle.jsx) ya está listo para mostrarlas en cuanto existan.
+-- ============================================================
+
+alter table productos add column if not exists medida text;
+
+create table if not exists producto_imagenes (
+  id uuid primary key default gen_random_uuid(),
+  producto_id uuid not null references productos(id) on delete cascade,
+  url text not null,
+  orden int default 0
+);
+
+create index if not exists idx_producto_imagenes_producto on producto_imagenes (producto_id);
+
+alter table producto_imagenes enable row level security;
+
+drop policy if exists "producto_imagenes: lectura publica" on producto_imagenes;
+create policy "producto_imagenes: lectura publica"
+  on producto_imagenes for select
+  using (true);
+
+-- Mismo esquema temporal de escritura pública que las demás tablas de
+-- Fase 1 (ver la nota de seguridad más arriba en este archivo).
+drop policy if exists "producto_imagenes: escritura temporal anon" on producto_imagenes;
+create policy "producto_imagenes: escritura temporal anon"
+  on producto_imagenes for all
+  using (true)
+  with check (true);

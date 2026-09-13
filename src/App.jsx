@@ -13,6 +13,11 @@ import ProductForm from "./admin/ProductForm";
 export default function App() {
   const { pathname } = useLocation();
   const esAdmin = pathname.startsWith("/admin");
+  const esDetalleProducto = pathname.startsWith("/producto/");
+  // En el detalle de producto no se muestra la barra inferior: esa página
+  // ya tiene su propio botón fijo de WhatsApp abajo, y dos barras fijas
+  // superpuestas se verían mal en móvil.
+  const ocultarBottomNav = esAdmin || esDetalleProducto;
 
   return (
     <div className="min-h-screen bg-carbon">
@@ -20,7 +25,7 @@ export default function App() {
 
       {/* pb-16 deja espacio para que la barra inferior móvil no tape el
           contenido; en desktop no aplica porque BottomNav está oculto. */}
-      <div className={esAdmin ? "" : "pb-16 sm:pb-0"}>
+      <div className={ocultarBottomNav ? "" : "pb-16 sm:pb-0"}>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/catalogo" element={<CatalogoProductos />} />
@@ -37,7 +42,7 @@ export default function App() {
         </Routes>
       </div>
 
-      {!esAdmin && <BottomNav />}
+      {!ocultarBottomNav && <BottomNav />}
     </div>
   );
 }

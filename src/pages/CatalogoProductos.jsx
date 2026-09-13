@@ -68,16 +68,6 @@ export default function CatalogoProductos() {
     }
   }
 
-  function handleComprar(producto) {
-    // Fase 1: placeholder — se conecta al flujo de carrito/checkout existente
-    console.log("Comprar ahora:", producto.id);
-  }
-
-  function handleCompraPersonalizada(producto) {
-    // Fase 1: placeholder — abre WhatsApp o un formulario de personalización
-    console.log("Compra personalizada:", producto.id);
-  }
-
   return (
     <div className="px-4 py-6 max-w-6xl mx-auto">
       <h1 className="text-3xl font-extrabold text-ink mb-6">Catálogo</h1>
@@ -101,14 +91,9 @@ export default function CatalogoProductos() {
       )}
 
       {!cargando && !error && productos.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
           {productos.map((producto) => (
-            <ProductCard
-              key={producto.id}
-              producto={producto}
-              onComprar={handleComprar}
-              onCompraPersonalizada={handleCompraPersonalizada}
-            />
+            <ProductCard key={producto.id} producto={producto} />
           ))}
         </div>
       )}

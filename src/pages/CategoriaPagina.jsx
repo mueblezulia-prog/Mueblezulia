@@ -59,6 +59,13 @@ export default function CategoriaPagina() {
 
   return (
     <div className="px-4 py-6 max-w-5xl mx-auto">
+      <Link
+        to="/catalogo"
+        className="min-h-tap inline-flex items-center gap-2 text-ink text-lg font-bold mb-4"
+      >
+        ← Volver al Catálogo
+      </Link>
+
       <div className="bg-gold text-carbon rounded-control px-5 py-3 mb-6 flex items-center gap-3">
         <span className="text-2xl">{categoria.icono}</span>
         <h1 className="text-xl sm:text-2xl font-extrabold">{categoria.banner}</h1>
