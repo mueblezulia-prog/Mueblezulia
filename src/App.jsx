@@ -1,4 +1,6 @@
-import { Routes, Route, Link, Navigate, useLocation } from "react-router-dom";
+import { Routes, Route, Link, Navigate, useLocation, useParams, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { supabase } from "./lib/supabaseClient";
 import NavBar from "./components/NavBar";
 import BottomNav from "./components/BottomNav";
 import AdminHeader from "./admin/AdminHeader";
@@ -9,6 +11,9 @@ import ProductoDetalle from "./pages/ProductoDetalle";
 import Fabricacion from "./pages/Fabricacion";
 import Contacto from "./pages/Contacto";
 import ProductForm from "./admin/ProductForm";
+import AdminProductosLista from "./admin/AdminProductosLista";
+import AdminCategorias from "./admin/AdminCategorias";
+import AdminTelas from "./admin/AdminTelas";
 
 export default function App() {
   const { pathname } = useLocation();
@@ -36,8 +41,12 @@ export default function App() {
           {/* Rutas viejas: redirigen para no romper enlaces guardados */}
           <Route path="/ubicacion" element={<Navigate to="/contacto" replace />} />
           <Route path="/metodos-pago" element={<Navigate to="/contacto" replace />} />
-          <Route path="/admin/productos/nuevo" element={<ProductForm />} />
+          <Route path="/admin/productos" element={<AdminProductosLista />} />
+          <Route path="/admin/productos/nuevo" element={<NuevoProducto />} />
           <Route path="/admin/productos/:id/editar" element={<EditarProducto />} />
+          <Route path="/admin/categorias" element={<AdminCategorias />} />
+          <Route path="/admin/telas" element={<AdminTelas />} />
+          <Route path="/admin" element={<Navigate to="/admin/productos" replace />} />
           <Route path="*" element={<NoEncontrado />} />
         </Routes>
       </div>
@@ -47,11 +56,59 @@ export default function App() {
   );
 }
 
+function NuevoProducto() {
+  const navigate = useNavigate();
+  return <ProductForm onGuardado={() => navigate("/admin/productos")} />;
+}
+
 function EditarProducto() {
-  // Fase 1: placeholder de ruta — cargar el producto por id y pasarlo
-  // como `productoExistente` a ProductForm queda listo para conectar
-  // en cuanto el panel admin tenga listado + autenticación (ver README).
-  return <ProductForm />;
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const [producto, setProducto] = useState(null);
+  const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    let activo = true;
+    async function cargar() {
+      setCargando(true);
+      const { data: productoData, error: errorProducto } = await supabase
+        .from("productos")
+        .select("*")
+        .eq("id", id)
+        .single();
+      if (!activo) return;
+      if (errorProducto) {
+        setError(errorProducto.message);
+      } else {
+        setProducto(productoData);
+      }
+      setCargando(false);
+    }
+    cargar();
+    return () => {
+      activo = false;
+    };
+  }, [id]);
+
+  if (cargando) return <p className="text-center text-ink-muted text-lg py-16">Cargando…</p>;
+  if (error || !producto) {
+    return (
+      <p className="text-center text-terracota text-lg py-16">
+        No se pudo cargar el producto{error ? `: ${error}` : ""}.
+      </p>
+    );
+  }
+
+  // `key` fuerza a que el formulario se vuelva a montar si se navega
+  // directamente de "editar producto A" a "editar producto B".
+  return (
+    <ProductForm
+      key={producto.id}
+      productoExistente={producto}
+      onGuardado={() => navigate("/admin/productos")}
+    />
+  );
 }
 
 function NoEncontrado() {

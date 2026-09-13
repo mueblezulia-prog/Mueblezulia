@@ -1,17 +1,21 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 
-// Pestañas del panel admin. Solo "Muebles" está construida en esta Fase 1
-// (el formulario de agregar/editar producto). Las demás quedan visibles
-// pero deshabilitadas, como recordatorio de lo que falta en próximas fases.
+// Pestañas del panel admin. "Muebles" y "Categorías" ya están construidas;
+// las demás quedan visibles pero deshabilitadas, como recordatorio de lo
+// que falta en próximas fases (reutilizan las rutas API que ya existen en
+// server.js: /api/admin/pedidos y /api/admin/estadisticas).
 const TABS = [
-  { label: "Estadísticas", disponible: false },
-  { label: "Pedidos", disponible: false },
-  { label: "Muebles", disponible: true },
-  { label: "Categorías", disponible: false },
-  { label: "Configuración", disponible: false },
+  { label: "Estadísticas", ruta: null },
+  { label: "Pedidos", ruta: null },
+  { label: "Muebles", ruta: "/admin/productos" },
+  { label: "Categorías", ruta: "/admin/categorias" },
+  { label: "Telas", ruta: "/admin/telas" },
+  { label: "Configuración", ruta: null },
 ];
 
 export default function AdminHeader() {
+  const { pathname } = useLocation();
+
   return (
     <header className="bg-carbon border-b border-carbon-border">
       <div className="max-w-5xl mx-auto px-4 py-4">
@@ -25,20 +29,34 @@ export default function AdminHeader() {
         </div>
 
         <nav className="flex flex-wrap gap-2">
-          {TABS.map((tab) => (
-            <span
-              key={tab.label}
-              title={tab.disponible ? undefined : "Disponible en una próxima fase"}
-              className={[
-                "min-h-tap flex items-center px-4 rounded-control text-sm font-semibold",
-                tab.disponible
-                  ? "bg-gold text-carbon"
-                  : "bg-carbon-light text-ink-muted opacity-50 cursor-not-allowed",
-              ].join(" ")}
-            >
-              {tab.label}
-            </span>
-          ))}
+          {TABS.map((tab) => {
+            // "Muebles" también se considera activa en /admin/productos/nuevo
+            // y /admin/productos/:id/editar, no solo en la lista exacta.
+            const activa = tab.ruta && pathname.startsWith(tab.ruta);
+            if (!tab.ruta) {
+              return (
+                <span
+                  key={tab.label}
+                  title="Disponible en una próxima fase"
+                  className="min-h-tap flex items-center px-4 rounded-control text-sm font-semibold bg-carbon-light text-ink-muted opacity-50 cursor-not-allowed"
+                >
+                  {tab.label}
+                </span>
+              );
+            }
+            return (
+              <Link
+                key={tab.label}
+                to={tab.ruta}
+                className={[
+                  "min-h-tap flex items-center px-4 rounded-control text-sm font-semibold",
+                  activa ? "bg-gold text-carbon" : "bg-carbon-light text-ink hover:bg-carbon-border",
+                ].join(" ")}
+              >
+                {tab.label}
+              </Link>
+            );
+          })}
         </nav>
       </div>
     </header>

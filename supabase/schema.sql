@@ -186,6 +186,37 @@ create table if not exists producto_imagenes (
 
 create index if not exists idx_producto_imagenes_producto on producto_imagenes (producto_id);
 
+-- ============================================================
+-- FASE 1.2 — Catálogo global de telas/colores
+-- Antes cada producto escribía sus propios colores a mano (texto libre +
+-- hex). Ahora las telas son un catálogo COMPARTIDO: se crean una sola vez
+-- en /admin/telas y cada producto elige cuáles aplican, en vez de
+-- reescribir el mismo color en cada mueble.
+-- ============================================================
+create table if not exists telas (
+  id uuid primary key default gen_random_uuid(),
+  nombre text not null,
+  hex text not null check (hex ~* '^#[0-9a-f]{6}$'),
+  orden int default 0
+);
+
+alter table producto_colores add column if not exists tela_id uuid references telas(id) on delete set null;
+
+alter table telas enable row level security;
+drop policy if exists "telas: lectura publica" on telas;
+create policy "telas: lectura publica" on telas for select using (true);
+drop policy if exists "telas: escritura temporal anon" on telas;
+create policy "telas: escritura temporal anon" on telas for all using (true) with check (true);
+
+insert into telas (nombre, hex, orden)
+select * from (values
+  ('Gris Perla', '#B9B9B9', 0),
+  ('Beige', '#D8C9AE', 1),
+  ('Café', '#6B4226', 2),
+  ('Negro', '#1E1E1E', 3)
+) as t(nombre, hex, orden)
+where not exists (select 1 from telas);
+
 alter table producto_imagenes enable row level security;
 
 drop policy if exists "producto_imagenes: lectura publica" on producto_imagenes;

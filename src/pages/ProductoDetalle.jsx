@@ -1,7 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
-import ColorSwatchSelector from "../components/ColorSwatchSelector";
 
 const WHATSAPP_NUMERO = "584127519141"; // +58 412 751 9141
 
@@ -11,8 +10,6 @@ export default function ProductoDetalle() {
 
   const [producto, setProducto] = useState(null);
   const [imagenes, setImagenes] = useState([]);
-  const [colores, setColores] = useState([]);
-  const [colorSeleccionado, setColorSeleccionado] = useState(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
   const [indiceImagen, setIndiceImagen] = useState(0);
@@ -26,11 +23,9 @@ export default function ProductoDetalle() {
 
       const [
         { data: productoData, error: errorProducto },
-        { data: coloresData, error: errorColores },
         { data: imagenesData, error: errorImagenes },
       ] = await Promise.all([
         supabase.from("productos").select("*").eq("id", id).single(),
-        supabase.from("producto_colores").select("*").eq("producto_id", id).order("orden"),
         supabase.from("producto_imagenes").select("*").eq("producto_id", id).order("orden"),
       ]);
 
@@ -48,10 +43,6 @@ export default function ProductoDetalle() {
         } else if (productoData?.imagen_recortada_url) {
           setImagenes([productoData.imagen_recortada_url]);
         }
-      }
-      if (!errorColores && coloresData?.length) {
-        setColores(coloresData);
-        setColorSeleccionado(coloresData[0]);
       }
       setCargando(false);
     }

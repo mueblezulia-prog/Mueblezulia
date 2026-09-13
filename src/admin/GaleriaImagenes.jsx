@@ -106,8 +106,6 @@ export default function GaleriaImagenes({ fotos, onChange }) {
         <div className="flex flex-col gap-3 border-t border-carbon-border pt-3">
           <ImageCropModule
             imagenOriginalUrl={editando.originalUrl}
-            aspecto={cropState.aspecto}
-            onAspectoChange={(aspecto) => setCropState((s) => ({ ...s, aspecto }))}
             onChange={(nuevo) => setCropState((s) => ({ ...s, ...nuevo }))}
           />
           {error && <p className="text-terracota text-base">{error}</p>}

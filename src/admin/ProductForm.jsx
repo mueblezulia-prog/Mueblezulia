@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 import { getCroppedImageBlob } from "../lib/cropImage";
 import ImageCropModule from "./ImageCropModule";
-import VariantManager from "./VariantManager";
 import GaleriaImagenes from "./GaleriaImagenes";
+import SelectorTelas from "./SelectorTelas";
 import PreviewModal from "./PreviewModal";
 
 const BUCKET = "productos";
@@ -40,11 +41,29 @@ export default function ProductForm({ productoExistente, onGuardado }) {
     aspecto: productoExistente?.crop_data?.aspecto ?? 4 / 5,
   });
 
-  const [variantes, setVariantes] = useState(productoExistente?.colores ?? []);
   const [fotos, setFotos] = useState([]);
+  const [telasSeleccionadas, setTelasSeleccionadas] = useState([]);
   const [previewAbierto, setPreviewAbierto] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [mensaje, setMensaje] = useState(null);
+
+  // Carga las telas ya asignadas a este producto al editarlo.
+  useEffect(() => {
+    if (!productoExistente?.id) return;
+    let activo = true;
+    supabase
+      .from("producto_colores")
+      .select("tela_id")
+      .eq("producto_id", productoExistente.id)
+      .then(({ data, error }) => {
+        if (activo && !error && data) {
+          setTelasSeleccionadas(data.map((f) => f.tela_id).filter(Boolean));
+        }
+      });
+    return () => {
+      activo = false;
+    };
+  }, [productoExistente?.id]);
 
   // Carga la galería existente (producto_imagenes) al editar un producto.
   useEffect(() => {
@@ -105,6 +124,18 @@ export default function ProductForm({ productoExistente, onGuardado }) {
   }
 
   async function handleGuardar() {
+    if (!titulo.trim()) {
+      setMensaje("Error: el título es obligatorio.");
+      return;
+    }
+    if (!precio || Number(precio) <= 0) {
+      setMensaje("Error: ingresa un precio válido (mayor a 0).");
+      return;
+    }
+    if (!imagenOriginalUrl) {
+      setMensaje("Error: sube al menos una foto principal.");
+      return;
+    }
     setGuardando(true);
     setMensaje(null);
     try {
@@ -136,16 +167,24 @@ export default function ProductForm({ productoExistente, onGuardado }) {
         productoId = data.id;
       }
 
-      // Reemplaza las variantes de color del producto (borra + inserta, sencillo para Fase 1)
+      // Reemplaza las telas asignadas a este producto (borra + inserta,
+      // copiando nombre/hex del catálogo global para que el detalle del
+      // cliente no tenga que ir a buscarlos aparte).
       await supabase.from("producto_colores").delete().eq("producto_id", productoId);
-      if (variantes.length) {
-        const filas = variantes.map((v, i) => ({
+      if (telasSeleccionadas.length) {
+        const { data: telasData, error: errorTelas } = await supabase
+          .from("telas")
+          .select("*")
+          .in("id", telasSeleccionadas);
+        if (errorTelas) throw errorTelas;
+        const filasColores = (telasData ?? []).map((tela, i) => ({
           producto_id: productoId,
-          nombre: v.nombre,
-          hex: v.hex,
+          tela_id: tela.id,
+          nombre: tela.nombre,
+          hex: tela.hex,
           orden: i,
         }));
-        const { error } = await supabase.from("producto_colores").insert(filas);
+        const { error } = await supabase.from("producto_colores").insert(filasColores);
         if (error) throw error;
       }
 
@@ -173,10 +212,15 @@ export default function ProductForm({ productoExistente, onGuardado }) {
 
   return (
     <div className="max-w-5xl mx-auto p-6 flex flex-col gap-8">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-extrabold text-ink">
-          {productoExistente ? `${titulo || "Editar producto"}` : "Nuevo producto"}
-        </h1>
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <Link to="/admin/productos" className="text-sm text-ink-muted hover:text-ink font-semibold">
+            ← Muebles
+          </Link>
+          <h1 className="text-2xl font-extrabold text-ink">
+            {productoExistente ? `${titulo || "Editar producto"}` : "Nuevo producto"}
+          </h1>
+        </div>
         <div className="flex gap-3">
           <button
             type="button"
@@ -211,8 +255,6 @@ export default function ProductForm({ productoExistente, onGuardado }) {
 
           <ImageCropModule
             imagenOriginalUrl={imagenOriginalUrl}
-            aspecto={cropState.aspecto}
-            onAspectoChange={(aspecto) => setCropState((s) => ({ ...s, aspecto }))}
             onChange={(nuevo) => setCropState((s) => ({ ...s, ...nuevo }))}
           />
         </div>
@@ -280,7 +322,7 @@ export default function ProductForm({ productoExistente, onGuardado }) {
             />
           </Campo>
 
-          <VariantManager variantes={variantes} onChange={setVariantes} />
+          <SelectorTelas seleccionadas={telasSeleccionadas} onChange={setTelasSeleccionadas} />
 
           <GaleriaImagenes fotos={fotos} onChange={setFotos} />
         </div>

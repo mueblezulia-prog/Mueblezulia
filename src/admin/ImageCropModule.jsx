@@ -3,13 +3,8 @@ import Cropper from "react-easy-crop";
 
 /**
  * Módulo de recorte y escala para el panel de administrador.
- *
- * - `imagenOriginalUrl`: la foto tal cual la subió el admin (sin recortar).
- * - `aspecto`: relación de ancho/alto libre que el admin puede fijar
- *   (ej. 4/5 vertical, 1/1 cuadrado, 4/3). null = recorte libre.
- * - `onChange(cropState)`: se dispara en cada cambio con
- *   { crop, zoom, croppedAreaPixels } para que el formulario padre
- *   guarde el estado más reciente (y lo use al presionar "Guardar").
+ * Recorte fijo en vertical (4:5) — la misma proporción que usa la
+ * tarjeta del catálogo, para que todas las fotos se vean parejas.
  *
  * Este componente NO sube nada a Supabase por sí mismo — solo calcula
  * los parámetros de recorte. La subida del blob recortado ocurre en
@@ -17,12 +12,11 @@ import Cropper from "react-easy-crop";
  */
 export default function ImageCropModule({
   imagenOriginalUrl,
-  aspecto = 4 / 5,
-  onAspectoChange,
   cropInicial = { x: 0, y: 0 },
   zoomInicial = 1,
   onChange,
 }) {
+  const aspecto = 4 / 5;
   const [crop, setCrop] = useState(cropInicial);
   const [zoom, setZoom] = useState(zoomInicial);
 
@@ -72,26 +66,6 @@ export default function ImageCropModule({
           onChange={(e) => setZoom(Number(e.target.value))}
           className="w-full accent-gold h-6"
         />
-      </div>
-
-      <div className="flex gap-2">
-        {[
-          { label: "Vertical", valor: 4 / 5 },
-          { label: "Cuadrado", valor: 1 },
-          { label: "Horizontal", valor: 4 / 3 },
-        ].map((opcion) => (
-          <button
-            key={opcion.label}
-            type="button"
-            onClick={() => onAspectoChange?.(opcion.valor)}
-            className={`min-h-tap px-4 rounded-control border text-base font-semibold
-              ${aspecto === opcion.valor
-                ? "bg-gold text-carbon border-gold"
-                : "bg-transparent text-ink border-carbon-border"}`}
-          >
-            {opcion.label}
-          </button>
-        ))}
       </div>
     </div>
   );
