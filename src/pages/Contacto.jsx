@@ -13,14 +13,16 @@ export default function Contacto() {
   return (
     <div>
       {/* NUESTRA SEDE */}
-      <section className="px-4 py-10 max-w-5xl mx-auto">
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-gold text-center mb-6">
-          Nuestra Sede
-        </h1>
+      <section className="max-w-5xl mx-auto">
+        <div className="bg-gold py-3 mb-6">
+          <h1 className="text-center text-carbon font-extrabold text-xl sm:text-2xl uppercase tracking-wide">
+            Nuestra Sede
+          </h1>
+        </div>
 
-        <div className="grid sm:grid-cols-2 gap-4 items-stretch">
+        <div className="px-4 grid sm:grid-cols-2 gap-4 items-stretch">
           <img
-            src="/assets/fachada.jpg"
+            src="/assets/ubicacion.jpg"
             alt="Fachada de Muebles Zulia"
             className="w-full h-56 sm:h-full object-cover rounded-card border border-carbon-border"
           />
@@ -41,13 +43,15 @@ export default function Contacto() {
           </div>
         </div>
 
-        <div className="mt-4 rounded-card overflow-hidden border border-carbon-border h-64">
-          <iframe
-            title="Ubicación de Muebles Zulia"
-            src={MAPS_EMBED_SRC}
-            className="w-full h-full border-0"
-            loading="lazy"
-          />
+        <div className="px-4">
+          <div className="mt-4 rounded-card overflow-hidden border border-carbon-border h-64">
+            <iframe
+              title="Ubicación de Muebles Zulia"
+              src={MAPS_EMBED_SRC}
+              className="w-full h-full border-0"
+              loading="lazy"
+            />
+          </div>
         </div>
       </section>
 

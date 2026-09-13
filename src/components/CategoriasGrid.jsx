@@ -3,19 +3,25 @@ import { supabase } from "../lib/supabaseClient";
 
 // Categorías por defecto que se muestran mientras no haya datos reales en
 // Supabase, o si una categoría todavía no tiene imagen cargada desde el
-// panel admin. Se marcan como "placeholder": true porque no tienen un id
-// numérico real de la base de datos, así que no se usan para filtrar
-// (evita el error "invalid input syntax for type integer").
+// panel admin. Cada una tiene su propia página dedicada en /categoria/:slug
+// (ver src/pages/CategoriaPagina.jsx), así que sí son "clicables" incluso
+// sin id numérico real — solo se comportan distinto al filtro por id.
 const CATEGORIAS_PLACEHOLDER = [
-  { id: "modulares", nombre: "Modulares", placeholder: true },
-  { id: "comedores", nombre: "Comedores", placeholder: true },
-  { id: "dormitorios", nombre: "Dormitorios", placeholder: true },
-  { id: "mesa-centro", nombre: "Mesa de Centro", placeholder: true },
-  { id: "reflejos", nombre: "Colección de Reflejos", placeholder: true },
-  { id: "mueble-tv", nombre: "Mueble TV", placeholder: true },
+  { id: "modulares", nombre: "Modulares", imagen: "/assets/categorias/modulares.jpg" },
+  { id: "comedores", nombre: "Comedores", imagen: "/assets/categorias/comedores.jpg" },
+  { id: "dormitorios", nombre: "Dormitorios", imagen: "/assets/categorias/dormitorios.jpg" },
+  { id: "mesa-centro", nombre: "Mesa de Centro", imagen: "/assets/categorias/mesa-centro.jpg" },
+  { id: "reflejos", nombre: "Colección de Reflejos", imagen: "/assets/categorias/reflejos.jpg" },
+  { id: "mueble-tv", nombre: "Mueble TV", imagen: "/assets/categorias/mueble-tv.jpg" },
 ];
 
-export default function CategoriasGrid({ onSeleccionar, categoriaActivaId, titulo = "¿Cuál te llevas a Casa?" }) {
+/**
+ * Grilla de categorías reutilizable.
+ * `onCategoriaClick(cat)` recibe el objeto categoría completo ({id, nombre,
+ * imagen}) — cada página decide qué hacer al hacer clic (ir a una página
+ * dedicada, filtrar in-place, etc.), esta grilla no asume nada de eso.
+ */
+export default function CategoriasGrid({ onCategoriaClick, categoriaActivaId, titulo = "¿Cuál te llevas a Casa?" }) {
   const [categorias, setCategorias] = useState(CATEGORIAS_PLACEHOLDER);
 
   useEffect(() => {
@@ -47,14 +53,12 @@ export default function CategoriasGrid({ onSeleccionar, categoriaActivaId, titul
           return (
             <button
               key={cat.id}
-              onClick={() => !cat.placeholder && onSeleccionar?.(activa ? null : cat.id)}
-              title={cat.placeholder ? "Agrega esta categoría en el Panel Admin para poder filtrar por ella" : undefined}
+              onClick={() => onCategoriaClick?.(cat)}
               className={[
-                "relative rounded-card overflow-hidden aspect-[4/3] flex items-end p-3 text-left border transition-colors",
+                "relative rounded-card overflow-hidden aspect-[4/3] flex items-end p-3 text-left border transition-colors cursor-pointer",
                 activa
                   ? "border-gold ring-2 ring-gold"
                   : "border-carbon-border hover:border-ink-muted",
-                cat.placeholder ? "cursor-default" : "cursor-pointer",
               ].join(" ")}
               style={
                 cat.imagen

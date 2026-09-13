@@ -4,6 +4,7 @@ import BottomNav from "./components/BottomNav";
 import AdminHeader from "./admin/AdminHeader";
 import Home from "./pages/Home";
 import CatalogoProductos from "./pages/CatalogoProductos";
+import CategoriaPagina from "./pages/CategoriaPagina";
 import ProductoDetalle from "./pages/ProductoDetalle";
 import Fabricacion from "./pages/Fabricacion";
 import Contacto from "./pages/Contacto";
@@ -23,6 +24,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/catalogo" element={<CatalogoProductos />} />
+          <Route path="/categoria/:slug" element={<CategoriaPagina />} />
           <Route path="/producto/:id" element={<ProductoDetalle />} />
           <Route path="/fabricacion" element={<Fabricacion />} />
           <Route path="/contacto" element={<Contacto />} />

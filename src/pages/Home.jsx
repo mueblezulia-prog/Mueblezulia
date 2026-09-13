@@ -13,7 +13,7 @@ export default function Home() {
           no se filtra en la misma página. */}
       <div id="catalogo" className="px-4 py-6 max-w-6xl mx-auto scroll-mt-16">
         <CategoriasGrid
-          onSeleccionar={(id) => navigate(id ? `/catalogo?categoria=${id}` : "/catalogo")}
+          onCategoriaClick={(cat) => navigate(`/categoria/${cat.id}`)}
         />
         <div className="text-center">
           <Link
@@ -26,9 +26,13 @@ export default function Home() {
       </div>
 
       {/* NUESTRA SEDE (resumen — la versión completa vive en /contacto) */}
-      <section className="px-4 py-10 max-w-5xl mx-auto border-t border-carbon-border">
-        <h2 className="text-2xl font-extrabold text-gold text-center mb-6">Nuestra Sede</h2>
-        <div className="grid sm:grid-cols-2 gap-4 items-center">
+      <section className="pb-10 max-w-5xl mx-auto border-t border-carbon-border">
+        <div className="bg-gold py-3 mb-6">
+          <h2 className="text-center text-carbon font-extrabold text-xl uppercase tracking-wide">
+            Nuestra Sede
+          </h2>
+        </div>
+        <div className="px-4 grid sm:grid-cols-2 gap-4 items-center">
           <img
             src="/assets/ubicacion.jpg"
             alt="Fachada de Muebles Zulia"
@@ -51,11 +55,13 @@ export default function Home() {
       </section>
 
       {/* EXCELENCIA EN MANUFACTURA (resumen — versión completa en /fabricacion) */}
-      <section className="px-4 py-10 max-w-5xl mx-auto border-t border-carbon-border">
-        <h2 className="text-2xl font-extrabold text-ink text-center mb-6">
-          Excelencia en Manufactura
-        </h2>
-        <div className="grid sm:grid-cols-2 gap-4 items-center">
+      <section className="pb-10 max-w-5xl mx-auto border-t border-carbon-border">
+        <div className="bg-ink py-3 mb-6">
+          <h2 className="text-center text-carbon font-extrabold text-xl uppercase tracking-wide">
+            Excelencia en Manufactura
+          </h2>
+        </div>
+        <div className="px-4 grid sm:grid-cols-2 gap-4 items-center">
           <img
             src="/assets/taller.jpg"
             alt="Artesano trabajando en el taller de Muebles Zulia"

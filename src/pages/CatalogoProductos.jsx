@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 import ProductCard from "../components/ProductCard";
 import CategoriasGrid from "../components/CategoriasGrid";
 
 export default function CatalogoProductos() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const categoriaId = searchParams.get("categoria");
 
   const [productos, setProductos] = useState([]);
@@ -51,11 +52,19 @@ export default function CatalogoProductos() {
     };
   }, [categoriaId]);
 
-  function seleccionarCategoria(id) {
-    if (id == null) {
-      setSearchParams({});
+  function alHacerClicCategoria(cat) {
+    // Categorías reales de Supabase (id numérico): filtran la grilla de
+    // productos en esta misma página. Categorías de ejemplo (slug de texto,
+    // sin productos reales todavía): llevan a su página de presentación.
+    if (Number.isFinite(Number(cat.id))) {
+      const yaActiva = String(categoriaId) === String(cat.id);
+      if (yaActiva) {
+        setSearchParams({});
+      } else {
+        setSearchParams({ categoria: cat.id });
+      }
     } else {
-      setSearchParams({ categoria: id });
+      navigate(`/categoria/${cat.id}`);
     }
   }
 
@@ -73,7 +82,7 @@ export default function CatalogoProductos() {
     <div className="px-4 py-6 max-w-6xl mx-auto">
       <h1 className="text-3xl font-extrabold text-ink mb-6">Catálogo</h1>
 
-      <CategoriasGrid onSeleccionar={seleccionarCategoria} categoriaActivaId={categoriaId} />
+      <CategoriasGrid onCategoriaClick={alHacerClicCategoria} categoriaActivaId={categoriaId} />
 
       {cargando && (
         <p className="text-center text-ink-muted text-lg py-16">Cargando catálogo…</p>
