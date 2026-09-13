@@ -30,6 +30,20 @@ create table if not exists categorias (
 );
 alter table categorias add column if not exists imagen text;
 
+-- Categorías reales (coinciden con los slugs que ya usa el sitio en
+-- CategoriasGrid.jsx / CategoriaPagina.jsx). Sin estas filas, las páginas
+-- de categoría no tienen forma de saber qué productos son de cada línea.
+-- Es seguro volver a correr este INSERT — "on conflict" no duplica nada.
+insert into categorias (nombre, slug, orden)
+values
+  ('Modulares', 'modulares', 1),
+  ('Comedores', 'comedores', 2),
+  ('Dormitorios', 'dormitorios', 3),
+  ('Mesa de Centro', 'mesa-centro', 4),
+  ('Colección de Reflejos', 'reflejos', 5),
+  ('Mueble TV', 'mueble-tv', 6)
+on conflict (slug) do nothing;
+
 -- ------------------------------------------------------------
 -- PRODUCTOS (esquema nuevo de la Fase 1)
 -- ------------------------------------------------------------

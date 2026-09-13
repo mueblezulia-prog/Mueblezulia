@@ -80,8 +80,9 @@ export default function ProductoDetalle() {
     );
   }
 
+  const linkProducto = `${window.location.origin}/producto/${producto.id}`;
   const mensajeWhatsApp = encodeURIComponent(
-    `Hola, estoy preguntando por: ${producto.titulo}`
+    `Hola, estoy preguntando por: ${producto.titulo}\n${linkProducto}`
   );
   const linkWhatsApp = `https://wa.me/${WHATSAPP_NUMERO}?text=${mensajeWhatsApp}`;
 

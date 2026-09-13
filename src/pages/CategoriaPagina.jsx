@@ -1,61 +1,82 @@
+import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
+import { supabase } from "../lib/supabaseClient";
+import ProductCard from "../components/ProductCard";
 
-// Contenido de cada categoría: título de la franja (banner), emoji/ícono y
-// las fotos de la galería. "Mueble TV" no tiene fotos propias todavía —
-// se sube desde el Panel Admin cuando haya productos reales de esa línea.
-const CATEGORIAS = {
-  modulares: {
-    nombre: "Modulares",
-    banner: "Confort Total",
-    icono: "🛋️",
-    fotos: ["1", "2", "3", "4"],
-  },
-  comedores: {
-    nombre: "Comedores",
-    banner: "El Arte de Compartir",
-    icono: "🍽️",
-    fotos: ["1", "2", "3", "4"],
-  },
-  dormitorios: {
-    nombre: "Dormitorios",
-    banner: "Descansa Como Mereces",
-    icono: "🛏️",
-    fotos: ["1", "2", "3", "4"],
-  },
-  "mesa-centro": {
-    nombre: "Mesa de Centro",
-    banner: "El Centro de tu Sala",
-    icono: "🪑",
-    fotos: ["1", "2", "3", "4"],
-  },
-  reflejos: {
-    nombre: "Colección de Reflejos",
-    banner: "Detalles que Iluminan",
-    icono: "🪞",
-    fotos: ["1", "2", "3"],
-  },
-  "mueble-tv": {
-    nombre: "Mueble TV",
-    banner: "Entretenimiento en Casa",
-    icono: "📺",
-    fotos: [],
-  },
+// Solo para el banner (título + ícono) mientras la categoría no tenga
+// todavía una fila real en Supabase. En cuanto exista en la tabla
+// "categorias" (Panel Admin), el nombre real la reemplaza automáticamente.
+const BANNERS = {
+  modulares: { banner: "Confort Total", icono: "🛋️" },
+  comedores: { banner: "El Arte de Compartir", icono: "🍽️" },
+  dormitorios: { banner: "Descansa Como Mereces", icono: "🛏️" },
+  "mesa-centro": { banner: "El Centro de tu Sala", icono: "🪑" },
+  reflejos: { banner: "Detalles que Iluminan", icono: "🪞" },
+  "mueble-tv": { banner: "Entretenimiento en Casa", icono: "📺" },
 };
 
 export default function CategoriaPagina() {
   const { slug } = useParams();
-  const categoria = CATEGORIAS[slug];
+  const [categoria, setCategoria] = useState(null);
+  const [productos, setProductos] = useState([]);
+  const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState(null);
 
-  if (!categoria) {
-    return (
-      <div className="px-4 py-16 text-center">
-        <p className="text-xl text-ink-muted mb-4">Categoría no encontrada.</p>
-        <Link to="/catalogo" className="text-gold font-bold">
-          Ver catálogo completo
-        </Link>
-      </div>
-    );
-  }
+  useEffect(() => {
+    let activo = true;
+
+    async function cargar() {
+      setCargando(true);
+      setError(null);
+
+      const { data: categoriaData, error: errorCategoria } = await supabase
+        .from("categorias")
+        .select("*")
+        .eq("slug", slug)
+        .maybeSingle();
+
+      if (!activo) return;
+
+      if (errorCategoria) {
+        setError(errorCategoria.message);
+        setCargando(false);
+        return;
+      }
+      setCategoria(categoriaData);
+
+      // Todavía no existe esta categoría en Supabase (falta crearla desde
+      // el Panel Admin) — no hay cómo saber qué productos son de esta
+      // línea, así que se muestra la página vacía en vez de adivinar.
+      if (!categoriaData) {
+        setProductos([]);
+        setCargando(false);
+        return;
+      }
+
+      const { data: productosData, error: errorProductos } = await supabase
+        .from("productos")
+        .select("*")
+        .eq("categoria_id", categoriaData.id)
+        .eq("activo", true)
+        .order("orden", { ascending: true });
+
+      if (!activo) return;
+      if (errorProductos) {
+        setError(errorProductos.message);
+      } else {
+        setProductos(productosData ?? []);
+      }
+      setCargando(false);
+    }
+
+    cargar();
+    return () => {
+      activo = false;
+    };
+  }, [slug]);
+
+  const bannerInfo = BANNERS[slug] ?? { banner: categoria?.nombre ?? "Catálogo", icono: "🪑" };
+  const nombreCategoria = categoria?.nombre ?? bannerInfo.banner;
 
   return (
     <div className="px-4 py-6 max-w-5xl mx-auto">
@@ -67,26 +88,32 @@ export default function CategoriaPagina() {
       </Link>
 
       <div className="bg-gold text-carbon rounded-control px-5 py-3 mb-6 flex items-center gap-3">
-        <span className="text-2xl">{categoria.icono}</span>
-        <h1 className="text-xl sm:text-2xl font-extrabold">{categoria.banner}</h1>
+        <span className="text-2xl">{bannerInfo.icono}</span>
+        <h1 className="text-xl sm:text-2xl font-extrabold">{bannerInfo.banner}</h1>
       </div>
 
-      {categoria.fotos.length > 0 ? (
-        <div className="grid grid-cols-2 gap-3 sm:gap-4">
-          {categoria.fotos.map((n) => (
-            <div key={n} className="rounded-card overflow-hidden border border-carbon-border aspect-square">
-              <img
-                src={`/assets/categorias/galeria/${slug}/${n}.jpg`}
-                alt={categoria.nombre}
-                className="w-full h-full object-cover"
-              />
-            </div>
+      {cargando && (
+        <p className="text-center text-ink-muted text-lg py-16">Cargando…</p>
+      )}
+
+      {!cargando && error && (
+        <p className="text-center text-terracota text-lg py-16">
+          No se pudo cargar: {error}
+        </p>
+      )}
+
+      {!cargando && !error && productos.length === 0 && (
+        <p className="text-center text-ink-muted text-lg py-16">
+          Todavía no hay productos de {nombreCategoria} cargados — pronto agregamos piezas de esta línea.
+        </p>
+      )}
+
+      {!cargando && !error && productos.length > 0 && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+          {productos.map((producto) => (
+            <ProductCard key={producto.id} producto={producto} />
           ))}
         </div>
-      ) : (
-        <p className="text-center text-ink-muted text-lg py-16">
-          Todavía no hay fotos de {categoria.nombre} — pronto agregamos productos de esta línea.
-        </p>
       )}
 
       <div className="text-center mt-8">

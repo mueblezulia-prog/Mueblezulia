@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { getCroppedImageBlob } from "../lib/cropImage";
 import ImageCropModule from "./ImageCropModule";
 import VariantManager from "./VariantManager";
+import GaleriaImagenes from "./GaleriaImagenes";
 import PreviewModal from "./PreviewModal";
 
 const BUCKET = "productos";
@@ -16,6 +17,19 @@ export default function ProductForm({ productoExistente, onGuardado }) {
   const [precio, setPrecio] = useState(productoExistente?.precio ?? "");
   const [descripcionCorta, setDescripcionCorta] = useState(productoExistente?.descripcion_corta ?? "");
   const [descripcionLarga, setDescripcionLarga] = useState(productoExistente?.descripcion_larga ?? "");
+  const [medida, setMedida] = useState(productoExistente?.medida ?? "");
+  const [categoriaId, setCategoriaId] = useState(productoExistente?.categoria_id ?? "");
+  const [categorias, setCategorias] = useState([]);
+
+  useEffect(() => {
+    supabase
+      .from("categorias")
+      .select("id, nombre")
+      .order("orden")
+      .then(({ data, error }) => {
+        if (!error && data) setCategorias(data);
+      });
+  }, []);
 
   const [imagenOriginalUrl, setImagenOriginalUrl] = useState(productoExistente?.imagen_original_url ?? null);
   const [imagenOriginalFile, setImagenOriginalFile] = useState(null);
@@ -27,9 +41,27 @@ export default function ProductForm({ productoExistente, onGuardado }) {
   });
 
   const [variantes, setVariantes] = useState(productoExistente?.colores ?? []);
+  const [fotos, setFotos] = useState([]);
   const [previewAbierto, setPreviewAbierto] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [mensaje, setMensaje] = useState(null);
+
+  // Carga la galería existente (producto_imagenes) al editar un producto.
+  useEffect(() => {
+    if (!productoExistente?.id) return;
+    let activo = true;
+    supabase
+      .from("producto_imagenes")
+      .select("*")
+      .eq("producto_id", productoExistente.id)
+      .order("orden")
+      .then(({ data, error }) => {
+        if (activo && !error && data) setFotos(data);
+      });
+    return () => {
+      activo = false;
+    };
+  }, [productoExistente?.id]);
 
   function handleSubirImagen(e) {
     const file = e.target.files?.[0];
@@ -84,6 +116,8 @@ export default function ProductForm({ productoExistente, onGuardado }) {
         precio: Number(precio),
         descripcion_corta: descripcionCorta,
         descripcion_larga: descripcionLarga,
+        medida: medida || null,
+        categoria_id: categoriaId ? Number(categoriaId) : null,
         imagen_original_url: urlOriginal,
         imagen_recortada_url: urlRecortada,
         crop_data: {
@@ -112,6 +146,19 @@ export default function ProductForm({ productoExistente, onGuardado }) {
           orden: i,
         }));
         const { error } = await supabase.from("producto_colores").insert(filas);
+        if (error) throw error;
+      }
+
+      // Reemplaza la galería de fotos del producto (las fotos ya están
+      // subidas a Storage — aquí solo se guarda la lista final + orden).
+      await supabase.from("producto_imagenes").delete().eq("producto_id", productoId);
+      if (fotos.length) {
+        const filasFotos = fotos.map((f, i) => ({
+          producto_id: productoId,
+          url: f.url,
+          orden: i,
+        }));
+        const { error } = await supabase.from("producto_imagenes").insert(filasFotos);
         if (error) throw error;
       }
 
@@ -192,6 +239,29 @@ export default function ProductForm({ productoExistente, onGuardado }) {
             />
           </Campo>
 
+          <Campo label="Medida (opcional)">
+            <input
+              type="text"
+              value={medida}
+              onChange={(e) => setMedida(e.target.value)}
+              placeholder="Ej: 180cm x 90cm x 80cm"
+              className="campo-input"
+            />
+          </Campo>
+
+          <Campo label="Categoría">
+            <select
+              value={categoriaId}
+              onChange={(e) => setCategoriaId(e.target.value)}
+              className="campo-input"
+            >
+              <option value="">Sin categoría</option>
+              {categorias.map((c) => (
+                <option key={c.id} value={c.id}>{c.nombre}</option>
+              ))}
+            </select>
+          </Campo>
+
           <Campo label="Descripción Corta">
             <textarea
               rows={3}
@@ -211,6 +281,8 @@ export default function ProductForm({ productoExistente, onGuardado }) {
           </Campo>
 
           <VariantManager variantes={variantes} onChange={setVariantes} />
+
+          <GaleriaImagenes fotos={fotos} onChange={setFotos} />
         </div>
       </div>
 
