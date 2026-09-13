@@ -15,7 +15,7 @@ const CATEGORIAS_PLACEHOLDER = [
   { id: "mueble-tv", nombre: "Mueble TV", placeholder: true },
 ];
 
-export default function CategoriasGrid({ onSeleccionar, categoriaActivaId }) {
+export default function CategoriasGrid({ onSeleccionar, categoriaActivaId, titulo = "¿Cuál te llevas a Casa?" }) {
   const [categorias, setCategorias] = useState(CATEGORIAS_PLACEHOLDER);
 
   useEffect(() => {
@@ -38,12 +38,12 @@ export default function CategoriasGrid({ onSeleccionar, categoriaActivaId }) {
 
   return (
     <div className="mb-8">
-      <h2 className="text-xl sm:text-2xl font-extrabold text-ink mb-4">
-        ¿Cuál te llevas a Casa?
-      </h2>
+      <h2 className="text-xl sm:text-2xl font-extrabold text-ink mb-4">{titulo}</h2>
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
         {categorias.map((cat) => {
-          const activa = categoriaActivaId === cat.id;
+          // Comparación como texto: categoriaActivaId puede venir de la URL
+          // (siempre string) mientras que cat.id puede ser number desde Supabase.
+          const activa = categoriaActivaId != null && String(categoriaActivaId) === String(cat.id);
           return (
             <button
               key={cat.id}

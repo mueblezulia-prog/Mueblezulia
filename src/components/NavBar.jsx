@@ -1,7 +1,8 @@
 import { NavLink } from "react-router-dom";
 
 const TABS = [
-  { to: "/", label: "Catálogo", end: true },
+  { to: "/", label: "Inicio", end: true },
+  { to: "/catalogo", label: "Catálogo" },
   { to: "/fabricacion", label: "Fabricación" },
   { to: "/contacto", label: "Contacto" },
 ];
@@ -10,11 +11,14 @@ export default function NavBar() {
   return (
     <header className="bg-carbon border-b border-carbon-border sticky top-0 z-20">
       <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
-        <NavLink to="/" className="text-lg sm:text-xl font-extrabold text-ink shrink-0">
-          Mueble Zulia
+        <NavLink to="/" className="flex items-center gap-2 shrink-0">
+          <img src="/assets/logo.png" alt="" className="w-8 h-8 object-contain" />
+          <span className="text-lg sm:text-xl font-extrabold text-ink">Mueble Zulia</span>
         </NavLink>
 
-        <nav className="flex items-center gap-1 sm:gap-2 overflow-x-auto no-scrollbar">
+        {/* En móvil la navegación vive en la barra inferior (BottomNav);
+            estas pestañas de arriba solo se muestran en pantallas grandes. */}
+        <nav className="hidden sm:flex items-center gap-1 sm:gap-2 overflow-x-auto no-scrollbar">
           {TABS.map((tab) => (
             <NavLink
               key={tab.to}

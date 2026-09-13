@@ -1,13 +1,16 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 import ProductCard from "../components/ProductCard";
 import CategoriasGrid from "../components/CategoriasGrid";
 
-export default function Catalogo() {
+export default function CatalogoProductos() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const categoriaId = searchParams.get("categoria");
+
   const [productos, setProductos] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
-  const [categoriaId, setCategoriaId] = useState(null);
 
   useEffect(() => {
     let activo = true;
@@ -22,7 +25,9 @@ export default function Catalogo() {
           .eq("activo", true)
           .order("orden", { ascending: true });
 
-        if (categoriaId) query = query.eq("categoria_id", categoriaId);
+        if (categoriaId != null && Number.isFinite(Number(categoriaId))) {
+          query = query.eq("categoria_id", Number(categoriaId));
+        }
 
         const { data, error } = await query;
 
@@ -46,6 +51,14 @@ export default function Catalogo() {
     };
   }, [categoriaId]);
 
+  function seleccionarCategoria(id) {
+    if (id == null) {
+      setSearchParams({});
+    } else {
+      setSearchParams({ categoria: id });
+    }
+  }
+
   function handleComprar(producto) {
     // Fase 1: placeholder — se conecta al flujo de carrito/checkout existente
     console.log("Comprar ahora:", producto.id);
@@ -58,9 +71,9 @@ export default function Catalogo() {
 
   return (
     <div className="px-4 py-6 max-w-6xl mx-auto">
-      <CategoriasGrid onSeleccionar={setCategoriaId} categoriaActivaId={categoriaId} />
-
       <h1 className="text-3xl font-extrabold text-ink mb-6">Catálogo</h1>
+
+      <CategoriasGrid onSeleccionar={seleccionarCategoria} categoriaActivaId={categoriaId} />
 
       {cargando && (
         <p className="text-center text-ink-muted text-lg py-16">Cargando catálogo…</p>
