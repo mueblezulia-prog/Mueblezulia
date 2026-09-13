@@ -70,6 +70,14 @@ export default function ProductoDetalle() {
     setIndiceImagen(i);
   }
 
+  function irAImagen(i) {
+    const el = scrollRef.current;
+    if (!el) return;
+    const destino = Math.max(0, Math.min(i, imagenes.length - 1));
+    el.scrollTo({ left: destino * el.clientWidth, behavior: "smooth" });
+    setIndiceImagen(destino);
+  }
+
   if (cargando) {
     return <p className="text-center text-ink-muted text-lg py-16">Cargando…</p>;
   }
@@ -101,29 +109,63 @@ export default function ProductoDetalle() {
 
       {/* Galería deslizable: si el mueble tiene varias fotos (cargadas
           desde el Panel Admin en producto_imagenes), aquí se pueden
-          deslizar con el dedo. Los puntos de abajo indican cuál se ve. */}
-      <div
-        ref={scrollRef}
-        onScroll={alHacerScroll}
-        className="flex overflow-x-auto snap-x snap-mandatory no-scrollbar"
-      >
-        {imagenes.map((url, i) => (
-          <img
-            key={i}
-            src={url}
-            alt={`${producto.titulo} — foto ${i + 1}`}
-            className="w-full shrink-0 snap-center object-cover"
-          />
-        ))}
+          deslizar con el dedo o usar las flechas. Los puntos de abajo
+          indican cuál se ve. */}
+      <div className="relative">
+        <div
+          ref={scrollRef}
+          onScroll={alHacerScroll}
+          className="flex overflow-x-auto snap-x snap-mandatory no-scrollbar"
+        >
+          {imagenes.map((url, i) => (
+            <img
+              key={i}
+              src={url}
+              alt={`${producto.titulo} — foto ${i + 1}`}
+              className="w-full shrink-0 snap-center object-cover"
+            />
+          ))}
+        </div>
+
+        {imagenes.length > 1 && (
+          <>
+            {indiceImagen > 0 && (
+              <button
+                type="button"
+                onClick={() => irAImagen(indiceImagen - 1)}
+                aria-label="Foto anterior"
+                className="absolute left-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/50 text-white flex items-center justify-center text-xl backdrop-blur"
+              >
+                ‹
+              </button>
+            )}
+            {indiceImagen < imagenes.length - 1 && (
+              <button
+                type="button"
+                onClick={() => irAImagen(indiceImagen + 1)}
+                aria-label="Foto siguiente"
+                className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/50 text-white flex items-center justify-center text-xl backdrop-blur"
+              >
+                ›
+              </button>
+            )}
+            <span className="absolute top-2 right-2 bg-black/50 text-white text-xs font-bold px-2 py-0.5 rounded-full backdrop-blur">
+              {indiceImagen + 1}/{imagenes.length}
+            </span>
+          </>
+        )}
       </div>
 
       {imagenes.length > 1 && (
         <div className="flex justify-center gap-1.5 py-3">
           {imagenes.map((_, i) => (
-            <span
+            <button
               key={i}
+              type="button"
+              onClick={() => irAImagen(i)}
+              aria-label={`Ir a la foto ${i + 1}`}
               className={[
-                "w-2 h-2 rounded-full",
+                "w-2 h-2 rounded-full transition-colors",
                 i === indiceImagen ? "bg-gold" : "bg-carbon-border",
               ].join(" ")}
             />

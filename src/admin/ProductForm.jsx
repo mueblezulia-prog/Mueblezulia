@@ -132,6 +132,57 @@ export default function ProductForm({ productoExistente, onGuardado }) {
     };
   }
 
+  // Espera (con reintentos cortos) a que el producto recién creado sea
+  // visible antes de escribirle filas relacionadas (colores, fotos). Esto
+  // evita el error "violates foreign key constraint producto_colores_
+  // producto_id_fkey" si por cualquier motivo la fila tarda un instante en
+  // quedar visible para la siguiente petición.
+  async function esperarProductoVisible(id) {
+    for (let intento = 0; intento < 3; intento++) {
+      const { data } = await supabase.from("productos").select("id").eq("id", id).maybeSingle();
+      if (data) return true;
+      await new Promise((r) => setTimeout(r, 400));
+    }
+    return false;
+  }
+
+  // Reemplaza las telas asignadas a este producto (borra + inserta,
+  // copiando nombre/hex del catálogo global para que el detalle del
+  // cliente no tenga que ir a buscarlos aparte). Lanza si falla, pero
+  // no bloquea el guardado de las fotos (ver Promise.allSettled arriba).
+  async function guardarColores(productoId) {
+    await supabase.from("producto_colores").delete().eq("producto_id", productoId);
+    if (!telasSeleccionadas.length) return;
+    const { data: telasData, error: errorTelas } = await supabase
+      .from("telas")
+      .select("*")
+      .in("id", telasSeleccionadas);
+    if (errorTelas) throw errorTelas;
+    const filasColores = (telasData ?? []).map((tela, i) => ({
+      producto_id: productoId,
+      tela_id: tela.id,
+      nombre: tela.nombre,
+      hex: tela.hex,
+      orden: i,
+    }));
+    const { error } = await supabase.from("producto_colores").insert(filasColores);
+    if (error) throw error;
+  }
+
+  // Reemplaza la galería de fotos del producto (las fotos ya están subidas
+  // a Storage — aquí solo se guarda la lista final + orden).
+  async function guardarFotos(productoId) {
+    await supabase.from("producto_imagenes").delete().eq("producto_id", productoId);
+    if (!fotos.length) return;
+    const filasFotos = fotos.map((f, i) => ({
+      producto_id: productoId,
+      url: f.url,
+      orden: i,
+    }));
+    const { error } = await supabase.from("producto_imagenes").insert(filasFotos);
+    if (error) throw error;
+  }
+
   async function handleGuardar() {
     if (!titulo.trim()) {
       setMensaje("Error: el título es obligatorio.");
@@ -174,43 +225,34 @@ export default function ProductForm({ productoExistente, onGuardado }) {
         const { data, error } = await supabase.from("productos").insert(payload).select("id").single();
         if (error) throw error;
         productoId = data.id;
+        // Solo para productos nuevos: confirma que la fila ya es visible
+        // antes de intentar escribir colores/fotos que dependen de ella.
+        await esperarProductoVisible(productoId);
       }
 
-      // Reemplaza las telas asignadas a este producto (borra + inserta,
-      // copiando nombre/hex del catálogo global para que el detalle del
-      // cliente no tenga que ir a buscarlos aparte).
-      await supabase.from("producto_colores").delete().eq("producto_id", productoId);
-      if (telasSeleccionadas.length) {
-        const { data: telasData, error: errorTelas } = await supabase
-          .from("telas")
-          .select("*")
-          .in("id", telasSeleccionadas);
-        if (errorTelas) throw errorTelas;
-        const filasColores = (telasData ?? []).map((tela, i) => ({
-          producto_id: productoId,
-          tela_id: tela.id,
-          nombre: tela.nombre,
-          hex: tela.hex,
-          orden: i,
-        }));
-        const { error } = await supabase.from("producto_colores").insert(filasColores);
-        if (error) throw error;
+      // Colores y fotos se guardan por separado (Promise.allSettled): si uno
+      // de los dos falla, el otro se guarda igual — antes, un error en las
+      // telas impedía que las fotos de la galería llegaran a guardarse.
+      const [resultadoColores, resultadoFotos] = await Promise.allSettled([
+        guardarColores(productoId),
+        guardarFotos(productoId),
+      ]);
+
+      const advertencias = [];
+      if (resultadoColores.status === "rejected") {
+        advertencias.push(`colores (${resultadoColores.reason.message})`);
+      }
+      if (resultadoFotos.status === "rejected") {
+        advertencias.push(`fotos de la galería (${resultadoFotos.reason.message})`);
       }
 
-      // Reemplaza la galería de fotos del producto (las fotos ya están
-      // subidas a Storage — aquí solo se guarda la lista final + orden).
-      await supabase.from("producto_imagenes").delete().eq("producto_id", productoId);
-      if (fotos.length) {
-        const filasFotos = fotos.map((f, i) => ({
-          producto_id: productoId,
-          url: f.url,
-          orden: i,
-        }));
-        const { error } = await supabase.from("producto_imagenes").insert(filasFotos);
-        if (error) throw error;
+      if (advertencias.length) {
+        setMensaje(
+          `Guardado, pero no se pudo guardar: ${advertencias.join(" y ")}. Vuelve a intentar guardar en unos segundos.`
+        );
+      } else {
+        setMensaje("Guardado correctamente.");
       }
-
-      setMensaje("Guardado correctamente.");
       onGuardado?.(productoId);
     } catch (err) {
       setMensaje(`Error al guardar: ${err.message}`);
