@@ -2,17 +2,19 @@ import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 import ProductCard from "../components/ProductCard";
+import SectionBanner from "../components/SectionBanner";
 
 // Solo para el banner (título + ícono) mientras la categoría no tenga
 // todavía una fila real en Supabase. En cuanto exista en la tabla
 // "categorias" (Panel Admin), el nombre real la reemplaza automáticamente.
+// "tinte" alterna dorado/blanco entre categorías, como se pidió.
 const BANNERS = {
-  modulares: { banner: "Confort Total", icono: "🛋️" },
-  comedores: { banner: "El Arte de Compartir", icono: "🍽️" },
-  dormitorios: { banner: "Descansa Como Mereces", icono: "🛏️" },
-  "mesa-centro": { banner: "El Centro de tu Sala", icono: "🪑" },
-  reflejos: { banner: "Detalles que Iluminan", icono: "🪞" },
-  "mueble-tv": { banner: "Entretenimiento en Casa", icono: "📺" },
+  modulares: { banner: "Confort Total", icono: "🛋️", tinte: "dorado" },
+  comedores: { banner: "El Arte de Compartir", icono: "🍽️", tinte: "blanco" },
+  dormitorios: { banner: "Descansa Como Mereces", icono: "🛏️", tinte: "dorado" },
+  "mesa-centro": { banner: "El Centro de tu Sala", icono: "🪑", tinte: "blanco" },
+  reflejos: { banner: "Detalles que Iluminan", icono: "🪞", tinte: "dorado" },
+  "mueble-tv": { banner: "Entretenimiento en Casa", icono: "📺", tinte: "blanco" },
 };
 
 export default function CategoriaPagina() {
@@ -75,7 +77,7 @@ export default function CategoriaPagina() {
     };
   }, [slug]);
 
-  const bannerInfo = BANNERS[slug] ?? { banner: categoria?.nombre ?? "Catálogo", icono: "🪑" };
+  const bannerInfo = BANNERS[slug] ?? { banner: categoria?.nombre ?? "Catálogo", icono: "🪑", tinte: "dorado" };
   const nombreCategoria = categoria?.nombre ?? bannerInfo.banner;
 
   return (
@@ -89,19 +91,13 @@ export default function CategoriaPagina() {
         </Link>
       </div>
 
-      {/* Banner de borde a borde: el truco "left-1/2 -mx-[50vw] w-screen"
-          hace que este bloque ocupe todo el ancho de la pantalla sin
-          importar el max-w/padding del contenedor de arriba. */}
-      <div className="relative left-1/2 right-1/2 -mx-[50vw] w-screen overflow-hidden mb-6 py-8 px-4 flex items-center justify-center">
-        <div
-          className="absolute inset-0 bg-cover bg-center scale-110 blur-[3px]"
-          style={{ backgroundImage: "url(/assets/interior-tienda.jpg)" }}
+      <div className="mb-6">
+        <SectionBanner
+          titulo={bannerInfo.banner}
+          icono={bannerInfo.icono}
+          imagenFondo="/assets/interior-tienda.jpg"
+          tinte={bannerInfo.tinte}
         />
-        <div className="absolute inset-0 bg-carbon/50" />
-        <div className="relative glass-gold text-ink rounded-control px-5 py-3 flex items-center gap-3">
-          <span className="text-3xl leading-none">{bannerInfo.icono}</span>
-          <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight">{bannerInfo.banner}</h1>
-        </div>
       </div>
 
       <div className="px-4 max-w-5xl mx-auto">

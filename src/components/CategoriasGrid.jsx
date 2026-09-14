@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
+import SectionBanner from "./SectionBanner";
 
 // Categorías por defecto que se muestran mientras no haya datos reales en
 // Supabase, o si una categoría todavía no tiene imagen cargada desde el
@@ -44,19 +45,10 @@ export default function CategoriasGrid({ titulo = "¿Cuál te llevas a Casa?" })
 
   return (
     <div className="mb-8">
-      {/* Encabezado de borde a borde, con foto real de la tienda de fondo
-          (difuminada). El truco "left-1/2 -mx-[50vw] w-screen" hace que
-          este bloque ocupe todo el ancho de la pantalla sin importar el
-          max-w/padding del contenedor donde se use (Home o Catálogo). */}
-      <div className="relative left-1/2 right-1/2 -mx-[50vw] w-screen overflow-hidden mb-4 py-8 px-4 flex items-center justify-center min-h-[110px]">
-        <div
-          className="absolute inset-0 bg-cover bg-center scale-110 blur-[3px]"
-          style={{ backgroundImage: "url(/assets/interior-tienda.jpg)" }}
-        />
-        <div className="absolute inset-0 glass-gold" />
-        <h2 className="relative text-ink font-extrabold text-xl sm:text-2xl text-center drop-shadow-md">
-          {titulo}
-        </h2>
+      {/* Encabezado de borde a borde, con foto real de la sala de
+          exhibición de fondo (difuminada, efecto gaussiano). */}
+      <div className="mb-4">
+        <SectionBanner titulo={titulo} imagenFondo="/assets/interior-tienda.jpg" tinte="dorado" />
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">

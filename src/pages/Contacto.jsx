@@ -1,6 +1,9 @@
+import SectionBanner from "../components/SectionBanner";
+
 const DIRECCION = "Av. 15 Delicias, frente a Alkosto, Maracaibo, Zulia";
 const MAPS_EMBED_SRC = `https://www.google.com/maps?q=${encodeURIComponent(DIRECCION)}&output=embed`;
 const MAPS_LINK = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(DIRECCION)}`;
+const WHATSAPP_LINK = "https://wa.me/584127519141?text=" + encodeURIComponent("Hola, tengo una consulta sobre sus muebles.");
 
 const METODOS = [
   { nombre: "Efectivo", detalle: "Pago contra entrega o directo en nuestra sede." },
@@ -14,10 +17,8 @@ export default function Contacto() {
     <div>
       {/* NUESTRA SEDE */}
       <section className="max-w-5xl mx-auto">
-        <div className="bg-gold py-3 mb-6">
-          <h1 className="text-center text-carbon font-extrabold text-xl sm:text-2xl uppercase tracking-wide">
-            Nuestra Sede
-          </h1>
+        <div className="mb-6">
+          <SectionBanner titulo="Nuestra Sede" icono="📍" imagenFondo="/assets/ubicacion.jpg" tinte="dorado" />
         </div>
 
         <div className="px-4 grid sm:grid-cols-2 gap-4 items-stretch">
@@ -73,7 +74,9 @@ export default function Contacto() {
         <h2 className="text-2xl font-extrabold text-ink mb-4">¿Tienes dudas?</h2>
         <p className="text-ink-muted mb-6">Escríbenos y te ayudamos con tu pedido o cotización.</p>
         <a
-          href="https://wa.me/58" // TODO: reemplazar por el número real de WhatsApp
+          href={WHATSAPP_LINK}
+          target="_blank"
+          rel="noreferrer"
           className="min-h-tap inline-flex items-center justify-center px-6 rounded-control bg-gold text-carbon font-bold text-lg"
         >
           Escribir por WhatsApp

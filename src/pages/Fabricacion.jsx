@@ -1,19 +1,23 @@
+import SectionBanner from "../components/SectionBanner";
+
 export default function Fabricacion() {
   return (
     <div>
-      {/* Barra de título de ancho completo, no una "pastilla" redondeada */}
-      <div className="bg-ink py-3 mb-8">
-        <h1 className="text-center text-carbon font-extrabold text-xl sm:text-2xl uppercase tracking-wide">
-          Excelencia en Manufactura
-        </h1>
+      <div className="mb-8">
+        <SectionBanner
+          titulo="Excelencia en Manufactura"
+          icono="🔨"
+          imagenFondo="/assets/carpinteria.jpg"
+          tinte="oscuro"
+        />
       </div>
 
       <section className="px-4 pb-10 max-w-5xl mx-auto">
         <div className="grid sm:grid-cols-2 gap-6 items-center">
           <div className="flex gap-3">
             <img
-              src="/assets/taller.jpg"
-              alt="Artesano trabajando en el taller de Muebles Zulia"
+              src="/assets/carpinteria.jpg"
+              alt="Taller de carpintería de Muebles Zulia"
               className="w-2/3 h-72 sm:h-96 object-cover rounded-card border border-carbon-border"
             />
             <div className="w-1/3 flex flex-col gap-3">

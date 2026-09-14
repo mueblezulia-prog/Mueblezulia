@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import Hero from "../components/Hero";
 import CategoriasGrid from "../components/CategoriasGrid";
+import SectionBanner from "../components/SectionBanner";
 
 export default function Home() {
   return (
@@ -22,16 +23,12 @@ export default function Home() {
         </div>
       </div>
 
-      {/* NUESTRA SEDE (resumen — la versión completa vive en /contacto).
-          Tarjeta única con efecto vidrio: la foto y el texto viven en un
-          mismo panel translúcido, con el título flotando como pill dorado. */}
-      <section className="pb-10 max-w-5xl mx-auto border-t border-carbon-border pt-8 px-4">
-        <div className="flex justify-center mb-5">
-          <h2 className="glass-gold text-ink font-extrabold text-lg uppercase tracking-wide px-5 py-2 rounded-control">
-            Nuestra Sede
-          </h2>
+      {/* NUESTRA SEDE (resumen — la versión completa vive en /contacto) */}
+      <section className="pb-10 max-w-5xl mx-auto border-t border-carbon-border pt-8">
+        <div className="mb-5">
+          <SectionBanner titulo="Nuestra Sede" icono="📍" imagenFondo="/assets/ubicacion.jpg" tinte="dorado" />
         </div>
-        <div className="glass rounded-card overflow-hidden grid sm:grid-cols-2">
+        <div className="px-4 glass rounded-card overflow-hidden grid sm:grid-cols-2">
           <img
             src="/assets/ubicacion.jpg"
             alt="Fachada de Muebles Zulia"
@@ -55,16 +52,14 @@ export default function Home() {
       </section>
 
       {/* EXCELENCIA EN MANUFACTURA (resumen — versión completa en /fabricacion) */}
-      <section className="pb-10 max-w-5xl mx-auto border-t border-carbon-border pt-8 px-4">
-        <div className="flex justify-center mb-5">
-          <h2 className="glass text-ink font-extrabold text-lg uppercase tracking-wide px-5 py-2 rounded-control">
-            Excelencia en Manufactura
-          </h2>
+      <section className="pb-10 max-w-5xl mx-auto border-t border-carbon-border pt-8">
+        <div className="mb-5">
+          <SectionBanner titulo="Excelencia en Manufactura" icono="🔨" imagenFondo="/assets/carpinteria.jpg" tinte="oscuro" />
         </div>
-        <div className="glass rounded-card overflow-hidden grid sm:grid-cols-2">
+        <div className="px-4 glass rounded-card overflow-hidden grid sm:grid-cols-2">
           <img
-            src="/assets/taller.jpg"
-            alt="Artesano trabajando en el taller de Muebles Zulia"
+            src="/assets/carpinteria.jpg"
+            alt="Taller de carpintería de Muebles Zulia"
             className="w-full h-56 sm:h-full object-cover"
           />
           <div className="p-5 flex flex-col justify-center">
