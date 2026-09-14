@@ -26,16 +26,19 @@ export default function AdminContenido() {
   const [sede, setSede] = useState(CONTENIDO_DEFAULT.nuestra_sede);
   const [fabricacion, setFabricacion] = useState(CONTENIDO_DEFAULT.fabricacion);
   const [metodos, setMetodos] = useState(CONTENIDO_DEFAULT.metodos_pago.metodos);
+  const [bloques, setBloques] = useState([]);
 
   useEffect(() => {
     Promise.all([
       obtenerContenido("nuestra_sede"),
       obtenerContenido("fabricacion"),
       obtenerContenido("metodos_pago"),
-    ]).then(([s, f, m]) => {
+      obtenerContenido("secciones_home"),
+    ]).then(([s, f, m, b]) => {
       setSede(s);
       setFabricacion(f);
       setMetodos(m.metodos ?? []);
+      setBloques(b.bloques ?? []);
       setCargando(false);
     });
   }, []);
@@ -56,6 +59,7 @@ export default function AdminContenido() {
       <SeccionSede sede={sede} onGuardado={setSede} />
       <SeccionFabricacion fabricacion={fabricacion} onGuardado={setFabricacion} />
       <SeccionMetodosPago metodos={metodos} onGuardado={setMetodos} />
+      <SeccionBloques bloques={bloques} onGuardado={setBloques} />
     </div>
   );
 }
@@ -142,6 +146,10 @@ function SeccionSede({ sede, onGuardado }) {
           onChange={(e) => cambiar("texto", e.target.value)}
           className="campo-input resize-none"
         />
+      </Campo>
+
+      <Campo label="Ajuste de la foto">
+        <SelectorAjuste valor={form.ajusteImagen} onCambiar={(v) => cambiar("ajusteImagen", v)} />
       </Campo>
 
       <div className="flex items-center gap-3">
@@ -240,6 +248,7 @@ function SeccionFabricacion({ fabricacion, onGuardado }) {
 
       <div className="flex flex-col gap-2">
         <span className="text-base font-semibold text-ink">Fotos del taller</span>
+        <p className="text-sm text-ink-muted -mt-1">La primera foto es la más grande en /fabricacion.</p>
         <div className="flex flex-wrap gap-3">
           {(form.imagenes ?? []).map((url, i) => (
             <div key={url + i} className="relative w-24">
@@ -260,6 +269,10 @@ function SeccionFabricacion({ fabricacion, onGuardado }) {
           </label>
         </div>
       </div>
+
+      <Campo label="Ajuste de las fotos">
+        <SelectorAjuste valor={form.ajusteImagen} onCambiar={(v) => cambiar("ajusteImagen", v)} />
+      </Campo>
 
       <div className="flex items-center gap-3">
         <button type="button" onClick={handleGuardar} disabled={guardando} className="btn-admin-primary text-sm">
@@ -373,5 +386,424 @@ function Campo({ label, children }) {
       <span className="text-base font-semibold text-ink">{label}</span>
       {children}
     </label>
+  );
+}
+
+/** Botones "Se ve completa" / "Llena el marco" para elegir object-contain vs object-cover. */
+function SelectorAjuste({ valor, onCambiar }) {
+  const opciones = [
+    { valor: "cover", label: "Llena el marco", ayuda: "recorta si sobra" },
+    { valor: "contain", label: "Se ve completa", ayuda: "puede dejar franjas" },
+  ];
+  return (
+    <div className="flex gap-2">
+      {opciones.map((o) => (
+        <button
+          key={o.valor}
+          type="button"
+          onClick={() => onCambiar(o.valor)}
+          className={[
+            "flex-1 min-h-tap rounded-control border-2 px-3 text-sm font-semibold transition-all duration-150",
+            (valor ?? "cover") === o.valor
+              ? "border-gold bg-gold/10 text-ink"
+              : "border-carbon-border text-ink-muted hover:border-carbon-border/60",
+          ].join(" ")}
+        >
+          {o.label}
+          <span className="block text-xs font-normal text-ink-muted">{o.ayuda}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/** Botones pequeño / mediano / grande para el alto del marco de fotos. */
+function SelectorAlto({ valor, onCambiar }) {
+  const opciones = [
+    { valor: "pequeno", label: "Pequeño" },
+    { valor: "mediano", label: "Mediano" },
+    { valor: "grande", label: "Grande" },
+  ];
+  return (
+    <div className="flex gap-2">
+      {opciones.map((o) => (
+        <button
+          key={o.valor}
+          type="button"
+          onClick={() => onCambiar(o.valor)}
+          className={[
+            "flex-1 min-h-tap rounded-control border-2 text-sm font-semibold transition-all duration-150",
+            (valor ?? "mediano") === o.valor
+              ? "border-gold bg-gold/10 text-ink"
+              : "border-carbon-border text-ink-muted hover:border-carbon-border/60",
+          ].join(" ")}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/** Selector de tinte de vidrio para bloques tipo "banner". */
+function SelectorTinte({ valor, onCambiar }) {
+  const opciones = [
+    { valor: "dorado", label: "Dorado" },
+    { valor: "blanco", label: "Blanco" },
+    { valor: "oscuro", label: "Oscuro" },
+  ];
+  return (
+    <div className="flex gap-2">
+      {opciones.map((o) => (
+        <button
+          key={o.valor}
+          type="button"
+          onClick={() => onCambiar(o.valor)}
+          className={[
+            "flex-1 min-h-tap rounded-control border-2 text-sm font-semibold transition-all duration-150",
+            (valor ?? "dorado") === o.valor
+              ? "border-gold bg-gold/10 text-ink"
+              : "border-carbon-border text-ink-muted hover:border-carbon-border/60",
+          ].join(" ")}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/** Elegir si la foto va a la izquierda o a la derecha del texto. */
+function SelectorPosicion({ valor, onCambiar }) {
+  const opciones = [
+    { valor: "izquierda", label: "Foto a la izquierda" },
+    { valor: "derecha", label: "Foto a la derecha" },
+  ];
+  return (
+    <div className="flex gap-2">
+      {opciones.map((o) => (
+        <button
+          key={o.valor}
+          type="button"
+          onClick={() => onCambiar(o.valor)}
+          className={[
+            "flex-1 min-h-tap rounded-control border-2 px-2 text-sm font-semibold transition-all duration-150",
+            (valor ?? "izquierda") === o.valor
+              ? "border-gold bg-gold/10 text-ink"
+              : "border-carbon-border text-ink-muted hover:border-carbon-border/60",
+          ].join(" ")}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+const TIPOS_BLOQUE = [
+  { tipo: "banner", icono: "🏷️", label: "Banner de título", ayuda: "franja de borde a borde con foto de fondo" },
+  { tipo: "imagen_texto", icono: "🖼️", label: "Imagen + Texto", ayuda: "una foto al lado de un párrafo" },
+  { tipo: "galeria", icono: "🧩", label: "Galería de Fotos", ayuda: "varias fotos en cuadrícula" },
+  { tipo: "texto", icono: "📝", label: "Texto libre", ayuda: "solo título y párrafo, sin fotos" },
+];
+
+function bloqueVacio(tipo) {
+  return {
+    id: crypto.randomUUID(),
+    tipo,
+    titulo: "",
+    texto: "",
+    imagenes: [],
+    icono: "🏷️",
+    tinte: "dorado",
+    alto: "mediano",
+    ajusteImagen: "cover",
+    posicionImagen: "izquierda",
+  };
+}
+
+/* ------------------------------------------------------------ */
+/* SECCIONES PERSONALIZADAS — constructor libre de bloques para   */
+/* la página de inicio: el admin elige el tipo, el orden, las      */
+/* fotos y cómo se ven, sin tocar código.                          */
+/* ------------------------------------------------------------ */
+function SeccionBloques({ bloques, onGuardado }) {
+  const [lista, setLista] = useState(bloques);
+  const [expandidoId, setExpandidoId] = useState(null);
+  const [guardando, setGuardando] = useState(false);
+  const [mensaje, setMensaje] = useState(null);
+
+  function actualizarBloque(id, cambios) {
+    setLista((l) => l.map((b) => (b.id === id ? { ...b, ...cambios } : b)));
+  }
+
+  function quitarBloque(id) {
+    setLista((l) => l.filter((b) => b.id !== id));
+  }
+
+  function moverBloque(id, direccion) {
+    setLista((l) => {
+      const i = l.findIndex((b) => b.id === id);
+      const j = i + direccion;
+      if (i < 0 || j < 0 || j >= l.length) return l;
+      const copia = [...l];
+      [copia[i], copia[j]] = [copia[j], copia[i]];
+      return copia;
+    });
+  }
+
+  function agregarBloque(tipo) {
+    const nuevo = bloqueVacio(tipo);
+    setLista((l) => [...l, nuevo]);
+    setExpandidoId(nuevo.id);
+  }
+
+  async function handleGuardar() {
+    setGuardando(true);
+    setMensaje(null);
+    try {
+      await guardarContenido("secciones_home", { bloques: lista });
+      onGuardado(lista);
+      setMensaje("Guardado correctamente.");
+    } catch (err) {
+      setMensaje(`Error al guardar: ${err.message}`);
+    } finally {
+      setGuardando(false);
+    }
+  }
+
+  return (
+    <section className="admin-card p-5 flex flex-col gap-4">
+      <div>
+        <h2 className="text-xl font-bold text-ink">🧩 Secciones Personalizadas</h2>
+        <p className="text-sm text-ink-muted mt-1">
+          Arma la página de inicio a tu gusto: agrega tantas secciones como quieras, en el orden que quieras, con
+          las fotos y el tamaño que prefieras. Se muestran debajo de "Excelencia en Manufactura".
+        </p>
+      </div>
+
+      {lista.length === 0 && (
+        <p className="text-ink-muted text-base bg-carbon border border-dashed border-carbon-border rounded-control px-4 py-6 text-center">
+          Todavía no has agregado ninguna sección. Elige un tipo abajo para empezar.
+        </p>
+      )}
+
+      <div className="flex flex-col gap-3">
+        {lista.map((bloque, i) => {
+          const meta = TIPOS_BLOQUE.find((t) => t.tipo === bloque.tipo) ?? TIPOS_BLOQUE[0];
+          const abierto = expandidoId === bloque.id;
+          return (
+            <div key={bloque.id} className="bg-carbon border border-carbon-border rounded-control overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setExpandidoId(abierto ? null : bloque.id)}
+                className="w-full flex items-center gap-3 p-3 text-left hover:bg-carbon-light/50 transition-colors duration-150"
+              >
+                <span className="text-xl shrink-0">{meta.icono}</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-ink font-bold truncate">{bloque.titulo || `${meta.label} sin título`}</p>
+                  <p className="text-ink-muted text-xs">{meta.label}</p>
+                </div>
+                <span className="text-ink-muted text-sm shrink-0">{abierto ? "▲" : "▼"}</span>
+              </button>
+
+              {abierto && (
+                <div className="p-4 border-t border-carbon-border flex flex-col gap-4">
+                  <EditorBloque bloque={bloque} onCambiar={(c) => actualizarBloque(bloque.id, c)} />
+                </div>
+              )}
+
+              <div className="flex items-center justify-between px-3 py-2 border-t border-carbon-border bg-carbon-light/30">
+                <div className="flex gap-1">
+                  <button type="button" onClick={() => moverBloque(bloque.id, -1)} disabled={i === 0}
+                    className="min-h-tap min-w-tap text-ink-muted disabled:opacity-30 hover:text-ink transition-colors" aria-label="Subir sección">↑</button>
+                  <button type="button" onClick={() => moverBloque(bloque.id, 1)} disabled={i === lista.length - 1}
+                    className="min-h-tap min-w-tap text-ink-muted disabled:opacity-30 hover:text-ink transition-colors" aria-label="Bajar sección">↓</button>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => quitarBloque(bloque.id)}
+                  className="min-h-tap px-3 text-terracota text-sm font-semibold hover:text-ink transition-colors"
+                >
+                  Borrar sección
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="flex flex-col gap-2 pt-1 border-t border-carbon-border">
+        <span className="text-sm font-semibold text-ink-muted">+ Agregar sección:</span>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          {TIPOS_BLOQUE.map((t) => (
+            <button
+              key={t.tipo}
+              type="button"
+              onClick={() => agregarBloque(t.tipo)}
+              className="flex flex-col items-center gap-1 rounded-control border-2 border-dashed border-carbon-border p-3
+                         hover:border-gold/50 hover:bg-gold/5 transition-all duration-150"
+            >
+              <span className="text-2xl">{t.icono}</span>
+              <span className="text-xs font-bold text-ink text-center">{t.label}</span>
+              <span className="text-[11px] text-ink-muted text-center leading-tight">{t.ayuda}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="flex items-center gap-3">
+        <button type="button" onClick={handleGuardar} disabled={guardando} className="btn-admin-primary text-sm">
+          {guardando ? "Guardando…" : "Guardar Secciones"}
+        </button>
+        {mensaje && (
+          <span className={mensaje.startsWith("Error") ? "text-terracota text-sm" : "text-gold text-sm"}>{mensaje}</span>
+        )}
+      </div>
+    </section>
+  );
+}
+
+/** Formulario de UN bloque — los campos que muestra dependen de `bloque.tipo`. */
+function EditorBloque({ bloque, onCambiar }) {
+  const [subiendo, setSubiendo] = useState(false);
+
+  async function subirUnica(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setSubiendo(true);
+    try {
+      const url = await subirImagenContenido(file);
+      onCambiar({ imagenes: [url] });
+    } catch (err) {
+      alert(`No se pudo subir la foto: ${err.message}`);
+    } finally {
+      setSubiendo(false);
+    }
+  }
+
+  async function agregarMultiple(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = "";
+    setSubiendo(true);
+    try {
+      const url = await subirImagenContenido(file);
+      onCambiar({ imagenes: [...(bloque.imagenes ?? []), url] });
+    } catch (err) {
+      alert(`No se pudo subir la foto: ${err.message}`);
+    } finally {
+      setSubiendo(false);
+    }
+  }
+
+  function quitarFoto(i) {
+    onCambiar({ imagenes: bloque.imagenes.filter((_, idx) => idx !== i) });
+  }
+
+  function moverFoto(i, direccion) {
+    const j = i + direccion;
+    if (j < 0 || j >= bloque.imagenes.length) return;
+    const copia = [...bloque.imagenes];
+    [copia[i], copia[j]] = [copia[j], copia[i]];
+    onCambiar({ imagenes: copia });
+  }
+
+  return (
+    <>
+      {bloque.tipo === "banner" && (
+        <Campo label="Ícono (emoji)">
+          <input
+            type="text"
+            value={bloque.icono}
+            onChange={(e) => onCambiar({ icono: e.target.value })}
+            className="campo-input w-20 text-center text-xl"
+          />
+        </Campo>
+      )}
+
+      <Campo label="Título">
+        <input
+          type="text"
+          value={bloque.titulo}
+          onChange={(e) => onCambiar({ titulo: e.target.value })}
+          className="campo-input"
+        />
+      </Campo>
+
+      {bloque.tipo !== "banner" && (
+        <Campo label="Texto">
+          <textarea
+            rows={4}
+            value={bloque.texto}
+            onChange={(e) => onCambiar({ texto: e.target.value })}
+            className="campo-input resize-none"
+          />
+        </Campo>
+      )}
+
+      {/* Foto única: banner e imagen_texto */}
+      {(bloque.tipo === "banner" || bloque.tipo === "imagen_texto") && (
+        <Campo label="Foto">
+          <label className="relative w-full h-32 rounded-control overflow-hidden bg-carbon-light border border-carbon-border cursor-pointer group block">
+            {bloque.imagenes?.[0] && (
+              <img src={bloque.imagenes[0]} alt="" className="w-full h-full object-cover" />
+            )}
+            <span className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/55 text-white text-sm font-semibold opacity-0 group-hover:opacity-100 transition-all duration-200">
+              {subiendo ? "Subiendo…" : bloque.imagenes?.[0] ? "Cambiar foto" : "+ Subir foto"}
+            </span>
+            <input type="file" accept="image/*,.heic,.heif" className="hidden" onChange={subirUnica} />
+          </label>
+        </Campo>
+      )}
+
+      {/* Galería de varias fotos */}
+      {bloque.tipo === "galeria" && (
+        <Campo label="Fotos">
+          <div className="flex flex-wrap gap-3">
+            {(bloque.imagenes ?? []).map((url, i) => (
+              <div key={url + i} className="relative w-20">
+                <img src={url} alt={`Foto ${i + 1}`} className="w-20 h-20 object-cover rounded-control border border-carbon-border" />
+                <div className="flex justify-center gap-1 mt-1">
+                  <button type="button" onClick={() => moverFoto(i, -1)} disabled={i === 0}
+                    className="min-h-tap min-w-tap text-ink-muted disabled:opacity-30 hover:text-ink transition-colors text-sm" aria-label="Mover antes">←</button>
+                  <button type="button" onClick={() => quitarFoto(i)}
+                    className="min-h-tap min-w-tap text-terracota font-bold hover:text-ink transition-colors text-sm" aria-label="Quitar">×</button>
+                  <button type="button" onClick={() => moverFoto(i, 1)} disabled={i === bloque.imagenes.length - 1}
+                    className="min-h-tap min-w-tap text-ink-muted disabled:opacity-30 hover:text-ink transition-colors text-sm" aria-label="Mover después">→</button>
+                </div>
+              </div>
+            ))}
+            <label className="w-20 h-20 flex items-center justify-center rounded-control border-2 border-dashed border-carbon-border text-ink-muted text-xs text-center cursor-pointer hover:border-gold/50 hover:text-ink transition-colors duration-150">
+              <input type="file" accept="image/*,.heic,.heif" className="hidden" onChange={agregarMultiple} />
+              {subiendo ? "…" : "+ Foto"}
+            </label>
+          </div>
+        </Campo>
+      )}
+
+      {(bloque.tipo === "imagen_texto" || bloque.tipo === "galeria") && (
+        <>
+          <Campo label="Alto del marco">
+            <SelectorAlto valor={bloque.alto} onCambiar={(v) => onCambiar({ alto: v })} />
+          </Campo>
+          <Campo label="Ajuste de la foto">
+            <SelectorAjuste valor={bloque.ajusteImagen} onCambiar={(v) => onCambiar({ ajusteImagen: v })} />
+          </Campo>
+        </>
+      )}
+
+      {bloque.tipo === "imagen_texto" && (
+        <Campo label="Posición">
+          <SelectorPosicion valor={bloque.posicionImagen} onCambiar={(v) => onCambiar({ posicionImagen: v })} />
+        </Campo>
+      )}
+
+      {bloque.tipo === "banner" && (
+        <Campo label="Color del vidrio">
+          <SelectorTinte valor={bloque.tinte} onCambiar={(v) => onCambiar({ tinte: v })} />
+        </Campo>
+      )}
+    </>
   );
 }

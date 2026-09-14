@@ -15,6 +15,7 @@ export const CONTENIDO_DEFAULT = {
     direccion: "Av. 15 Delicias, frente a Alkosto, Maracaibo, Zulia",
     titulo: "¡Te esperamos en Muebles Zulia! 📍",
     texto: "Ven a conocer la calidad y el diseño que cambiarán tu hogar.",
+    ajusteImagen: "contain", // "contain" = se ve la foto completa | "cover" = llena el marco (puede recortar)
   },
   fabricacion: {
     titulo: "Pasión por el Detalle",
@@ -26,6 +27,7 @@ export const CONTENIDO_DEFAULT = {
       "/assets/trabajador-2.png",
       "/assets/trabajador-3.png",
     ],
+    ajusteImagen: "cover",
   },
   metodos_pago: {
     metodos: [
@@ -35,6 +37,19 @@ export const CONTENIDO_DEFAULT = {
       { nombre: "Divisas (USD)", detalle: "Aceptamos dólares en efectivo.", icono: "💲" },
     ],
   },
+  // Secciones libres que el admin arma a su gusto (tipo, orden, fotos,
+  // textos, tamaño) y que se muestran en la página de inicio, debajo de
+  // "Fabricación". Ver AdminContenido.jsx → "Secciones Personalizadas".
+  secciones_home: {
+    bloques: [],
+  },
+};
+
+/** Tamaños de imagen disponibles al armar un bloque (alto del marco). */
+export const ALTOS_BLOQUE = {
+  pequeno: "h-48",
+  mediano: "h-72",
+  grande: "h-96",
 };
 
 /**

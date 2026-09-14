@@ -3,16 +3,19 @@ import { Link } from "react-router-dom";
 import Hero from "../components/Hero";
 import CategoriasGrid from "../components/CategoriasGrid";
 import SectionBanner from "../components/SectionBanner";
+import BloqueContenido from "../components/BloqueContenido";
 import { obtenerContenido, CONTENIDO_DEFAULT } from "../lib/contenido";
 
 export default function Home() {
   const [sede, setSede] = useState(CONTENIDO_DEFAULT.nuestra_sede);
   const [fabricacion, setFabricacion] = useState(CONTENIDO_DEFAULT.fabricacion);
+  const [bloques, setBloques] = useState([]);
 
   useEffect(() => {
     let activo = true;
     obtenerContenido("nuestra_sede").then((d) => activo && setSede(d));
     obtenerContenido("fabricacion").then((d) => activo && setFabricacion(d));
+    obtenerContenido("secciones_home").then((d) => activo && setBloques(d.bloques ?? []));
     return () => {
       activo = false;
     };
@@ -89,6 +92,13 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* Secciones libres, armadas y ordenadas desde /admin/contenido */}
+      {bloques.map((bloque) => (
+        <div key={bloque.id} className="border-t border-carbon-border">
+          <BloqueContenido bloque={bloque} />
+        </div>
+      ))}
     </div>
   );
 }

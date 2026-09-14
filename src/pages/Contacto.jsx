@@ -37,7 +37,7 @@ export default function Contacto() {
             <img
               src={sede.imagen}
               alt="Fachada de Muebles Zulia"
-              className="w-full max-h-[420px] object-contain bg-carbon"
+              className={`w-full max-h-[420px] ${sede.ajusteImagen === "cover" ? "h-[420px] object-cover" : "object-contain"} bg-carbon`}
             />
           </div>
 

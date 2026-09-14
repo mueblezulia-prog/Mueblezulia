@@ -34,7 +34,9 @@ export default function Fabricacion() {
                 key={url + i}
                 src={url}
                 alt="Trabajo artesanal en el taller de Muebles Zulia"
-                className="w-full h-full object-cover rounded-card border border-carbon-border"
+                className={`w-full h-full rounded-card border border-carbon-border ${
+                  datos.ajusteImagen === "contain" ? "object-contain bg-carbon" : "object-cover"
+                }`}
               />
             ))}
           </div>
