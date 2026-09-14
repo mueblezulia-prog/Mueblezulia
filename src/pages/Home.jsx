@@ -1,9 +1,25 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import Hero from "../components/Hero";
 import CategoriasGrid from "../components/CategoriasGrid";
 import SectionBanner from "../components/SectionBanner";
+import { obtenerContenido, CONTENIDO_DEFAULT } from "../lib/contenido";
 
 export default function Home() {
+  const [sede, setSede] = useState(CONTENIDO_DEFAULT.nuestra_sede);
+  const [fabricacion, setFabricacion] = useState(CONTENIDO_DEFAULT.fabricacion);
+
+  useEffect(() => {
+    let activo = true;
+    obtenerContenido("nuestra_sede").then((d) => activo && setSede(d));
+    obtenerContenido("fabricacion").then((d) => activo && setFabricacion(d));
+    return () => {
+      activo = false;
+    };
+  }, []);
+
+  const fotoFabricacion = fabricacion.imagenes?.[0] ?? CONTENIDO_DEFAULT.fabricacion.imagenes[0];
+
   return (
     <div>
       <Hero />
@@ -26,20 +42,18 @@ export default function Home() {
       {/* NUESTRA SEDE (resumen — la versión completa vive en /contacto) */}
       <section className="pb-10 max-w-5xl mx-auto border-t border-carbon-border pt-8">
         <div className="mb-5">
-          <SectionBanner titulo="Nuestra Sede" icono="📍" imagenFondo="/assets/ubicacion.jpg" tinte="dorado" />
+          <SectionBanner titulo="Nuestra Sede" icono="📍" imagenFondo={sede.imagen} tinte="dorado" />
         </div>
         <div className="px-4 glass rounded-card overflow-hidden grid sm:grid-cols-2">
           <img
-            src="/assets/ubicacion.jpg"
+            src={sede.imagen}
             alt="Fachada de Muebles Zulia"
             className="w-full h-56 sm:h-full object-cover"
           />
           <div className="p-5 flex flex-col justify-center">
-            <h3 className="text-xl font-bold text-ink mb-2">¡Te esperamos en Muebles Zulia! 📍</h3>
-            <p className="text-ink-muted mb-2">
-              Ven a conocer la calidad y el diseño que cambiarán tu hogar.
-            </p>
-            <p className="text-ink font-semibold mb-4">Av. 15 Delicias, frente a Alkosto.</p>
+            <h3 className="text-xl font-bold text-ink mb-2">{sede.titulo}</h3>
+            <p className="text-ink-muted mb-2">{sede.texto}</p>
+            <p className="text-ink font-semibold mb-4">{sede.direccion}</p>
             <Link
               to="/contacto"
               className="min-h-tap inline-flex items-center px-5 rounded-control border-2 border-ink/60 text-ink font-bold w-fit
@@ -58,16 +72,13 @@ export default function Home() {
         </div>
         <div className="px-4 glass rounded-card overflow-hidden grid sm:grid-cols-2">
           <img
-            src="/assets/carpinteria.jpg"
+            src={fotoFabricacion}
             alt="Taller de carpintería de Muebles Zulia"
             className="w-full h-56 sm:h-full object-cover"
           />
           <div className="p-5 flex flex-col justify-center">
-            <h3 className="text-xl font-bold text-gold mb-2">Pasión por el Detalle</h3>
-            <p className="text-ink-muted mb-4">
-              En Muebles Zulia, la excelencia no es negociable. Supervisamos
-              cada etapa de la confección para lograr acabados impecables.
-            </p>
+            <h3 className="text-xl font-bold text-gold mb-2">{fabricacion.titulo}</h3>
+            <p className="text-ink-muted mb-4 line-clamp-3">{fabricacion.texto}</p>
             <Link
               to="/fabricacion"
               className="min-h-tap inline-flex items-center px-5 rounded-control border-2 border-ink/60 text-ink font-bold w-fit
