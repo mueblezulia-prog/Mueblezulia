@@ -6,10 +6,10 @@ const MAPS_LINK = `https://www.google.com/maps/search/?api=1&query=${encodeURICo
 const WHATSAPP_LINK = "https://wa.me/584127519141?text=" + encodeURIComponent("Hola, tengo una consulta sobre sus muebles.");
 
 const METODOS = [
-  { nombre: "Efectivo", detalle: "Pago contra entrega o directo en nuestra sede." },
-  { nombre: "Transferencia / Pago Móvil", detalle: "Te compartimos los datos bancarios al confirmar tu pedido." },
-  { nombre: "Zelle", detalle: "Disponible para clientes en el exterior." },
-  { nombre: "Divisas (USD)", detalle: "Aceptamos dólares en efectivo." },
+  { nombre: "Efectivo", detalle: "Pago contra entrega o directo en nuestra sede.", icono: "💵" },
+  { nombre: "Transferencia / Pago Móvil", detalle: "Te compartimos los datos bancarios al confirmar tu pedido.", icono: "🏦" },
+  { nombre: "Zelle", detalle: "Disponible para clientes en el exterior.", icono: "💳" },
+  { nombre: "Divisas (USD)", detalle: "Aceptamos dólares en efectivo.", icono: "💲" },
 ];
 
 export default function Contacto() {
@@ -18,16 +18,23 @@ export default function Contacto() {
       {/* NUESTRA SEDE */}
       <section className="max-w-5xl mx-auto">
         <div className="mb-6">
-          <SectionBanner titulo="Nuestra Sede" icono="📍" imagenFondo="/assets/ubicacion.jpg" tinte="dorado" />
+          <SectionBanner titulo="Nuestra Sede" icono="📍" imagenFondo="/assets/ubicacion.jpg" tinte="blanco" />
         </div>
 
-        <div className="px-4 grid sm:grid-cols-2 gap-4 items-stretch">
-          <img
-            src="/assets/ubicacion.jpg"
-            alt="Fachada de Muebles Zulia"
-            className="w-full h-56 sm:h-full object-cover rounded-card border border-carbon-border"
-          />
-          <div className="bg-carbon-light border border-carbon-border rounded-card p-5 flex flex-col justify-center">
+        <div className="px-4">
+          {/* La foto se ve completa (object-contain, sin recortar) y la
+              tarjeta de información sube con margen negativo para que el
+              panel de vidrio quede montado sobre la parte de abajo de la
+              foto — mismo efecto premium que en el detalle de producto. */}
+          <div className="relative rounded-card overflow-hidden bg-carbon-light border border-carbon-border">
+            <img
+              src="/assets/ubicacion.jpg"
+              alt="Fachada de Muebles Zulia"
+              className="w-full max-h-[420px] object-contain bg-carbon"
+            />
+          </div>
+
+          <div className="relative -mt-10 sm:-mt-14 mx-3 sm:mx-6 glass rounded-card p-5 flex flex-col items-start">
             <h2 className="text-xl font-bold text-ink mb-2">¡Te esperamos en Muebles Zulia! 📍</h2>
             <p className="text-ink-muted mb-4">
               Ven a conocer la calidad y el diseño que cambiarán tu hogar.
@@ -37,7 +44,8 @@ export default function Contacto() {
               href={MAPS_LINK}
               target="_blank"
               rel="noreferrer"
-              className="min-h-tap inline-flex items-center justify-center px-5 rounded-control bg-gold text-carbon font-bold"
+              className="min-h-tap inline-flex items-center justify-center px-5 rounded-control bg-gold text-carbon font-bold
+                         hover:bg-gold-hover active:scale-[0.98] transition-all duration-200"
             >
               Ver en Google Maps
             </a>
@@ -45,7 +53,7 @@ export default function Contacto() {
         </div>
 
         <div className="px-4">
-          <div className="mt-4 rounded-card overflow-hidden border border-carbon-border h-64">
+          <div className="mt-6 rounded-card overflow-hidden border border-carbon-border h-64">
             <iframe
               title="Ubicación de Muebles Zulia"
               src={MAPS_EMBED_SRC}
@@ -57,13 +65,22 @@ export default function Contacto() {
       </section>
 
       {/* MÉTODOS DE PAGO */}
-      <section className="px-4 py-10 max-w-5xl mx-auto border-t border-carbon-border">
-        <h2 className="text-2xl font-extrabold text-ink mb-6 text-center">Métodos de Pago</h2>
-        <div className="grid sm:grid-cols-2 gap-4">
+      <section className="pb-10 max-w-5xl mx-auto">
+        <div className="my-8">
+          <SectionBanner titulo="Métodos de Pago" icono="💳" imagenFondo="/assets/interior-tienda.jpg" tinte="blanco" />
+        </div>
+        <div className="px-4 grid sm:grid-cols-2 gap-4">
           {METODOS.map((m) => (
-            <div key={m.nombre} className="bg-carbon-light border border-carbon-border rounded-card p-5">
-              <h3 className="text-lg font-bold text-ink mb-1">{m.nombre}</h3>
-              <p className="text-ink-muted">{m.detalle}</p>
+            <div
+              key={m.nombre}
+              className="bg-carbon-light border border-carbon-border rounded-card p-5 flex gap-4
+                         hover:border-gold/40 hover:shadow-lg hover:shadow-black/20 transition-all duration-200"
+            >
+              <span className="text-3xl leading-none shrink-0">{m.icono}</span>
+              <div>
+                <h3 className="text-lg font-bold text-ink mb-1">{m.nombre}</h3>
+                <p className="text-ink-muted">{m.detalle}</p>
+              </div>
             </div>
           ))}
         </div>

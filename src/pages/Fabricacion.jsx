@@ -14,24 +14,27 @@ export default function Fabricacion() {
 
       <section className="px-4 pb-10 max-w-5xl mx-auto">
         <div className="grid sm:grid-cols-2 gap-6 items-center">
-          <div className="flex gap-3">
+          <div className="grid grid-cols-2 grid-rows-2 gap-3 h-72 sm:h-96">
             <img
               src="/assets/carpinteria.jpg"
               alt="Taller de carpintería de Muebles Zulia"
-              className="w-2/3 h-72 sm:h-96 object-cover rounded-card border border-carbon-border"
+              className="w-full h-full object-cover rounded-card border border-carbon-border"
             />
-            <div className="w-1/3 flex flex-col gap-3">
-              <img
-                src="/assets/trabajador-2.png"
-                alt="Artesano armando un mueble"
-                className="w-full h-[calc(50%-6px)] object-cover rounded-card border border-carbon-border"
-              />
-              <img
-                src="/assets/trabajador-3.png"
-                alt="Artesano terminando un mueble"
-                className="w-full h-[calc(50%-6px)] object-cover rounded-card border border-carbon-border"
-              />
-            </div>
+            <img
+              src="/assets/trabajador-4.jpg"
+              alt="Artesanos instalando un mueble en el taller"
+              className="w-full h-full object-cover rounded-card border border-carbon-border"
+            />
+            <img
+              src="/assets/trabajador-2.png"
+              alt="Artesano armando un mueble"
+              className="w-full h-full object-cover rounded-card border border-carbon-border"
+            />
+            <img
+              src="/assets/trabajador-3.png"
+              alt="Artesano terminando un mueble"
+              className="w-full h-full object-cover rounded-card border border-carbon-border"
+            />
           </div>
           <div>
             <h2 className="text-xl sm:text-2xl font-extrabold text-gold mb-3">
