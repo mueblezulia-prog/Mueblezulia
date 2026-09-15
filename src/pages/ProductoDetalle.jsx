@@ -40,14 +40,16 @@ export default function ProductoDetalle() {
         setError(errorProducto.message);
       } else {
         setProducto(productoData);
-        // Si todavía no hay filas en producto_imagenes (panel admin no
-        // sube varias fotos aún), se usa la única foto del producto como
-        // galería de 1 imagen, para que el diseño no cambie.
-        if (!errorImagenes && imagenesData?.length) {
-          setImagenes(imagenesData.map((im) => im.url));
-        } else if (productoData?.imagen_recortada_url) {
-          setImagenes([productoData.imagen_recortada_url]);
-        }
+        // La galería del detalle siempre incluye la foto de portada
+        // primero (para que "1/2" cuente también la portada, no solo
+        // las fotos extra), seguida de las demás fotos de la galería,
+        // sin repetir la portada si el admin también la agregó ahí.
+        const galeriaExtra = !errorImagenes && imagenesData?.length ? imagenesData.map((im) => im.url) : [];
+        const portada = productoData?.imagen_recortada_url;
+        const todas = portada
+          ? [portada, ...galeriaExtra.filter((url) => url !== portada)]
+          : galeriaExtra;
+        setImagenes(todas);
 
         if (!errorColores && coloresData?.length) {
           setColores(coloresData);

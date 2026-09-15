@@ -24,7 +24,18 @@ export function esArchivoHeic(file) {
 export async function convertirSiEsHeic(file) {
   if (!esArchivoHeic(file)) return file;
 
-  const heic2any = (await import("heic2any")).default;
+  let heic2any;
+  try {
+    heic2any = (await import("heic2any")).default;
+  } catch (err) {
+    // Mismo caso que el listener de vite:preloadError en main.jsx: el
+    // sitio se actualizó y este navegador todavía tiene la versión
+    // vieja cargada. Recargamos para traer la nueva versión — cuando
+    // la persona vuelva a intentar subir la foto, ya va a funcionar.
+    window.location.reload();
+    throw new Error("El sitio se actualizó, recargando la página. Por favor intenta subir la foto de nuevo en un momento.");
+  }
+
   const resultado = await heic2any({ blob: file, toType: "image/jpeg", quality: 0.9 });
   // heic2any puede devolver un array de blobs si el HEIC trae varias fotos
   // (ráfaga en vivo); esta app solo usa la primera.
