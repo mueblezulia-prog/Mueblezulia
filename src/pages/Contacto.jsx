@@ -31,32 +31,32 @@ export default function Contacto() {
         </div>
 
         <div className="px-4">
-          {/* La foto se ve completa (object-contain, sin recortar) y la
-              tarjeta de información sube con margen negativo para que el
-              panel de vidrio quede montado sobre la parte de abajo de la
-              foto — mismo efecto premium que en el detalle de producto. */}
-          <div className="relative rounded-card overflow-hidden bg-carbon-light border border-carbon-border">
+          {/* Un solo cuadro completo: la foto y el panel de vidrio viven
+              DENTRO del mismo contenedor con overflow-hidden, así los
+              bordes redondeados quedan unificados en vez de dos cajas
+              separadas que no encajaban bien entre sí. */}
+          <div className="relative rounded-card overflow-hidden border border-carbon-border bg-carbon-light">
             <img
               src={sede.imagen}
               alt="Fachada de Muebles Zulia"
               className={`w-full max-h-[420px] ${sede.ajusteImagen === "cover" ? "h-[420px] object-cover" : "object-contain"} bg-carbon`}
             />
-          </div>
 
-          <div className="relative -mt-10 sm:-mt-14 mx-3 sm:mx-6 glass rounded-card p-5 flex flex-col items-start animar-entrada">
-            <h2 className="text-xl font-bold text-ink mb-2">{sede.titulo}</h2>
-            <p className="text-ink-muted mb-4">{sede.texto}</p>
-            <p className="text-ink font-semibold mb-4">{sede.direccion}</p>
-            <a
-              href={mapsLink}
-              target="_blank"
-              rel="noreferrer"
-              onClick={sonidoNavegar}
-              className="min-h-tap inline-flex items-center justify-center px-5 rounded-control bg-gold text-carbon font-bold
-                         hover:bg-gold-hover active:scale-[0.98] transition-all duration-200"
-            >
-              Ver en Google Maps
-            </a>
+            <div className="relative -mt-10 sm:-mt-14 glass p-5 flex flex-col items-start animar-entrada">
+              <h2 className="text-xl font-bold text-ink mb-2">{sede.titulo}</h2>
+              <p className="text-ink-muted mb-4">{sede.texto}</p>
+              <p className="text-ink font-semibold mb-4">{sede.direccion}</p>
+              <a
+                href={mapsLink}
+                target="_blank"
+                rel="noreferrer"
+                onClick={sonidoNavegar}
+                className="min-h-tap inline-flex items-center justify-center px-5 rounded-control bg-gold text-carbon font-bold
+                           hover:bg-gold-hover active:scale-[0.98] transition-all duration-200"
+              >
+                Ver en Google Maps
+              </a>
+            </div>
           </div>
         </div>
 

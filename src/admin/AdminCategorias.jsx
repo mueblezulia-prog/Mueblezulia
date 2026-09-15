@@ -48,7 +48,13 @@ export default function AdminCategorias() {
     setGuardandoId(categoria.id);
     const { error } = await supabase
       .from("categorias")
-      .update({ nombre: categoria.nombre, slug: categoria.slug, imagen: categoria.imagen, orden: categoria.orden })
+      .update({
+        nombre: categoria.nombre,
+        slug: categoria.slug,
+        imagen: categoria.imagen,
+        orden: categoria.orden,
+        subcategorias: categoria.subcategorias ?? [],
+      })
       .eq("id", categoria.id);
     setGuardandoId(null);
     if (error) alert(`No se pudo guardar: ${error.message}`);
@@ -176,6 +182,11 @@ function TarjetaCategoria({ categoria, guardando, subiendo, onCambiar, onGuardar
           aria-label="Slug"
         />
 
+        <EditorSubcategorias
+          subcategorias={categoria.subcategorias ?? []}
+          onCambiar={(subcategorias) => onCambiar({ subcategorias })}
+        />
+
         <div className="flex items-center justify-between pt-1">
           <button
             type="button"
@@ -193,6 +204,77 @@ function TarjetaCategoria({ categoria, guardando, subiendo, onCambiar, onGuardar
             {guardando ? "…" : "Guardar"}
           </button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Lista de "chips" con las subcategorías de una categoría (ej: dentro
+ * de "Modulares" → Grecia, Verona, Raquel). Se escriben libremente y
+ * se guardan junto con el resto de la categoría al darle "Guardar".
+ */
+function EditorSubcategorias({ subcategorias, onCambiar }) {
+  const [nuevo, setNuevo] = useState("");
+
+  function agregar() {
+    const texto = nuevo.trim();
+    if (!texto || subcategorias.includes(texto)) {
+      setNuevo("");
+      return;
+    }
+    onCambiar([...subcategorias, texto]);
+    setNuevo("");
+  }
+
+  function quitar(nombre) {
+    onCambiar(subcategorias.filter((s) => s !== nombre));
+  }
+
+  return (
+    <div className="flex flex-col gap-1.5 pt-1 border-t border-carbon-border/60">
+      <span className="text-[11px] font-semibold text-ink-muted uppercase tracking-wide">Subcategorías</span>
+      {subcategorias.length > 0 && (
+        <div className="flex flex-wrap gap-1">
+          {subcategorias.map((s) => (
+            <span
+              key={s}
+              className="inline-flex items-center gap-1 bg-carbon border border-carbon-border rounded-control px-2 py-0.5 text-xs text-ink"
+            >
+              {s}
+              <button
+                type="button"
+                onClick={() => quitar(s)}
+                className="text-terracota font-bold hover:text-ink transition-colors leading-none"
+                aria-label={`Quitar ${s}`}
+              >
+                ×
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+      <div className="flex gap-1">
+        <input
+          type="text"
+          value={nuevo}
+          onChange={(e) => setNuevo(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              agregar();
+            }
+          }}
+          placeholder="Ej: Grecia"
+          className="flex-1 min-w-0 bg-carbon border border-carbon-border rounded-control px-2 py-1 text-xs text-ink outline-none focus:border-gold/60 transition-colors duration-150"
+        />
+        <button
+          type="button"
+          onClick={agregar}
+          className="shrink-0 px-2 rounded-control border border-carbon-border text-ink-muted text-xs font-bold hover:border-gold/50 hover:text-ink transition-colors duration-150"
+        >
+          + Añadir
+        </button>
       </div>
     </div>
   );

@@ -25,6 +25,7 @@ export default function CategoriaPagina() {
   const [productos, setProductos] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
+  const [subActiva, setSubActiva] = useState("todas");
 
   useEffect(() => {
     let activo = true;
@@ -32,6 +33,7 @@ export default function CategoriaPagina() {
     async function cargar() {
       setCargando(true);
       setError(null);
+      setSubActiva("todas");
 
       const { data: categoriaData, error: errorCategoria } = await supabase
         .from("categorias")
@@ -81,6 +83,9 @@ export default function CategoriaPagina() {
 
   const bannerInfo = BANNERS[slug] ?? { banner: categoria?.nombre ?? "Catálogo", icono: "🪑", tinte: "dorado" };
   const nombreCategoria = categoria?.nombre ?? bannerInfo.banner;
+  const subcategorias = categoria?.subcategorias ?? [];
+  const productosFiltrados =
+    subActiva === "todas" ? productos : productos.filter((p) => p.subcategoria === subActiva);
 
   return (
     <div className="py-6">
@@ -113,15 +118,34 @@ export default function CategoriaPagina() {
         </p>
       )}
 
+      {!cargando && !error && subcategorias.length > 0 && (
+        <div className="flex flex-wrap gap-2 mb-5">
+          <PestanaSub activa={subActiva === "todas"} onClick={() => { setSubActiva("todas"); sonidoNavegar(); }}>
+            Todas
+          </PestanaSub>
+          {subcategorias.map((s) => (
+            <PestanaSub key={s} activa={subActiva === s} onClick={() => { setSubActiva(s); sonidoNavegar(); }}>
+              {s}
+            </PestanaSub>
+          ))}
+        </div>
+      )}
+
       {!cargando && !error && productos.length === 0 && (
         <p className="text-center text-ink-muted text-lg py-16">
           Todavía no hay productos de {nombreCategoria} cargados — pronto agregamos piezas de esta línea.
         </p>
       )}
 
-      {!cargando && !error && productos.length > 0 && (
+      {!cargando && !error && productos.length > 0 && productosFiltrados.length === 0 && (
+        <p className="text-center text-ink-muted text-lg py-16">
+          Todavía no hay productos en "{subActiva}".
+        </p>
+      )}
+
+      {!cargando && !error && productosFiltrados.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
-          {productos.map((producto, i) => (
+          {productosFiltrados.map((producto, i) => (
             <Reveal key={producto.id} delay={(i % 9) * 60}>
               <ProductCard producto={producto} />
             </Reveal>
@@ -141,5 +165,23 @@ export default function CategoriaPagina() {
       </div>
       </div>
     </div>
+  );
+}
+
+/** Pestaña tipo píldora para filtrar por subcategoría (estilo "Folders / Files / Users"). */
+function PestanaSub({ activa, onClick, children }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={[
+        "min-h-tap px-4 rounded-full text-sm font-bold transition-all duration-200",
+        activa
+          ? "bg-gold text-carbon shadow-sm shadow-black/20"
+          : "bg-carbon-light border border-carbon-border text-ink-muted hover:text-ink hover:border-gold/40",
+      ].join(" ")}
+    >
+      {children}
+    </button>
   );
 }

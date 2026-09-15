@@ -21,17 +21,31 @@ export default function ProductForm({ productoExistente, onGuardado }) {
   const [descripcionLarga, setDescripcionLarga] = useState(productoExistente?.descripcion_larga ?? "");
   const [medida, setMedida] = useState(productoExistente?.medida ?? "");
   const [categoriaId, setCategoriaId] = useState(productoExistente?.categoria_id ?? "");
+  const [subcategoria, setSubcategoria] = useState(productoExistente?.subcategoria ?? "");
   const [categorias, setCategorias] = useState([]);
 
   useEffect(() => {
     supabase
       .from("categorias")
-      .select("id, nombre")
+      .select("id, nombre, subcategorias")
       .order("orden")
       .then(({ data, error }) => {
         if (!error && data) setCategorias(data);
       });
   }, []);
+
+  // Lista de subcategorías de la categoría elegida (si tiene). Si se
+  // cambia a una categoría sin esa subcategoría, se limpia sola para
+  // no guardar una subcategoría que ya no corresponde.
+  const categoriaSeleccionada = categorias.find((c) => String(c.id) === String(categoriaId));
+  const subcategoriasDisponibles = categoriaSeleccionada?.subcategorias ?? [];
+
+  useEffect(() => {
+    if (subcategoria && !subcategoriasDisponibles.includes(subcategoria)) {
+      setSubcategoria("");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [categoriaId]);
 
   const [imagenOriginalUrl, setImagenOriginalUrl] = useState(productoExistente?.imagen_original_url ?? null);
   const [imagenOriginalFile, setImagenOriginalFile] = useState(null);
@@ -209,6 +223,7 @@ export default function ProductForm({ productoExistente, onGuardado }) {
         descripcion_larga: descripcionLarga,
         medida: medida || null,
         categoria_id: categoriaId ? Number(categoriaId) : null,
+        subcategoria: subcategoria || null,
         imagen_original_url: urlOriginal,
         imagen_recortada_url: urlRecortada,
         crop_data: {
@@ -355,6 +370,21 @@ export default function ProductForm({ productoExistente, onGuardado }) {
               ))}
             </select>
           </Campo>
+
+          {subcategoriasDisponibles.length > 0 && (
+            <Campo label="Subcategoría (opcional)">
+              <select
+                value={subcategoria}
+                onChange={(e) => setSubcategoria(e.target.value)}
+                className="campo-input"
+              >
+                <option value="">Ninguna</option>
+                {subcategoriasDisponibles.map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
+            </Campo>
+          )}
 
           <Campo label="Descripción Corta">
             <textarea
