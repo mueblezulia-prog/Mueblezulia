@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 import SectionBanner from "./SectionBanner";
+import Reveal from "./Reveal";
+import { sonidoNavegar } from "../lib/sonido";
 
 // Categorías por defecto que se muestran mientras no haya datos reales en
 // Supabase, o si una categoría todavía no tiene imagen cargada desde el
@@ -52,29 +54,31 @@ export default function CategoriasGrid({ titulo = "¿Cuál te llevas a Casa?" })
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
-        {categorias.map((cat) => (
-          <Link
-            key={cat.id}
-            to={`/categoria/${cat.slug}`}
-            className="group relative rounded-card overflow-hidden aspect-[4/3] flex items-end text-left
-                       border border-carbon-border shadow-sm
-                       hover:border-gold/60 hover:shadow-lg hover:shadow-black/30 hover:-translate-y-0.5
-                       transition-all duration-300 ease-out"
-            style={!cat.imagen ? { backgroundColor: "#2A2A2A" } : undefined}
-          >
-            {cat.imagen && (
-              <span
-                className="absolute inset-0 bg-cover bg-center transition-transform duration-500 ease-out group-hover:scale-110"
-                style={{ backgroundImage: `url(${cat.imagen})` }}
-              />
-            )}
-            <span className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
-            {/* Etiqueta en barra completa (de borde a borde), no en pastilla
-                flotante — el vidrio cubre todo el ancho de la tarjeta. */}
-            <span className="relative w-full glass text-ink font-bold text-sm sm:text-base leading-tight px-3 py-2 group-hover:text-gold transition-colors duration-200">
-              {cat.nombre}
-            </span>
-          </Link>
+        {categorias.map((cat, i) => (
+          <Reveal key={cat.id} delay={i * 60}>
+            <Link
+              to={`/categoria/${cat.slug}`}
+              onClick={sonidoNavegar}
+              className="group relative rounded-card overflow-hidden aspect-[4/3] flex items-end text-left w-full
+                         border border-carbon-border shadow-sm
+                         hover:border-gold/60 hover:shadow-lg hover:shadow-black/30 hover:-translate-y-0.5
+                         transition-all duration-300 ease-out"
+              style={!cat.imagen ? { backgroundColor: "#2A2A2A" } : undefined}
+            >
+              {cat.imagen && (
+                <span
+                  className="absolute inset-0 bg-cover bg-center transition-transform duration-500 ease-out group-hover:scale-110"
+                  style={{ backgroundImage: `url(${cat.imagen})` }}
+                />
+              )}
+              <span className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+              {/* Etiqueta en barra completa (de borde a borde), no en pastilla
+                  flotante — el vidrio cubre todo el ancho de la tarjeta. */}
+              <span className="relative w-full glass text-ink font-bold text-sm sm:text-base leading-tight px-3 py-2 group-hover:text-gold transition-colors duration-200">
+                {cat.nombre}
+              </span>
+            </Link>
+          </Reveal>
         ))}
       </div>
     </div>

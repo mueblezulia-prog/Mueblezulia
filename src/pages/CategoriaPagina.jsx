@@ -3,6 +3,8 @@ import { useParams, Link } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 import ProductCard from "../components/ProductCard";
 import SectionBanner from "../components/SectionBanner";
+import Reveal from "../components/Reveal";
+import { sonidoNavegar } from "../lib/sonido";
 
 // Solo para el banner (título + ícono) mientras la categoría no tenga
 // todavía una fila real en Supabase. En cuanto exista en la tabla
@@ -119,8 +121,10 @@ export default function CategoriaPagina() {
 
       {!cargando && !error && productos.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
-          {productos.map((producto) => (
-            <ProductCard key={producto.id} producto={producto} />
+          {productos.map((producto, i) => (
+            <Reveal key={producto.id} delay={(i % 9) * 60}>
+              <ProductCard producto={producto} />
+            </Reveal>
           ))}
         </div>
       )}
@@ -128,6 +132,7 @@ export default function CategoriaPagina() {
       <div className="text-center mt-8">
         <Link
           to="/catalogo"
+          onClick={sonidoNavegar}
           className="min-h-tap inline-flex items-center justify-center px-6 rounded-control glass-gold text-ink font-bold
                      hover:bg-gold/25 active:scale-[0.98] transition-all duration-200"
         >

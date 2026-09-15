@@ -1,4 +1,5 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
+import { sonidoNavegar } from "../lib/sonido";
 
 const IconInicio = ({ activo }) => (
   <svg viewBox="0 0 24 24" fill="none" className="w-6 h-6" stroke={activo ? "#F2B90C" : "#B3B3B3"} strokeWidth="2">
@@ -39,6 +40,15 @@ const TABS = [
 ];
 
 export default function BottomNav() {
+  const { pathname } = useLocation();
+
+  function alTocar(to, end) {
+    const yaActiva = end ? pathname === to : pathname.startsWith(to);
+    // Solo suena si realmente cambia de pestaña — tocar la que ya está
+    // activa no debería sonar de nuevo.
+    if (!yaActiva) sonidoNavegar();
+  }
+
   return (
     <nav className="sm:hidden fixed bottom-0 inset-x-0 z-30 bg-carbon/80 backdrop-blur-md border-t border-white/10 pb-[env(safe-area-inset-bottom)] shadow-lg shadow-black/30">
       <div className="grid grid-cols-4">
@@ -47,6 +57,7 @@ export default function BottomNav() {
             key={to}
             to={to}
             end={end}
+            onClick={() => alTocar(to, end)}
             className="min-h-tap flex flex-col items-center justify-center py-2 gap-0.5"
           >
             {({ isActive }) => (

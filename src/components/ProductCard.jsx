@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { sonidoNavegar } from "../lib/sonido";
 
 /**
  * Tarjeta de producto para el catálogo (cliente). Imagen grande con
@@ -11,6 +12,7 @@ export default function ProductCard({ producto }) {
   return (
     <Link
       to={`/producto/${id}`}
+      onClick={sonidoNavegar}
       className="group relative rounded-card overflow-hidden flex flex-col
                  glass hover:border-gold/50 hover:shadow-xl hover:shadow-black/40 hover:-translate-y-0.5
                  transition-all duration-300 ease-out"

@@ -4,7 +4,9 @@ import Hero from "../components/Hero";
 import CategoriasGrid from "../components/CategoriasGrid";
 import SectionBanner from "../components/SectionBanner";
 import BloqueContenido from "../components/BloqueContenido";
+import Reveal from "../components/Reveal";
 import { obtenerContenido, CONTENIDO_DEFAULT } from "../lib/contenido";
+import { sonidoNavegar } from "../lib/sonido";
 
 export default function Home() {
   const [sede, setSede] = useState(CONTENIDO_DEFAULT.nuestra_sede);
@@ -34,6 +36,7 @@ export default function Home() {
         <div className="text-center">
           <Link
             to="/catalogo"
+            onClick={sonidoNavegar}
             className="min-h-tap inline-flex items-center justify-center px-6 rounded-control glass-gold text-ink font-bold
                        hover:bg-gold/25 active:scale-[0.98] transition-all duration-200"
           >
@@ -47,7 +50,7 @@ export default function Home() {
         <div className="mb-5">
           <SectionBanner titulo="Nuestra Sede" icono="📍" imagenFondo={sede.imagen} tinte="dorado" />
         </div>
-        <div className="px-4 glass rounded-card overflow-hidden grid sm:grid-cols-2">
+        <Reveal className="px-4 glass rounded-card overflow-hidden grid sm:grid-cols-2" delay={80}>
           <img
             src={sede.imagen}
             alt="Fachada de Muebles Zulia"
@@ -59,13 +62,14 @@ export default function Home() {
             <p className="text-ink font-semibold mb-4">{sede.direccion}</p>
             <Link
               to="/contacto"
+              onClick={sonidoNavegar}
               className="min-h-tap inline-flex items-center px-5 rounded-control border-2 border-ink/60 text-ink font-bold w-fit
                          hover:bg-ink hover:text-carbon active:scale-[0.98] transition-all duration-200"
             >
               Ver mapa y métodos de pago
             </Link>
           </div>
-        </div>
+        </Reveal>
       </section>
 
       {/* EXCELENCIA EN MANUFACTURA (resumen — versión completa en /fabricacion) */}
@@ -73,7 +77,7 @@ export default function Home() {
         <div className="mb-5">
           <SectionBanner titulo="Excelencia en Manufactura" icono="🔨" imagenFondo="/assets/carpinteria.jpg" tinte="oscuro" />
         </div>
-        <div className="px-4 glass rounded-card overflow-hidden grid sm:grid-cols-2">
+        <Reveal className="px-4 glass rounded-card overflow-hidden grid sm:grid-cols-2" delay={80}>
           <img
             src={fotoFabricacion}
             alt="Taller de carpintería de Muebles Zulia"
@@ -84,20 +88,21 @@ export default function Home() {
             <p className="text-ink-muted mb-4 line-clamp-3">{fabricacion.texto}</p>
             <Link
               to="/fabricacion"
+              onClick={sonidoNavegar}
               className="min-h-tap inline-flex items-center px-5 rounded-control border-2 border-ink/60 text-ink font-bold w-fit
                          hover:bg-ink hover:text-carbon active:scale-[0.98] transition-all duration-200"
             >
               Conocer nuestro proceso
             </Link>
           </div>
-        </div>
+        </Reveal>
       </section>
 
       {/* Secciones libres, armadas y ordenadas desde /admin/contenido */}
       {bloques.map((bloque) => (
-        <div key={bloque.id} className="border-t border-carbon-border">
+        <Reveal key={bloque.id} as="div" className="border-t border-carbon-border">
           <BloqueContenido bloque={bloque} />
-        </div>
+        </Reveal>
       ))}
     </div>
   );

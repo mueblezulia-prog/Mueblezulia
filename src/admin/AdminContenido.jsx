@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { convertirSiEsHeic } from "../lib/heic";
 import { obtenerContenido, guardarContenido, CONTENIDO_DEFAULT } from "../lib/contenido";
+import { sonidoConfirmar } from "../lib/sonido";
 
 const BUCKET = "productos"; // mismo bucket que ya usan fotos de mueble y categorías
 
@@ -98,6 +99,7 @@ function SeccionSede({ sede, onGuardado }) {
     try {
       await guardarContenido("nuestra_sede", form);
       onGuardado(form);
+      sonidoConfirmar();
       setMensaje("Guardado correctamente.");
     } catch (err) {
       setMensaje(`Error al guardar: ${err.message}`);
@@ -213,6 +215,7 @@ function SeccionFabricacion({ fabricacion, onGuardado }) {
     try {
       await guardarContenido("fabricacion", form);
       onGuardado(form);
+      sonidoConfirmar();
       setMensaje("Guardado correctamente.");
     } catch (err) {
       setMensaje(`Error al guardar: ${err.message}`);
@@ -312,6 +315,7 @@ function SeccionMetodosPago({ metodos, onGuardado }) {
     try {
       await guardarContenido("metodos_pago", { metodos: lista });
       onGuardado(lista);
+      sonidoConfirmar();
       setMensaje("Guardado correctamente.");
     } catch (err) {
       setMensaje(`Error al guardar: ${err.message}`);
@@ -564,6 +568,7 @@ function SeccionBloques({ bloques, onGuardado }) {
     try {
       await guardarContenido("secciones_home", { bloques: lista });
       onGuardado(lista);
+      sonidoConfirmar();
       setMensaje("Guardado correctamente.");
     } catch (err) {
       setMensaje(`Error al guardar: ${err.message}`);

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import SectionBanner from "../components/SectionBanner";
+import Reveal from "../components/Reveal";
 import { obtenerContenido, CONTENIDO_DEFAULT } from "../lib/contenido";
 
 export default function Fabricacion() {
@@ -27,11 +28,13 @@ export default function Fabricacion() {
       </div>
 
       <section className="px-4 pb-10 max-w-5xl mx-auto">
-        <div className="grid sm:grid-cols-2 gap-6 items-center">
+        <Reveal className="grid sm:grid-cols-2 gap-6 items-center">
           <div className="grid grid-cols-2 grid-rows-2 gap-3 h-72 sm:h-96">
             {imagenes.slice(0, 4).map((url, i) => (
-              <img
+              <Reveal
                 key={url + i}
+                delay={i * 90}
+                as="img"
                 src={url}
                 alt="Trabajo artesanal en el taller de Muebles Zulia"
                 className={`w-full h-full rounded-card border border-carbon-border ${
@@ -48,7 +51,7 @@ export default function Fabricacion() {
               {datos.texto}
             </p>
           </div>
-        </div>
+        </Reveal>
       </section>
     </div>
   );

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 import ProductCard from "../components/ProductCard";
 import CategoriasGrid from "../components/CategoriasGrid";
+import Reveal from "../components/Reveal";
 
 /**
  * Catálogo general: muestra TODOS los muebles activos. Para entrar a una
@@ -85,8 +86,10 @@ export default function CatalogoProductos() {
 
           {!cargando && !error && productos.length > 0 && (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-              {productos.map((producto) => (
-                <ProductCard key={producto.id} producto={producto} />
+              {productos.map((producto, i) => (
+                <Reveal key={producto.id} delay={(i % 8) * 60}>
+                  <ProductCard producto={producto} />
+                </Reveal>
               ))}
             </div>
           )}

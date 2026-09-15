@@ -1,3 +1,5 @@
+import Reveal from "./Reveal";
+
 /**
  * Franja de título de borde a borde, con foto de fondo difuminada
  * (efecto gaussiano) y una capa de vidrio semitransparente encima.
@@ -13,7 +15,7 @@ export default function SectionBanner({ titulo, icono, imagenFondo, tinte = "dor
   const claseTexto = tinte === "oscuro" ? "text-ink" : "text-ink";
 
   return (
-    <div
+    <Reveal
       className={[
         "relative left-1/2 right-1/2 -mx-[50vw] w-screen overflow-hidden flex items-center justify-center",
         tamano === "grande" ? "py-10" : "py-6",
@@ -32,6 +34,6 @@ export default function SectionBanner({ titulo, icono, imagenFondo, tinte = "dor
           {titulo}
         </h2>
       </div>
-    </div>
+    </Reveal>
   );
 }

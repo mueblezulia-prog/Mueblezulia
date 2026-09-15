@@ -2,6 +2,8 @@ import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 import ColorSwatchSelector from "../components/ColorSwatchSelector";
+import Reveal from "../components/Reveal";
+import { sonidoConfirmar } from "../lib/sonido";
 
 const WHATSAPP_NUMERO = "584127519141"; // +58 412 751 9141
 
@@ -188,7 +190,7 @@ export default function ProductoDetalle() {
             <div className="absolute inset-0 bg-carbon/85" />
           </>
         )}
-        <div className="relative glass px-5 pt-8 pb-8 flex flex-col gap-4 border-x-0">
+        <div className="relative glass px-5 pt-8 pb-8 flex flex-col gap-4 border-x-0 animar-entrada">
           <h1 className="text-3xl font-extrabold text-ink tracking-tight">{producto.titulo}</h1>
 
           {/* Precio y medida con su ícono respectivo */}
@@ -229,6 +231,7 @@ export default function ProductoDetalle() {
           href={linkWhatsApp}
           target="_blank"
           rel="noreferrer"
+          onClick={sonidoConfirmar}
           className="btn-primary flex items-center justify-center gap-2"
         >
           💬 Preguntar por WhatsApp

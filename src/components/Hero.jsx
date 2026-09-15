@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { sonidoNavegar } from "../lib/sonido";
 
 export default function Hero() {
   return (
@@ -17,18 +18,31 @@ export default function Hero() {
       <div className="absolute inset-0 bg-gradient-to-t from-carbon via-transparent to-transparent" />
 
       <div className="relative px-4 py-16 sm:py-24 max-w-4xl mx-auto text-center">
-        <span className="inline-block text-gold text-xs sm:text-sm font-bold uppercase tracking-[0.2em] mb-3">
+        <span
+          className="animar-entrada inline-block text-gold text-xs sm:text-sm font-bold uppercase tracking-[0.2em] mb-3"
+          style={{ animationDelay: "0ms" }}
+        >
           Calidad · Tradición · Confort
         </span>
-        <h1 className="text-3xl sm:text-5xl font-extrabold text-ink leading-tight mb-3 drop-shadow-sm">
+        <h1
+          className="animar-entrada text-3xl sm:text-5xl font-extrabold text-ink leading-tight mb-3 drop-shadow-sm"
+          style={{ animationDelay: "90ms" }}
+        >
           La Mueblería de la Familia Zuliana
         </h1>
-        <p className="text-ink-muted text-lg sm:text-xl mb-8">
+        <p
+          className="animar-entrada text-ink-muted text-lg sm:text-xl mb-8"
+          style={{ animationDelay: "180ms" }}
+        >
           Llevando confort a los hogares del Zulia
         </p>
-        <div className="flex flex-col sm:flex-row gap-3 justify-center">
+        <div
+          className="animar-entrada flex flex-col sm:flex-row gap-3 justify-center"
+          style={{ animationDelay: "270ms" }}
+        >
           <Link
             to="/catalogo"
+            onClick={sonidoNavegar}
             className="min-h-tap flex items-center justify-center px-6 rounded-control glass-gold text-ink font-bold text-lg
                        hover:bg-gold/25 active:scale-[0.98] transition-all duration-200"
           >
@@ -36,6 +50,7 @@ export default function Hero() {
           </Link>
           <Link
             to="/contacto"
+            onClick={sonidoNavegar}
             className="min-h-tap flex items-center justify-center px-6 rounded-control glass text-ink font-bold text-lg
                        hover:bg-white/15 active:scale-[0.98] transition-all duration-200"
           >

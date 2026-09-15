@@ -6,6 +6,7 @@
   html {
     /* Evita que iOS agrande el texto al rotar, mantiene nuestra escala fija */
     -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
   }
   body {
     @apply bg-carbon text-ink;
@@ -17,6 +18,21 @@
   a:focus-visible, button:focus-visible {
     outline: 2px solid theme("colors.gold.DEFAULT");
     outline-offset: 2px;
+  }
+
+  /* Animaciones sutiles y minimalistas — solo opacidad + un pequeño
+     desplazamiento, nunca rebotes ni giros. Se usan en el Hero (que
+     siempre está a la vista al cargar) y las reutiliza el componente
+     Reveal para todo lo demás. Respeta a quienes prefieren menos
+     movimiento en su sistema operativo. */
+  @media (prefers-reduced-motion: no-preference) {
+    @keyframes entrada-suave {
+      from { opacity: 0; transform: translateY(14px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animar-entrada {
+      animation: entrada-suave 0.8s ease-out both;
+    }
   }
 }
 

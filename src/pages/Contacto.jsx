@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import SectionBanner from "../components/SectionBanner";
+import Reveal from "../components/Reveal";
 import { obtenerContenido, CONTENIDO_DEFAULT } from "../lib/contenido";
+import { sonidoConfirmar, sonidoNavegar } from "../lib/sonido";
 
 const WHATSAPP_LINK = "https://wa.me/584127519141?text=" + encodeURIComponent("Hola, tengo una consulta sobre sus muebles.");
 
@@ -41,7 +43,7 @@ export default function Contacto() {
             />
           </div>
 
-          <div className="relative -mt-10 sm:-mt-14 mx-3 sm:mx-6 glass rounded-card p-5 flex flex-col items-start">
+          <div className="relative -mt-10 sm:-mt-14 mx-3 sm:mx-6 glass rounded-card p-5 flex flex-col items-start animar-entrada">
             <h2 className="text-xl font-bold text-ink mb-2">{sede.titulo}</h2>
             <p className="text-ink-muted mb-4">{sede.texto}</p>
             <p className="text-ink font-semibold mb-4">{sede.direccion}</p>
@@ -49,6 +51,7 @@ export default function Contacto() {
               href={mapsLink}
               target="_blank"
               rel="noreferrer"
+              onClick={sonidoNavegar}
               className="min-h-tap inline-flex items-center justify-center px-5 rounded-control bg-gold text-carbon font-bold
                          hover:bg-gold-hover active:scale-[0.98] transition-all duration-200"
             >
@@ -76,8 +79,9 @@ export default function Contacto() {
         </div>
         <div className="px-4 grid sm:grid-cols-2 gap-4">
           {metodos.map((m, i) => (
-            <div
+            <Reveal
               key={m.nombre || i}
+              delay={(i % 6) * 70}
               className="bg-carbon-light border border-carbon-border rounded-card p-5 flex gap-4
                          hover:border-gold/40 hover:shadow-lg hover:shadow-black/20 transition-all duration-200"
             >
@@ -86,7 +90,7 @@ export default function Contacto() {
                 <h3 className="text-lg font-bold text-ink mb-1">{m.nombre}</h3>
                 <p className="text-ink-muted">{m.detalle}</p>
               </div>
-            </div>
+            </Reveal>
           ))}
         </div>
       </section>
@@ -99,6 +103,7 @@ export default function Contacto() {
           href={WHATSAPP_LINK}
           target="_blank"
           rel="noreferrer"
+          onClick={sonidoConfirmar}
           className="min-h-tap inline-flex items-center justify-center px-6 rounded-control bg-gold text-carbon font-bold text-lg"
         >
           Escribir por WhatsApp
