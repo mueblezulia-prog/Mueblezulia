@@ -10,6 +10,11 @@ import { supabase } from "./supabaseClient";
  * /admin/contenido: "nuestra_sede", "fabricacion", "metodos_pago".
  */
 export const CONTENIDO_DEFAULT = {
+  hero: {
+    etiqueta: "Calidad · Tradición · Confort",
+    titulo: "La Mueblería de la Familia Zuliana",
+    subtitulo: "Llevando confort a los hogares del Zulia",
+  },
   nuestra_sede: {
     imagen: "/assets/ubicacion.jpg",
     direccion: "Av. 15 Delicias, frente a Alkosto, Maracaibo, Zulia",

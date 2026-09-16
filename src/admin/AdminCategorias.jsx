@@ -44,7 +44,7 @@ export default function AdminCategorias() {
     setCategorias((actual) => actual.map((c) => (c.id === id ? { ...c, ...cambios } : c)));
   }
 
-  async function guardarFila(categoria) {
+  async function guardarFila(categoria, subcategoriasFinal) {
     setGuardandoId(categoria.id);
     const { error } = await supabase
       .from("categorias")
@@ -53,7 +53,7 @@ export default function AdminCategorias() {
         slug: categoria.slug,
         imagen: categoria.imagen,
         orden: categoria.orden,
-        subcategorias: categoria.subcategorias ?? [],
+        subcategorias: subcategoriasFinal ?? categoria.subcategorias ?? [],
       })
       .eq("id", categoria.id);
     setGuardandoId(null);
@@ -126,7 +126,7 @@ export default function AdminCategorias() {
               guardando={guardandoId === cat.id}
               subiendo={subiendoId === cat.id}
               onCambiar={(cambios) => actualizarLocal(cat.id, cambios)}
-              onGuardar={() => guardarFila(cat)}
+              onGuardar={(subcategoriasFinal) => guardarFila(cat, subcategoriasFinal)}
               onSubirImagen={(file) => subirImagenFila(cat, file)}
               onBorrar={() => borrarFila(cat)}
             />
@@ -138,6 +138,29 @@ export default function AdminCategorias() {
 }
 
 function TarjetaCategoria({ categoria, guardando, subiendo, onCambiar, onGuardar, onSubirImagen, onBorrar }) {
+  // El texto que se está escribiendo para una subcategoría nueva vive
+  // aquí (no dentro de EditorSubcategorias) para que el botón
+  // "Guardar" de la tarjeta pueda incluirlo aunque el admin no haya
+  // presionado "+ Añadir" — antes, si escribías el nombre y le dabas
+  // directo a "Guardar", esa subcategoría se perdía silenciosamente.
+  const [nuevaSubcategoria, setNuevaSubcategoria] = useState("");
+
+  function subcategoriasConPendiente() {
+    const actuales = categoria.subcategorias ?? [];
+    const pendiente = nuevaSubcategoria.trim();
+    if (!pendiente || actuales.includes(pendiente)) return actuales;
+    return [...actuales, pendiente];
+  }
+
+  function handleGuardarClick() {
+    const finales = subcategoriasConPendiente();
+    if (finales !== categoria.subcategorias) {
+      onCambiar({ subcategorias: finales });
+      setNuevaSubcategoria("");
+    }
+    onGuardar(finales);
+  }
+
   return (
     <div className="group rounded-card overflow-hidden border border-carbon-border bg-carbon-light flex flex-col">
       <label
@@ -185,6 +208,8 @@ function TarjetaCategoria({ categoria, guardando, subiendo, onCambiar, onGuardar
         <EditorSubcategorias
           subcategorias={categoria.subcategorias ?? []}
           onCambiar={(subcategorias) => onCambiar({ subcategorias })}
+          nuevaSubcategoria={nuevaSubcategoria}
+          onCambiarNuevaSubcategoria={setNuevaSubcategoria}
         />
 
         <div className="flex items-center justify-between pt-1">
@@ -197,7 +222,7 @@ function TarjetaCategoria({ categoria, guardando, subiendo, onCambiar, onGuardar
           </button>
           <button
             type="button"
-            onClick={onGuardar}
+            onClick={handleGuardarClick}
             disabled={guardando}
             className="min-h-tap px-3 rounded-control bg-gold text-carbon text-xs font-bold disabled:opacity-60"
           >
@@ -211,20 +236,20 @@ function TarjetaCategoria({ categoria, guardando, subiendo, onCambiar, onGuardar
 
 /**
  * Lista de "chips" con las subcategorías de una categoría (ej: dentro
- * de "Modulares" → Grecia, Verona, Raquel). Se escriben libremente y
- * se guardan junto con el resto de la categoría al darle "Guardar".
+ * de "Modulares" → Grecia, Verona, Raquel). Se escriben libremente; el
+ * texto que se está escribiendo (aún sin confirmar con "+ Añadir")
+ * vive en el padre (TarjetaCategoria) para que "Guardar" también lo
+ * incluya si el admin no le dio a "+ Añadir" primero.
  */
-function EditorSubcategorias({ subcategorias, onCambiar }) {
-  const [nuevo, setNuevo] = useState("");
-
+function EditorSubcategorias({ subcategorias, onCambiar, nuevaSubcategoria, onCambiarNuevaSubcategoria }) {
   function agregar() {
-    const texto = nuevo.trim();
+    const texto = nuevaSubcategoria.trim();
     if (!texto || subcategorias.includes(texto)) {
-      setNuevo("");
+      onCambiarNuevaSubcategoria("");
       return;
     }
     onCambiar([...subcategorias, texto]);
-    setNuevo("");
+    onCambiarNuevaSubcategoria("");
   }
 
   function quitar(nombre) {
@@ -257,15 +282,15 @@ function EditorSubcategorias({ subcategorias, onCambiar }) {
       <div className="flex gap-1">
         <input
           type="text"
-          value={nuevo}
-          onChange={(e) => setNuevo(e.target.value)}
+          value={nuevaSubcategoria}
+          onChange={(e) => onCambiarNuevaSubcategoria(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === "Enter") {
               e.preventDefault();
               agregar();
             }
           }}
-          placeholder="Ej: Grecia"
+          placeholder="Ej: Grecia (o escribe y da Guardar)"
           className="flex-1 min-w-0 bg-carbon border border-carbon-border rounded-control px-2 py-1 text-xs text-ink outline-none focus:border-gold/60 transition-colors duration-150"
         />
         <button

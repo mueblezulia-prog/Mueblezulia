@@ -24,6 +24,7 @@ async function subirImagenContenido(file) {
 export default function AdminContenido() {
   const [cargando, setCargando] = useState(true);
 
+  const [hero, setHero] = useState(CONTENIDO_DEFAULT.hero);
   const [sede, setSede] = useState(CONTENIDO_DEFAULT.nuestra_sede);
   const [fabricacion, setFabricacion] = useState(CONTENIDO_DEFAULT.fabricacion);
   const [metodos, setMetodos] = useState(CONTENIDO_DEFAULT.metodos_pago.metodos);
@@ -31,11 +32,13 @@ export default function AdminContenido() {
 
   useEffect(() => {
     Promise.all([
+      obtenerContenido("hero"),
       obtenerContenido("nuestra_sede"),
       obtenerContenido("fabricacion"),
       obtenerContenido("metodos_pago"),
       obtenerContenido("secciones_home"),
-    ]).then(([s, f, m, b]) => {
+    ]).then(([h, s, f, m, b]) => {
+      setHero(h);
       setSede(s);
       setFabricacion(f);
       setMetodos(m.metodos ?? []);
@@ -57,11 +60,83 @@ export default function AdminContenido() {
         </p>
       </div>
 
+      <SeccionHero hero={hero} onGuardado={setHero} />
       <SeccionSede sede={sede} onGuardado={setSede} />
       <SeccionFabricacion fabricacion={fabricacion} onGuardado={setFabricacion} />
       <SeccionMetodosPago metodos={metodos} onGuardado={setMetodos} />
       <SeccionBloques bloques={bloques} onGuardado={setBloques} />
     </div>
+  );
+}
+
+/* ------------------------------------------------------------ */
+/* HERO — la franja principal de la página de inicio              */
+/* ------------------------------------------------------------ */
+function SeccionHero({ hero, onGuardado }) {
+  const [form, setForm] = useState(hero);
+  const [guardando, setGuardando] = useState(false);
+  const [mensaje, setMensaje] = useState(null);
+
+  function cambiar(campo, valor) {
+    setForm((f) => ({ ...f, [campo]: valor }));
+  }
+
+  async function handleGuardar() {
+    setGuardando(true);
+    setMensaje(null);
+    try {
+      await guardarContenido("hero", form);
+      onGuardado(form);
+      sonidoConfirmar();
+      setMensaje("Guardado correctamente.");
+    } catch (err) {
+      setMensaje(`Error al guardar: ${err.message}`);
+    } finally {
+      setGuardando(false);
+    }
+  }
+
+  return (
+    <section className="admin-card p-5 flex flex-col gap-4">
+      <h2 className="text-xl font-bold text-ink">🏠 Portada (Inicio)</h2>
+      <p className="text-sm text-ink-muted -mt-2">La franja principal que se ve primero al entrar al sitio.</p>
+
+      <Campo label="Etiqueta pequeña">
+        <input
+          type="text"
+          value={form.etiqueta}
+          onChange={(e) => cambiar("etiqueta", e.target.value)}
+          className="campo-input"
+        />
+      </Campo>
+
+      <Campo label="Título grande">
+        <input
+          type="text"
+          value={form.titulo}
+          onChange={(e) => cambiar("titulo", e.target.value)}
+          className="campo-input"
+        />
+      </Campo>
+
+      <Campo label="Subtítulo">
+        <input
+          type="text"
+          value={form.subtitulo}
+          onChange={(e) => cambiar("subtitulo", e.target.value)}
+          className="campo-input"
+        />
+      </Campo>
+
+      <div className="flex items-center gap-3">
+        <button type="button" onClick={handleGuardar} disabled={guardando} className="btn-admin-primary text-sm">
+          {guardando ? "Guardando…" : "Guardar Portada"}
+        </button>
+        {mensaje && (
+          <span className={mensaje.startsWith("Error") ? "text-terracota text-sm" : "text-gold text-sm"}>{mensaje}</span>
+        )}
+      </div>
+    </section>
   );
 }
 

@@ -11,7 +11,7 @@ import { supabase } from "../lib/supabaseClient";
  * `onChange(idsSeleccionados)` — el padre guarda esos ids en
  * `producto_colores` (columna `tela_id`) al presionar "Guardar".
  */
-export default function SelectorTelas({ seleccionadas, onChange }) {
+export default function SelectorTelas({ seleccionadas, onChange, disponibleTodasTelas, onCambiarTodasTelas, colorAEleccion, onCambiarColorEleccion }) {
   const [telas, setTelas] = useState([]);
   const [cargando, setCargando] = useState(true);
 
@@ -62,8 +62,8 @@ export default function SelectorTelas({ seleccionadas, onChange }) {
                 onClick={() => alternar(tela.id)}
                 aria-pressed={activa}
                 className={[
-                  "flex items-center gap-2 rounded-control border-2 px-3 py-2 min-h-tap",
-                  activa ? "border-gold bg-carbon-light" : "border-carbon-border bg-transparent",
+                  "flex items-center gap-2 rounded-control border-2 px-3 py-2 min-h-tap transition-colors duration-150",
+                  activa ? "border-gold bg-carbon-light" : "border-carbon-border bg-transparent hover:border-carbon-border/60",
                 ].join(" ")}
               >
                 <span
@@ -77,6 +77,54 @@ export default function SelectorTelas({ seleccionadas, onChange }) {
           })}
         </div>
       )}
+
+      {/* Etiquetas especiales — no son telas del catálogo, son avisos
+          para el cliente. Se muestran como insignia dorada en la tarjeta
+          y el detalle del producto cuando están activadas. */}
+      <div className="flex flex-col gap-2 pt-2 border-t border-carbon-border">
+        <EtiquetaEspecial
+          icono="🌈"
+          titulo="Disponible en todas las telas"
+          ayuda="El cliente puede pedir cualquier tela del catálogo, no solo las marcadas arriba."
+          activa={disponibleTodasTelas}
+          onClick={() => onCambiarTodasTelas(!disponibleTodasTelas)}
+        />
+        <EtiquetaEspecial
+          icono="🎨"
+          titulo="El color de tu preferencia"
+          ayuda="Se confecciona en el color o tela que pida el cliente, fuera del catálogo."
+          activa={colorAEleccion}
+          onClick={() => onCambiarColorEleccion(!colorAEleccion)}
+        />
+      </div>
     </div>
+  );
+}
+
+function EtiquetaEspecial({ icono, titulo, ayuda, activa, onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={activa}
+      className={[
+        "flex items-center gap-3 rounded-control border-2 px-3 py-2 min-h-tap text-left transition-all duration-150",
+        activa ? "border-gold bg-gold/10" : "border-carbon-border bg-transparent hover:border-carbon-border/60",
+      ].join(" ")}
+    >
+      <span className="text-xl shrink-0">{icono}</span>
+      <span className="flex-1 min-w-0">
+        <span className="block text-base font-semibold text-ink">{titulo}</span>
+        <span className="block text-xs text-ink-muted">{ayuda}</span>
+      </span>
+      <span
+        className={[
+          "w-5 h-5 rounded-full border-2 shrink-0 flex items-center justify-center text-[11px] font-bold",
+          activa ? "border-gold bg-gold text-carbon" : "border-carbon-border text-transparent",
+        ].join(" ")}
+      >
+        ✓
+      </span>
+    </button>
   );
 }

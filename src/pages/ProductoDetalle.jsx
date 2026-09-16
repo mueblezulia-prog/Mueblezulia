@@ -203,6 +203,16 @@ export default function ProductoDetalle() {
                 📏 {producto.medida}
               </span>
             )}
+            {producto.disponible_todas_telas && (
+              <span className="inline-flex items-center gap-2 text-base font-bold text-gold glass-gold px-3 py-1 rounded-control">
+                🌈 Todas las telas
+              </span>
+            )}
+            {producto.color_a_eleccion && (
+              <span className="inline-flex items-center gap-2 text-base font-bold text-gold glass-gold px-3 py-1 rounded-control">
+                🎨 El color de tu preferencia
+              </span>
+            )}
           </div>
 
           {producto.descripcion_corta && (

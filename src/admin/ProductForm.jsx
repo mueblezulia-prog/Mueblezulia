@@ -58,6 +58,8 @@ export default function ProductForm({ productoExistente, onGuardado }) {
 
   const [fotos, setFotos] = useState([]);
   const [telasSeleccionadas, setTelasSeleccionadas] = useState([]);
+  const [disponibleTodasTelas, setDisponibleTodasTelas] = useState(productoExistente?.disponible_todas_telas ?? false);
+  const [colorAEleccion, setColorAEleccion] = useState(productoExistente?.color_a_eleccion ?? false);
   const [previewAbierto, setPreviewAbierto] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [mensaje, setMensaje] = useState(null);
@@ -140,6 +142,9 @@ export default function ProductForm({ productoExistente, onGuardado }) {
       titulo,
       descripcion_corta: descripcionCorta,
       precio: precio || 0,
+      medida,
+      disponible_todas_telas: disponibleTodasTelas,
+      color_a_eleccion: colorAEleccion,
       // Mientras no se guarda, la vista previa usa el blob local (imagenOriginalUrl
       // apunta al object URL de la foto recién subida o a la ya guardada).
       imagen_recortada_url: imagenOriginalUrl,
@@ -224,6 +229,8 @@ export default function ProductForm({ productoExistente, onGuardado }) {
         medida: medida || null,
         categoria_id: categoriaId ? Number(categoriaId) : null,
         subcategoria: subcategoria || null,
+        disponible_todas_telas: disponibleTodasTelas,
+        color_a_eleccion: colorAEleccion,
         imagen_original_url: urlOriginal,
         imagen_recortada_url: urlRecortada,
         crop_data: {
@@ -404,7 +411,14 @@ export default function ProductForm({ productoExistente, onGuardado }) {
             />
           </Campo>
 
-          <SelectorTelas seleccionadas={telasSeleccionadas} onChange={setTelasSeleccionadas} />
+          <SelectorTelas
+            seleccionadas={telasSeleccionadas}
+            onChange={setTelasSeleccionadas}
+            disponibleTodasTelas={disponibleTodasTelas}
+            onCambiarTodasTelas={setDisponibleTodasTelas}
+            colorAEleccion={colorAEleccion}
+            onCambiarColorEleccion={setColorAEleccion}
+          />
 
           <GaleriaImagenes fotos={fotos} onChange={setFotos} />
         </div>

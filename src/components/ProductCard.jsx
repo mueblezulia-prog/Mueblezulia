@@ -7,7 +7,7 @@ import { sonidoNavegar } from "../lib/sonido";
  * tarjeta es un solo link al detalle del producto.
  */
 export default function ProductCard({ producto }) {
-  const { id, titulo, precio, imagen_recortada_url, medida } = producto;
+  const { id, titulo, precio, imagen_recortada_url, medida, disponible_todas_telas, color_a_eleccion } = producto;
 
   return (
     <Link
@@ -33,11 +33,23 @@ export default function ProductCard({ producto }) {
         <h3 className="text-base sm:text-lg font-bold text-ink leading-snug line-clamp-2 group-hover:text-gold transition-colors duration-200">
           {titulo}
         </h3>
-        {medida && (
-          <span className="inline-flex items-center gap-1 self-start text-xs text-ink-muted bg-white/5 border border-white/10 rounded-control px-2 py-0.5">
-            📏 {medida}
-          </span>
-        )}
+        <div className="flex flex-wrap gap-1">
+          {medida && (
+            <span className="inline-flex items-center gap-1 self-start text-xs text-ink-muted bg-white/5 border border-white/10 rounded-control px-2 py-0.5">
+              📏 {medida}
+            </span>
+          )}
+          {disponible_todas_telas && (
+            <span className="inline-flex items-center gap-1 self-start text-xs font-semibold text-gold bg-gold/15 border border-gold/40 rounded-control px-2 py-0.5">
+              🌈 Todas las telas
+            </span>
+          )}
+          {color_a_eleccion && (
+            <span className="inline-flex items-center gap-1 self-start text-xs font-semibold text-gold bg-gold/15 border border-gold/40 rounded-control px-2 py-0.5">
+              🎨 A tu color
+            </span>
+          )}
+        </div>
       </div>
     </Link>
   );
