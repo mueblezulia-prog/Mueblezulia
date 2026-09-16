@@ -1,9 +1,23 @@
+import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import Hero from "../components/Hero";
 import CategoriasGrid from "../components/CategoriasGrid";
+import { obtenerContenido } from "../lib/contenido";
+import BloqueContenido from "../components/BloqueContenido";
 
 export default function Home() {
   const navigate = useNavigate();
+  const [bloquesExtra, setBloquesExtra] = useState([]);
+
+  useEffect(() => {
+    let activo = true;
+    obtenerContenido("secciones_home").then((c) => {
+      if (activo) setBloquesExtra(c.bloques ?? []);
+    });
+    return () => {
+      activo = false;
+    };
+  }, []);
 
   return (
     <div>
@@ -82,6 +96,11 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* Secciones extra armadas desde /admin/contenido */}
+      {bloquesExtra.map((bloque) => (
+        <BloqueContenido key={bloque.id} bloque={bloque} />
+      ))}
     </div>
   );
 }

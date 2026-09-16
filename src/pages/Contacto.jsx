@@ -1,3 +1,7 @@
+import { useEffect, useState } from "react";
+import { obtenerContenido } from "../lib/contenido";
+import BloqueContenido from "../components/BloqueContenido";
+
 const DIRECCION = "Av. 15 Delicias, frente a Alkosto, Maracaibo, Zulia";
 const MAPS_EMBED_SRC = `https://www.google.com/maps?q=${encodeURIComponent(DIRECCION)}&output=embed`;
 const MAPS_LINK = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(DIRECCION)}`;
@@ -10,6 +14,18 @@ const METODOS = [
 ];
 
 export default function Contacto() {
+  const [bloquesExtra, setBloquesExtra] = useState([]);
+
+  useEffect(() => {
+    let activo = true;
+    obtenerContenido("secciones_ubicacion").then((c) => {
+      if (activo) setBloquesExtra(c.bloques ?? []);
+    });
+    return () => {
+      activo = false;
+    };
+  }, []);
+
   return (
     <div>
       {/* NUESTRA SEDE */}
@@ -82,6 +98,11 @@ export default function Contacto() {
           Escribir por WhatsApp
         </a>
       </section>
+
+      {/* Secciones extra armadas desde /admin/contenido */}
+      {bloquesExtra.map((bloque) => (
+        <BloqueContenido key={bloque.id} bloque={bloque} />
+      ))}
     </div>
   );
 }

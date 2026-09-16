@@ -1,4 +1,20 @@
+import { useEffect, useState } from "react";
+import { obtenerContenido } from "../lib/contenido";
+import BloqueContenido from "../components/BloqueContenido";
+
 export default function Fabricacion() {
+  const [bloquesExtra, setBloquesExtra] = useState([]);
+
+  useEffect(() => {
+    let activo = true;
+    obtenerContenido("secciones_fabricacion").then((c) => {
+      if (activo) setBloquesExtra(c.bloques ?? []);
+    });
+    return () => {
+      activo = false;
+    };
+  }, []);
+
   return (
     <div>
       {/* Barra de título de ancho completo, no una "pastilla" redondeada */}
@@ -42,6 +58,12 @@ export default function Fabricacion() {
           </div>
         </div>
       </section>
+
+      {/* Secciones extra armadas desde /admin/contenido — se muestran en
+          el orden en que el admin las organizó. */}
+      {bloquesExtra.map((bloque) => (
+        <BloqueContenido key={bloque.id} bloque={bloque} />
+      ))}
     </div>
   );
 }

@@ -32,6 +32,54 @@
     @apply min-h-tap px-3 py-2 rounded-control bg-carbon-light border border-carbon-border
            text-ink text-base w-full;
   }
+  /* Tarjeta de sección del panel "Contenido del Sitio" */
+  .admin-card {
+    @apply bg-carbon-light border border-carbon-border rounded-card;
+  }
+  .btn-admin-primary {
+    @apply min-h-tap px-5 rounded-control bg-gold text-carbon font-bold
+           disabled:opacity-60 active:scale-[0.98] transition-transform;
+  }
+  .btn-admin-secondary {
+    @apply min-h-tap px-5 rounded-control border-2 border-ink text-ink font-bold
+           disabled:opacity-60 active:scale-[0.98] transition-transform;
+  }
+
+  /* ------------------------------------------------------------ */
+  /* EFECTO VIDRIO — tarjeta semitransparente con desenfoque, usada */
+  /* sobre fotos de fondo (banners y, ahora, el cierre del carrusel */
+  /* de "modo presentación"). Tres tintes para distintos fondos.     */
+  /* ------------------------------------------------------------ */
+  .glass {
+    background: rgba(255, 255, 255, 0.14);
+    backdrop-filter: blur(16px) saturate(140%);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+  }
+  .glass-gold {
+    background: rgba(242, 185, 12, 0.22);
+    backdrop-filter: blur(16px) saturate(140%);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+    border: 1px solid rgba(242, 185, 12, 0.35);
+  }
+  .glass-dark {
+    background: rgba(15, 15, 15, 0.55);
+    backdrop-filter: blur(16px) saturate(140%);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  /* Movimiento sutil de la tarjeta de vidrio en el modo presentación,
+     para que se sienta "viva" sin distraer del texto. */
+  .glass-float {
+    animation: glass-float 6s ease-in-out infinite;
+  }
+  @keyframes glass-float {
+    0%, 100% { transform: translateY(0) scale(1); }
+    50% { transform: translateY(-6px) scale(1.015); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .glass-float { animation: none; }
+  }
 }
 
 @layer utilities {
@@ -43,5 +91,12 @@
   .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
+  }
+}
+
+@layer components {
+  /* Fundido cruzado entre fotos del carrusel de "modo presentación" */
+  .carrusel-slide {
+    transition: opacity 1.1s ease-in-out;
   }
 }

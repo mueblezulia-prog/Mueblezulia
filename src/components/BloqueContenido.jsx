@@ -1,4 +1,5 @@
 import SectionBanner from "./SectionBanner";
+import CarruselBloque from "./CarruselBloque";
 import { ALTOS_BLOQUE } from "../lib/contenido";
 
 /**
@@ -35,6 +36,20 @@ export default function BloqueContenido({ bloque }) {
   }
 
   if (bloque.tipo === "galeria") {
+    if (bloque.modoPresentacion && imagenes.length > 0) {
+      return (
+        <section className="px-4 py-8 max-w-5xl mx-auto">
+          <CarruselBloque
+            imagenes={imagenes}
+            titulo={bloque.titulo}
+            texto={bloque.texto}
+            tinte={bloque.tinte}
+            alto={alto}
+            ajuste={ajuste}
+          />
+        </section>
+      );
+    }
     return (
       <section className="px-4 py-8 max-w-5xl mx-auto">
         {bloque.titulo && <h2 className="text-2xl font-extrabold text-ink mb-5 text-center">{bloque.titulo}</h2>}

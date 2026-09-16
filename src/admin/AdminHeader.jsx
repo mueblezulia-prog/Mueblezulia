@@ -10,7 +10,7 @@ const TABS = [
   { label: "Muebles", ruta: "/admin/productos" },
   { label: "Categorías", ruta: "/admin/categorias" },
   { label: "Telas", ruta: "/admin/telas" },
-  { label: "Configuración", ruta: null },
+  { label: "Contenido", ruta: "/admin/contenido" },
 ];
 
 export default function AdminHeader() {

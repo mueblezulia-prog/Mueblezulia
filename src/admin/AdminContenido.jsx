@@ -3,6 +3,7 @@ import { supabase } from "../lib/supabaseClient";
 import { convertirSiEsHeic } from "../lib/heic";
 import { obtenerContenido, guardarContenido, CONTENIDO_DEFAULT } from "../lib/contenido";
 import { sonidoConfirmar } from "../lib/sonido";
+import BloqueContenido from "../components/BloqueContenido";
 
 const BUCKET = "productos"; // mismo bucket que ya usan fotos de mueble y categorías
 
@@ -622,6 +623,7 @@ function bloqueVacio(tipo) {
     alto: "mediano",
     ajusteImagen: "cover",
     posicionImagen: "izquierda",
+    modoPresentacion: false,
   };
 }
 
@@ -633,6 +635,7 @@ function bloqueVacio(tipo) {
 function SeccionBloques({ contenidoKey, titulo, descripcion, bloques, onGuardado }) {
   const [lista, setLista] = useState(bloques);
   const [expandidoId, setExpandidoId] = useState(null);
+  const [previsualizandoId, setPrevisualizandoId] = useState(null);
   const [guardando, setGuardando] = useState(false);
   const [mensaje, setMensaje] = useState(null);
 
@@ -721,13 +724,22 @@ function SeccionBloques({ contenidoKey, titulo, descripcion, bloques, onGuardado
                   <button type="button" onClick={() => moverBloque(bloque.id, 1)} disabled={i === lista.length - 1}
                     className="min-h-tap min-w-tap text-ink-muted disabled:opacity-30 hover:text-ink transition-colors" aria-label="Bajar sección">↓</button>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => quitarBloque(bloque.id)}
-                  className="min-h-tap px-3 text-terracota text-sm font-semibold hover:text-ink transition-colors"
-                >
-                  Borrar sección
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setPrevisualizandoId(bloque.id)}
+                    className="min-h-tap px-3 text-ink-muted text-sm font-semibold hover:text-gold transition-colors"
+                  >
+                    👁 Previsualizar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => quitarBloque(bloque.id)}
+                    className="min-h-tap px-3 text-terracota text-sm font-semibold hover:text-ink transition-colors"
+                  >
+                    Borrar sección
+                  </button>
+                </div>
               </div>
             </div>
           );
@@ -761,7 +773,50 @@ function SeccionBloques({ contenidoKey, titulo, descripcion, bloques, onGuardado
           <span className={mensaje.startsWith("Error") ? "text-terracota text-sm" : "text-gold text-sm"}>{mensaje}</span>
         )}
       </div>
+
+      {previsualizandoId && (
+        <ModalPrevisualizacion
+          bloque={lista.find((b) => b.id === previsualizandoId)}
+          onCerrar={() => setPrevisualizandoId(null)}
+        />
+      )}
     </section>
+  );
+}
+
+/** Ventana modal que muestra el bloque EXACTAMENTE como se ve en el
+ * sitio público — reutiliza el mismo componente que usan las páginas,
+ * así "lo que ves es lo que se publica". Ancho de teléfono para poder
+ * juzgar bien cómo se ve el marco/collage en móvil. */
+function ModalPrevisualizacion({ bloque, onCerrar }) {
+  if (!bloque) return null;
+  return (
+    <div
+      className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4"
+      role="dialog"
+      aria-modal="true"
+      onClick={onCerrar}
+    >
+      <div
+        className="bg-carbon border border-carbon-border rounded-card w-full max-w-sm max-h-[85vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between p-4 border-b border-carbon-border sticky top-0 bg-carbon z-10">
+          <span className="text-ink font-bold">Así se ve en el sitio</span>
+          <button
+            type="button"
+            onClick={onCerrar}
+            aria-label="Cerrar previsualización"
+            className="min-h-tap min-w-tap text-2xl text-ink-muted hover:text-ink"
+          >
+            ×
+          </button>
+        </div>
+        <div className="py-2">
+          <BloqueContenido bloque={bloque} />
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -892,6 +947,45 @@ function EditorBloque({ bloque, onCambiar }) {
             <SelectorAjuste valor={bloque.ajusteImagen} onCambiar={(v) => onCambiar({ ajusteImagen: v })} />
           </Campo>
         </>
+      )}
+
+      {bloque.tipo === "galeria" && (bloque.imagenes?.length ?? 0) > 1 && (
+        <Campo label="Estilo de la galería">
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => onCambiar({ modoPresentacion: false })}
+              className={[
+                "flex-1 min-h-tap rounded-control border-2 px-3 text-sm font-semibold transition-all duration-150",
+                !bloque.modoPresentacion
+                  ? "border-gold bg-gold/10 text-ink"
+                  : "border-carbon-border text-ink-muted hover:border-carbon-border/60",
+              ].join(" ")}
+            >
+              Cuadrícula
+              <span className="block text-xs font-normal text-ink-muted">todas las fotos juntas</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => onCambiar({ modoPresentacion: true })}
+              className={[
+                "flex-1 min-h-tap rounded-control border-2 px-3 text-sm font-semibold transition-all duration-150",
+                bloque.modoPresentacion
+                  ? "border-gold bg-gold/10 text-ink"
+                  : "border-carbon-border text-ink-muted hover:border-carbon-border/60",
+              ].join(" ")}
+            >
+              Presentación
+              <span className="block text-xs font-normal text-ink-muted">pasan solas + vidrio al final</span>
+            </button>
+          </div>
+        </Campo>
+      )}
+
+      {bloque.tipo === "galeria" && bloque.modoPresentacion && (
+        <Campo label="Color del vidrio (sobre la última foto)">
+          <SelectorTinte valor={bloque.tinte} onCambiar={(v) => onCambiar({ tinte: v })} />
+        </Campo>
       )}
 
       {bloque.tipo === "imagen_texto" && (
