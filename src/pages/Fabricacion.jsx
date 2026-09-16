@@ -1,68 +1,69 @@
 import { useEffect, useState } from "react";
-import { obtenerContenido } from "../lib/contenido";
+import SectionBanner from "../components/SectionBanner";
+import Reveal from "../components/Reveal";
 import BloqueContenido from "../components/BloqueContenido";
+import { obtenerContenido, CONTENIDO_DEFAULT } from "../lib/contenido";
 
 export default function Fabricacion() {
-  const [bloquesExtra, setBloquesExtra] = useState([]);
+  const [datos, setDatos] = useState(CONTENIDO_DEFAULT.fabricacion);
+  const [bloques, setBloques] = useState([]);
 
   useEffect(() => {
     let activo = true;
-    obtenerContenido("secciones_fabricacion").then((c) => {
-      if (activo) setBloquesExtra(c.bloques ?? []);
-    });
+    obtenerContenido("fabricacion").then((d) => activo && setDatos(d));
+    obtenerContenido("secciones_fabricacion").then((d) => activo && setBloques(d.bloques ?? []));
     return () => {
       activo = false;
     };
   }, []);
 
+  const imagenes = datos.imagenes?.length ? datos.imagenes : CONTENIDO_DEFAULT.fabricacion.imagenes;
+
   return (
     <div>
-      {/* Barra de título de ancho completo, no una "pastilla" redondeada */}
-      <div className="bg-ink py-3 mb-8">
-        <h1 className="text-center text-carbon font-extrabold text-xl sm:text-2xl uppercase tracking-wide">
-          Excelencia en Manufactura
-        </h1>
+      <div className="mb-8">
+        <SectionBanner
+          titulo="Excelencia en Manufactura"
+          icono="🔨"
+          imagenFondo="/assets/carpinteria.jpg"
+          tinte="oscuro"
+        />
       </div>
 
       <section className="px-4 pb-10 max-w-5xl mx-auto">
-        <div className="grid sm:grid-cols-2 gap-6 items-center">
-          <div className="flex gap-3">
-            <img
-              src="/assets/taller.jpg"
-              alt="Artesano trabajando en el taller de Muebles Zulia"
-              className="w-2/3 h-72 sm:h-96 object-cover rounded-card border border-carbon-border"
-            />
-            <div className="w-1/3 flex flex-col gap-3">
-              <img
-                src="/assets/trabajador-2.png"
-                alt="Artesano armando un mueble"
-                className="w-full h-[calc(50%-6px)] object-cover rounded-card border border-carbon-border"
+        <Reveal className="grid sm:grid-cols-2 gap-6 items-center">
+          <div className="grid grid-cols-2 grid-rows-2 gap-3 h-72 sm:h-96">
+            {imagenes.slice(0, 4).map((url, i) => (
+              <Reveal
+                key={url + i}
+                delay={i * 90}
+                as="img"
+                src={url}
+                alt="Trabajo artesanal en el taller de Muebles Zulia"
+                className={`w-full h-full rounded-card border border-carbon-border ${
+                  datos.ajusteImagen === "contain" ? "object-contain bg-carbon" : "object-cover"
+                }`}
               />
-              <img
-                src="/assets/trabajador-3.png"
-                alt="Artesano terminando un mueble"
-                className="w-full h-[calc(50%-6px)] object-cover rounded-card border border-carbon-border"
-              />
-            </div>
+            ))}
           </div>
           <div>
             <h2 className="text-xl sm:text-2xl font-extrabold text-gold mb-3">
-              Pasión por el Detalle
+              {datos.titulo}
             </h2>
-            <p className="text-ink-muted text-lg leading-relaxed">
-              En Muebles Zulia, la excelencia no es negociable. Supervisamos
-              rigurosamente cada etapa de la confección, asegurándonos de que
-              manos expertas trabajen con los mejores materiales para lograr
-              los acabados impecables que tu hogar merece.
+            <p className="text-ink-muted text-lg leading-relaxed whitespace-pre-line">
+              {datos.texto}
             </p>
           </div>
-        </div>
+        </Reveal>
       </section>
 
-      {/* Secciones extra armadas desde /admin/contenido — se muestran en
-          el orden en que el admin las organizó. */}
-      {bloquesExtra.map((bloque) => (
-        <BloqueContenido key={bloque.id} bloque={bloque} />
+      {/* Secciones libres, armadas y ordenadas desde /admin/contenido
+          ("Página de Fabricación") — el admin agrega tantas como
+          quiera: más fotos, más texto, banners, en el orden que arme. */}
+      {bloques.map((bloque) => (
+        <Reveal key={bloque.id} as="div" className="border-t border-carbon-border">
+          <BloqueContenido bloque={bloque} />
+        </Reveal>
       ))}
     </div>
   );

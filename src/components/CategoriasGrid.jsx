@@ -1,27 +1,30 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
+import SectionBanner from "./SectionBanner";
+import Reveal from "./Reveal";
+import { sonidoNavegar } from "../lib/sonido";
 
 // Categorías por defecto que se muestran mientras no haya datos reales en
 // Supabase, o si una categoría todavía no tiene imagen cargada desde el
 // panel admin. Cada una tiene su propia página dedicada en /categoria/:slug
-// (ver src/pages/CategoriaPagina.jsx), así que sí son "clicables" incluso
-// sin id numérico real — solo se comportan distinto al filtro por id.
+// (ver src/pages/CategoriaPagina.jsx).
 const CATEGORIAS_PLACEHOLDER = [
-  { id: "modulares", nombre: "Modulares", imagen: "/assets/categorias/modulares.jpg" },
-  { id: "comedores", nombre: "Comedores", imagen: "/assets/categorias/comedores.jpg" },
-  { id: "dormitorios", nombre: "Dormitorios", imagen: "/assets/categorias/dormitorios.jpg" },
-  { id: "mesa-centro", nombre: "Mesa de Centro", imagen: "/assets/categorias/mesa-centro.jpg" },
-  { id: "reflejos", nombre: "Colección de Reflejos", imagen: "/assets/categorias/reflejos.jpg" },
-  { id: "mueble-tv", nombre: "Mueble TV", imagen: "/assets/categorias/mueble-tv.jpg" },
+  { id: "modulares", slug: "modulares", nombre: "Modulares", imagen: "/assets/categorias/modulares.jpg" },
+  { id: "comedores", slug: "comedores", nombre: "Comedores", imagen: "/assets/categorias/comedores.jpg" },
+  { id: "dormitorios", slug: "dormitorios", nombre: "Dormitorios", imagen: "/assets/categorias/dormitorios.jpg" },
+  { id: "mesa-centro", slug: "mesa-centro", nombre: "Mesa de Centro", imagen: "/assets/categorias/mesa-centro.jpg" },
+  { id: "reflejos", slug: "reflejos", nombre: "Colección de Reflejos", imagen: "/assets/categorias/reflejos.jpg" },
+  { id: "mueble-tv", slug: "mueble-tv", nombre: "Mueble TV", imagen: "/assets/categorias/mueble-tv.jpg" },
 ];
 
 /**
- * Grilla de categorías reutilizable.
- * `onCategoriaClick(cat)` recibe el objeto categoría completo ({id, nombre,
- * imagen}) — cada página decide qué hacer al hacer clic (ir a una página
- * dedicada, filtrar in-place, etc.), esta grilla no asume nada de eso.
+ * Grilla de categorías reutilizable. Cada tarjeta es un link directo a su
+ * página dedicada /categoria/:slug — no hay filtrado "en la misma página"
+ * en ningún lado, así todas las entradas (Home, Catálogo) se comportan
+ * igual y siempre aterrizan en la categoría correcta.
  */
-export default function CategoriasGrid({ onCategoriaClick, categoriaActivaId, titulo = "¿Cuál te llevas a Casa?" }) {
+export default function CategoriasGrid({ titulo = "¿Cuál te llevas a Casa?" }) {
   const [categorias, setCategorias] = useState(CATEGORIAS_PLACEHOLDER);
 
   useEffect(() => {
@@ -29,7 +32,7 @@ export default function CategoriasGrid({ onCategoriaClick, categoriaActivaId, ti
     async function cargar() {
       const { data, error } = await supabase
         .from("categorias")
-        .select("id, nombre, imagen")
+        .select("id, nombre, imagen, slug")
         .order("orden", { ascending: true });
       if (!activo) return;
       // Si aún no has cargado categorías reales en Supabase, se mantienen
@@ -44,35 +47,39 @@ export default function CategoriasGrid({ onCategoriaClick, categoriaActivaId, ti
 
   return (
     <div className="mb-8">
-      <h2 className="text-xl sm:text-2xl font-extrabold text-ink mb-4">{titulo}</h2>
+      {/* Encabezado de borde a borde, con foto real de la sala de
+          exhibición de fondo (difuminada, efecto gaussiano). */}
+      <div className="mb-4">
+        <SectionBanner titulo={titulo} imagenFondo="/assets/interior-tienda.jpg" tinte="dorado" />
+      </div>
+
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
-        {categorias.map((cat) => {
-          // Comparación como texto: categoriaActivaId puede venir de la URL
-          // (siempre string) mientras que cat.id puede ser number desde Supabase.
-          const activa = categoriaActivaId != null && String(categoriaActivaId) === String(cat.id);
-          return (
-            <button
-              key={cat.id}
-              onClick={() => onCategoriaClick?.(cat)}
-              className={[
-                "relative rounded-card overflow-hidden aspect-[4/3] flex items-end p-3 text-left border transition-colors cursor-pointer",
-                activa
-                  ? "border-gold ring-2 ring-gold"
-                  : "border-carbon-border hover:border-ink-muted",
-              ].join(" ")}
-              style={
-                cat.imagen
-                  ? { backgroundImage: `url(${cat.imagen})`, backgroundSize: "cover", backgroundPosition: "center" }
-                  : { backgroundColor: "#2A2A2A" }
-              }
+        {categorias.map((cat, i) => (
+          <Reveal key={cat.id} delay={i * 60}>
+            <Link
+              to={`/categoria/${cat.slug}`}
+              onClick={sonidoNavegar}
+              className="group relative rounded-card overflow-hidden aspect-[4/3] flex items-end text-left w-full
+                         border border-carbon-border shadow-sm
+                         hover:border-gold/60 hover:shadow-lg hover:shadow-black/30 hover:-translate-y-0.5
+                         transition-all duration-300 ease-out"
+              style={!cat.imagen ? { backgroundColor: "#2A2A2A" } : undefined}
             >
-              <span className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-              <span className="relative text-ink font-bold text-sm sm:text-base leading-tight">
+              {cat.imagen && (
+                <span
+                  className="absolute inset-0 bg-cover bg-center transition-transform duration-500 ease-out group-hover:scale-110"
+                  style={{ backgroundImage: `url(${cat.imagen})` }}
+                />
+              )}
+              <span className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+              {/* Etiqueta en barra completa (de borde a borde), no en pastilla
+                  flotante — el vidrio cubre todo el ancho de la tarjeta. */}
+              <span className="relative w-full glass text-ink font-bold text-sm sm:text-base leading-tight px-3 py-2 group-hover:text-gold transition-colors duration-200">
                 {cat.nombre}
               </span>
-            </button>
-          );
-        })}
+            </Link>
+          </Reveal>
+        ))}
       </div>
     </div>
   );

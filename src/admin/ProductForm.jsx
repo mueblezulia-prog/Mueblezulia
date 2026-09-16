@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 import { getCroppedImageBlob } from "../lib/cropImage";
+import { convertirSiEsHeic } from "../lib/heic";
 import ImageCropModule from "./ImageCropModule";
 import GaleriaImagenes from "./GaleriaImagenes";
 import SelectorTelas from "./SelectorTelas";
@@ -20,17 +21,31 @@ export default function ProductForm({ productoExistente, onGuardado }) {
   const [descripcionLarga, setDescripcionLarga] = useState(productoExistente?.descripcion_larga ?? "");
   const [medida, setMedida] = useState(productoExistente?.medida ?? "");
   const [categoriaId, setCategoriaId] = useState(productoExistente?.categoria_id ?? "");
+  const [subcategoria, setSubcategoria] = useState(productoExistente?.subcategoria ?? "");
   const [categorias, setCategorias] = useState([]);
 
   useEffect(() => {
     supabase
       .from("categorias")
-      .select("id, nombre")
+      .select("id, nombre, subcategorias")
       .order("orden")
       .then(({ data, error }) => {
         if (!error && data) setCategorias(data);
       });
   }, []);
+
+  // Lista de subcategorías de la categoría elegida (si tiene). Si se
+  // cambia a una categoría sin esa subcategoría, se limpia sola para
+  // no guardar una subcategoría que ya no corresponde.
+  const categoriaSeleccionada = categorias.find((c) => String(c.id) === String(categoriaId));
+  const subcategoriasDisponibles = categoriaSeleccionada?.subcategorias ?? [];
+
+  useEffect(() => {
+    if (subcategoria && !subcategoriasDisponibles.includes(subcategoria)) {
+      setSubcategoria("");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [categoriaId]);
 
   const [imagenOriginalUrl, setImagenOriginalUrl] = useState(productoExistente?.imagen_original_url ?? null);
   const [imagenOriginalFile, setImagenOriginalFile] = useState(null);
@@ -43,6 +58,8 @@ export default function ProductForm({ productoExistente, onGuardado }) {
 
   const [fotos, setFotos] = useState([]);
   const [telasSeleccionadas, setTelasSeleccionadas] = useState([]);
+  const [disponibleTodasTelas, setDisponibleTodasTelas] = useState(productoExistente?.disponible_todas_telas ?? false);
+  const [colorAEleccion, setColorAEleccion] = useState(productoExistente?.color_a_eleccion ?? false);
   const [previewAbierto, setPreviewAbierto] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [mensaje, setMensaje] = useState(null);
@@ -82,11 +99,19 @@ export default function ProductForm({ productoExistente, onGuardado }) {
     };
   }, [productoExistente?.id]);
 
-  function handleSubirImagen(e) {
+  const [errorImagen, setErrorImagen] = useState(null);
+
+  async function handleSubirImagen(e) {
     const file = e.target.files?.[0];
     if (!file) return;
-    setImagenOriginalFile(file);
-    setImagenOriginalUrl(URL.createObjectURL(file));
+    setErrorImagen(null);
+    try {
+      const fileListo = await convertirSiEsHeic(file);
+      setImagenOriginalFile(fileListo);
+      setImagenOriginalUrl(URL.createObjectURL(fileListo));
+    } catch (err) {
+      setErrorImagen(`No se pudo procesar la foto: ${err.message}`);
+    }
   }
 
   async function subirOriginalSiHaceFalta() {
@@ -117,10 +142,64 @@ export default function ProductForm({ productoExistente, onGuardado }) {
       titulo,
       descripcion_corta: descripcionCorta,
       precio: precio || 0,
+      medida,
+      disponible_todas_telas: disponibleTodasTelas,
+      color_a_eleccion: colorAEleccion,
       // Mientras no se guarda, la vista previa usa el blob local (imagenOriginalUrl
       // apunta al object URL de la foto recién subida o a la ya guardada).
       imagen_recortada_url: imagenOriginalUrl,
     };
+  }
+
+  // Espera (con reintentos cortos) a que el producto recién creado sea
+  // visible antes de escribirle filas relacionadas (colores, fotos). Esto
+  // evita el error "violates foreign key constraint producto_colores_
+  // producto_id_fkey" si por cualquier motivo la fila tarda un instante en
+  // quedar visible para la siguiente petición.
+  async function esperarProductoVisible(id) {
+    for (let intento = 0; intento < 3; intento++) {
+      const { data } = await supabase.from("productos").select("id").eq("id", id).maybeSingle();
+      if (data) return true;
+      await new Promise((r) => setTimeout(r, 400));
+    }
+    return false;
+  }
+
+  // Reemplaza las telas asignadas a este producto (borra + inserta,
+  // copiando nombre/hex del catálogo global para que el detalle del
+  // cliente no tenga que ir a buscarlos aparte). Lanza si falla, pero
+  // no bloquea el guardado de las fotos (ver Promise.allSettled arriba).
+  async function guardarColores(productoId) {
+    await supabase.from("producto_colores").delete().eq("producto_id", productoId);
+    if (!telasSeleccionadas.length) return;
+    const { data: telasData, error: errorTelas } = await supabase
+      .from("telas")
+      .select("*")
+      .in("id", telasSeleccionadas);
+    if (errorTelas) throw errorTelas;
+    const filasColores = (telasData ?? []).map((tela, i) => ({
+      producto_id: productoId,
+      tela_id: tela.id,
+      nombre: tela.nombre,
+      hex: tela.hex,
+      orden: i,
+    }));
+    const { error } = await supabase.from("producto_colores").insert(filasColores);
+    if (error) throw error;
+  }
+
+  // Reemplaza la galería de fotos del producto (las fotos ya están subidas
+  // a Storage — aquí solo se guarda la lista final + orden).
+  async function guardarFotos(productoId) {
+    await supabase.from("producto_imagenes").delete().eq("producto_id", productoId);
+    if (!fotos.length) return;
+    const filasFotos = fotos.map((f, i) => ({
+      producto_id: productoId,
+      url: f.url,
+      orden: i,
+    }));
+    const { error } = await supabase.from("producto_imagenes").insert(filasFotos);
+    if (error) throw error;
   }
 
   async function handleGuardar() {
@@ -149,6 +228,9 @@ export default function ProductForm({ productoExistente, onGuardado }) {
         descripcion_larga: descripcionLarga,
         medida: medida || null,
         categoria_id: categoriaId ? Number(categoriaId) : null,
+        subcategoria: subcategoria || null,
+        disponible_todas_telas: disponibleTodasTelas,
+        color_a_eleccion: colorAEleccion,
         imagen_original_url: urlOriginal,
         imagen_recortada_url: urlRecortada,
         crop_data: {
@@ -165,43 +247,34 @@ export default function ProductForm({ productoExistente, onGuardado }) {
         const { data, error } = await supabase.from("productos").insert(payload).select("id").single();
         if (error) throw error;
         productoId = data.id;
+        // Solo para productos nuevos: confirma que la fila ya es visible
+        // antes de intentar escribir colores/fotos que dependen de ella.
+        await esperarProductoVisible(productoId);
       }
 
-      // Reemplaza las telas asignadas a este producto (borra + inserta,
-      // copiando nombre/hex del catálogo global para que el detalle del
-      // cliente no tenga que ir a buscarlos aparte).
-      await supabase.from("producto_colores").delete().eq("producto_id", productoId);
-      if (telasSeleccionadas.length) {
-        const { data: telasData, error: errorTelas } = await supabase
-          .from("telas")
-          .select("*")
-          .in("id", telasSeleccionadas);
-        if (errorTelas) throw errorTelas;
-        const filasColores = (telasData ?? []).map((tela, i) => ({
-          producto_id: productoId,
-          tela_id: tela.id,
-          nombre: tela.nombre,
-          hex: tela.hex,
-          orden: i,
-        }));
-        const { error } = await supabase.from("producto_colores").insert(filasColores);
-        if (error) throw error;
+      // Colores y fotos se guardan por separado (Promise.allSettled): si uno
+      // de los dos falla, el otro se guarda igual — antes, un error en las
+      // telas impedía que las fotos de la galería llegaran a guardarse.
+      const [resultadoColores, resultadoFotos] = await Promise.allSettled([
+        guardarColores(productoId),
+        guardarFotos(productoId),
+      ]);
+
+      const advertencias = [];
+      if (resultadoColores.status === "rejected") {
+        advertencias.push(`colores (${resultadoColores.reason.message})`);
+      }
+      if (resultadoFotos.status === "rejected") {
+        advertencias.push(`fotos de la galería (${resultadoFotos.reason.message})`);
       }
 
-      // Reemplaza la galería de fotos del producto (las fotos ya están
-      // subidas a Storage — aquí solo se guarda la lista final + orden).
-      await supabase.from("producto_imagenes").delete().eq("producto_id", productoId);
-      if (fotos.length) {
-        const filasFotos = fotos.map((f, i) => ({
-          producto_id: productoId,
-          url: f.url,
-          orden: i,
-        }));
-        const { error } = await supabase.from("producto_imagenes").insert(filasFotos);
-        if (error) throw error;
+      if (advertencias.length) {
+        setMensaje(
+          `Guardado, pero no se pudo guardar: ${advertencias.join(" y ")}. Vuelve a intentar guardar en unos segundos.`
+        );
+      } else {
+        setMensaje("Guardado correctamente.");
       }
-
-      setMensaje("Guardado correctamente.");
       onGuardado?.(productoId);
     } catch (err) {
       setMensaje(`Error al guardar: ${err.message}`);
@@ -249,9 +322,10 @@ export default function ProductForm({ productoExistente, onGuardado }) {
         {/* Columna izquierda: imagen y recorte */}
         <div className="flex flex-col gap-4">
           <label className="min-h-tap flex items-center justify-center rounded-control border-2 border-dashed border-carbon-border text-ink-muted cursor-pointer">
-            <input type="file" accept="image/*" onChange={handleSubirImagen} className="hidden" />
+            <input type="file" accept="image/*,.heic,.heif" onChange={handleSubirImagen} className="hidden" />
             {imagenOriginalUrl ? "Cambiar foto" : "Subir foto del mueble"}
           </label>
+          {errorImagen && <p className="text-terracota text-sm">{errorImagen}</p>}
 
           <ImageCropModule
             imagenOriginalUrl={imagenOriginalUrl}
@@ -304,6 +378,21 @@ export default function ProductForm({ productoExistente, onGuardado }) {
             </select>
           </Campo>
 
+          {subcategoriasDisponibles.length > 0 && (
+            <Campo label="Subcategoría (opcional)">
+              <select
+                value={subcategoria}
+                onChange={(e) => setSubcategoria(e.target.value)}
+                className="campo-input"
+              >
+                <option value="">Ninguna</option>
+                {subcategoriasDisponibles.map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
+            </Campo>
+          )}
+
           <Campo label="Descripción Corta">
             <textarea
               rows={3}
@@ -322,7 +411,14 @@ export default function ProductForm({ productoExistente, onGuardado }) {
             />
           </Campo>
 
-          <SelectorTelas seleccionadas={telasSeleccionadas} onChange={setTelasSeleccionadas} />
+          <SelectorTelas
+            seleccionadas={telasSeleccionadas}
+            onChange={setTelasSeleccionadas}
+            disponibleTodasTelas={disponibleTodasTelas}
+            onCambiarTodasTelas={setDisponibleTodasTelas}
+            colorAEleccion={colorAEleccion}
+            onCambiarColorEleccion={setColorAEleccion}
+          />
 
           <GaleriaImagenes fotos={fotos} onChange={setFotos} />
         </div>

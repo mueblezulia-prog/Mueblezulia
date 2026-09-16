@@ -65,10 +65,10 @@ export const CONTENIDO_DEFAULT = {
   },
   metodos_pago: {
     metodos: [
-      { nombre: "Efectivo", detalle: "Pago contra entrega o directo en nuestra sede.", icono: "💵" },
-      { nombre: "Transferencia / Pago Móvil", detalle: "Te compartimos los datos bancarios al confirmar tu pedido.", icono: "🏦" },
-      { nombre: "Zelle", detalle: "Disponible para clientes en el exterior.", icono: "💳" },
-      { nombre: "Divisas (USD)", detalle: "Aceptamos dólares en efectivo.", icono: "💲" },
+      { nombre: "Efectivo", detalle: "Pago contra entrega o directo en nuestra sede.", icono: "/assets/icons/pago-efectivo.png" },
+      { nombre: "Transferencia / Pago Móvil", detalle: "Te compartimos los datos bancarios al confirmar tu pedido.", icono: "/assets/icons/pago-movil.png" },
+      { nombre: "Zelle", detalle: "Disponible para clientes en el exterior.", icono: "/assets/icons/pago-zelle.png" },
+      { nombre: "Divisas (USD)", detalle: "Aceptamos dólares en efectivo.", icono: "/assets/icons/pago-divisas.png" },
     ],
   },
   // Secciones libres que el admin arma a su gusto (tipo, orden, fotos,

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { getCroppedImageBlob } from "../lib/cropImage";
+import { convertirSiEsHeic } from "../lib/heic";
 import ImageCropModule from "./ImageCropModule";
 
 const BUCKET = "productos";
@@ -17,18 +18,36 @@ const BUCKET = "productos";
  * la fila en producto_imagenes si el producto ya existía)
  */
 export default function GaleriaImagenes({ fotos, onChange }) {
-  const [editando, setEditando] = useState(null); // { id, originalUrl, file }
+  // `cola`: fotos ya seleccionadas (multi-selección) que faltan por
+  // recortar y subir, en orden. `editando` siempre es cola[0]; al
+  // terminar esa foto se saca de la cola y automáticamente pasa a la
+  // siguiente, sin que el admin tenga que volver a abrir el selector.
+  const [cola, setCola] = useState([]);
+  const [totalLote, setTotalLote] = useState(0);
   const [cropState, setCropState] = useState({ crop: { x: 0, y: 0 }, zoom: 1, croppedAreaPixels: null, aspecto: 4 / 5 });
   const [subiendo, setSubiendo] = useState(false);
   const [error, setError] = useState(null);
 
-  function handleSeleccionarArchivo(e) {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const editando = cola[0] ?? null;
+
+  async function handleSeleccionarArchivos(e) {
+    const files = Array.from(e.target.files ?? []);
+    if (files.length === 0) return;
+    e.target.value = ""; // permite volver a elegir los mismos archivos después
     setError(null);
-    setEditando({ id: crypto.randomUUID(), file, originalUrl: URL.createObjectURL(file) });
-    setCropState({ crop: { x: 0, y: 0 }, zoom: 1, croppedAreaPixels: null, aspecto: 4 / 5 });
-    e.target.value = ""; // permite volver a elegir el mismo archivo después
+    try {
+      const listas = await Promise.all(
+        files.map(async (file) => {
+          const fileListo = await convertirSiEsHeic(file);
+          return { id: crypto.randomUUID(), file: fileListo, originalUrl: URL.createObjectURL(fileListo) };
+        })
+      );
+      setCola((c) => [...c, ...listas]);
+      setTotalLote((t) => (cola.length === 0 ? listas.length : t + listas.length));
+      setCropState({ crop: { x: 0, y: 0 }, zoom: 1, croppedAreaPixels: null, aspecto: 4 / 5 });
+    } catch (err) {
+      setError(`No se pudo procesar una de las fotos: ${err.message}`);
+    }
   }
 
   async function handleAplicarRecorte() {
@@ -51,12 +70,22 @@ export default function GaleriaImagenes({ fotos, onChange }) {
       const url = supabase.storage.from(BUCKET).getPublicUrl(nombreArchivo).data.publicUrl;
 
       onChange([...fotos, { id: editando.id, url, orden: fotos.length }]);
-      setEditando(null);
+      setCola((c) => c.slice(1));
+      setCropState({ crop: { x: 0, y: 0 }, zoom: 1, croppedAreaPixels: null, aspecto: 4 / 5 });
     } catch (err) {
       setError(err.message);
     } finally {
       setSubiendo(false);
     }
+  }
+
+  function saltarFoto() {
+    setCola((c) => c.slice(1));
+    setCropState({ crop: { x: 0, y: 0 }, zoom: 1, croppedAreaPixels: null, aspecto: 4 / 5 });
+  }
+
+  function cancelarCola() {
+    setCola([]);
   }
 
   function quitarFoto(id) {
@@ -104,26 +133,37 @@ export default function GaleriaImagenes({ fotos, onChange }) {
 
       {editando ? (
         <div className="flex flex-col gap-3 border-t border-carbon-border pt-3">
+          {cola.length > 1 && (
+            <p className="text-sm text-gold font-semibold">
+              Recortando foto {totalLote - cola.length + 1} de {totalLote} — al terminar, pasa a la siguiente automáticamente.
+            </p>
+          )}
           <ImageCropModule
             imagenOriginalUrl={editando.originalUrl}
             onChange={(nuevo) => setCropState((s) => ({ ...s, ...nuevo }))}
           />
           {error && <p className="text-terracota text-base">{error}</p>}
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <button type="button" onClick={handleAplicarRecorte} disabled={subiendo}
-              className="min-h-tap px-5 rounded-control bg-gold text-carbon font-bold disabled:opacity-60">
-              {subiendo ? "Subiendo…" : "Añadir esta foto"}
+              className="min-h-tap px-5 rounded-control bg-gold text-carbon font-bold disabled:opacity-60 hover:bg-gold-hover active:scale-[0.98] transition-all duration-150">
+              {subiendo ? "Subiendo…" : cola.length > 1 ? "Añadir y seguir con la siguiente" : "Añadir esta foto"}
             </button>
-            <button type="button" onClick={() => setEditando(null)}
-              className="min-h-tap px-5 rounded-control border-2 border-ink text-ink font-bold">
-              Cancelar
+            {cola.length > 1 && (
+              <button type="button" onClick={saltarFoto} disabled={subiendo}
+                className="min-h-tap px-5 rounded-control border-2 border-ink/60 text-ink font-bold hover:bg-ink hover:text-carbon transition-all duration-150">
+                Omitir esta
+              </button>
+            )}
+            <button type="button" onClick={cancelarCola} disabled={subiendo}
+              className="min-h-tap px-5 rounded-control border-2 border-terracota text-terracota font-bold hover:bg-terracota hover:text-ink transition-all duration-150">
+              {cola.length > 1 ? "Cancelar todas" : "Cancelar"}
             </button>
           </div>
         </div>
       ) : (
-        <label className="min-h-tap flex items-center justify-center rounded-control border-2 border-dashed border-carbon-border text-ink-muted cursor-pointer w-fit px-5">
-          <input type="file" accept="image/*" onChange={handleSeleccionarArchivo} className="hidden" />
-          + Agregar foto a la galería
+        <label className="min-h-tap flex items-center justify-center rounded-control border-2 border-dashed border-carbon-border text-ink-muted cursor-pointer w-fit px-5 hover:border-gold/50 hover:text-ink transition-colors duration-150">
+          <input type="file" accept="image/*,.heic,.heif" multiple onChange={handleSeleccionarArchivos} className="hidden" />
+          + Agregar fotos a la galería
         </label>
       )}
     </div>
