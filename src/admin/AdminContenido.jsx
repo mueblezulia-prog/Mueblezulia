@@ -13,7 +13,6 @@ async function subirImagenContenido(file) {
   if (error) throw error;
   return supabase.storage.from(BUCKET).getPublicUrl(nombreArchivo).data.publicUrl;
 }
-
 /**
  * Panel para editar el contenido del sitio sin tocar código: la
  * dirección y foto de "Nuestra Sede", el texto y las fotos de
@@ -28,7 +27,9 @@ export default function AdminContenido() {
   const [sede, setSede] = useState(CONTENIDO_DEFAULT.nuestra_sede);
   const [fabricacion, setFabricacion] = useState(CONTENIDO_DEFAULT.fabricacion);
   const [metodos, setMetodos] = useState(CONTENIDO_DEFAULT.metodos_pago.metodos);
-  const [bloques, setBloques] = useState([]);
+  const [bloquesHome, setBloquesHome] = useState([]);
+  const [bloquesFabricacion, setBloquesFabricacion] = useState([]);
+  const [bloquesUbicacion, setBloquesUbicacion] = useState([]);
 
   useEffect(() => {
     Promise.all([
@@ -37,12 +38,16 @@ export default function AdminContenido() {
       obtenerContenido("fabricacion"),
       obtenerContenido("metodos_pago"),
       obtenerContenido("secciones_home"),
-    ]).then(([h, s, f, m, b]) => {
+      obtenerContenido("secciones_fabricacion"),
+      obtenerContenido("secciones_ubicacion"),
+    ]).then(([h, s, fab, m, bh, bf, bu]) => {
       setHero(h);
       setSede(s);
-      setFabricacion(f);
+      setFabricacion(fab);
       setMetodos(m.metodos ?? []);
-      setBloques(b.bloques ?? []);
+      setBloquesHome(bh.bloques ?? []);
+      setBloquesFabricacion(bf.bloques ?? []);
+      setBloquesUbicacion(bu.bloques ?? []);
       setCargando(false);
     });
   }, []);
@@ -62,9 +67,29 @@ export default function AdminContenido() {
 
       <SeccionHero hero={hero} onGuardado={setHero} />
       <SeccionSede sede={sede} onGuardado={setSede} />
-      <SeccionFabricacion fabricacion={fabricacion} onGuardado={setFabricacion} />
       <SeccionMetodosPago metodos={metodos} onGuardado={setMetodos} />
-      <SeccionBloques bloques={bloques} onGuardado={setBloques} />
+      <SeccionBloques
+        contenidoKey="secciones_ubicacion"
+        titulo="Página de Ubicación — Secciones extra"
+        descripcion='Agrega tanto contenido como quieras a la página "Ubicación": más fotos, más texto, banners — se muestran al final, debajo de "¿Tienes dudas?".'
+        bloques={bloquesUbicacion}
+        onGuardado={setBloquesUbicacion}
+      />
+      <SeccionFabricacion fabricacion={fabricacion} onGuardado={setFabricacion} />
+      <SeccionBloques
+        contenidoKey="secciones_fabricacion"
+        titulo="Página de Fabricación — Secciones extra"
+        descripcion='Agrega más contenido debajo de lo de arriba: más fotos, más texto, banners — como si construyeras la página tú mismo.'
+        bloques={bloquesFabricacion}
+        onGuardado={setBloquesFabricacion}
+      />
+      <SeccionBloques
+        contenidoKey="secciones_home"
+        titulo="Página de Inicio — Secciones extra"
+        descripcion='Agrega tantas secciones como quieras a la página de inicio, en el orden que quieras. Se muestran debajo de "Excelencia en Manufactura".'
+        bloques={bloquesHome}
+        onGuardado={setBloquesHome}
+      />
     </div>
   );
 }
@@ -242,7 +267,7 @@ function SeccionSede({ sede, onGuardado }) {
 }
 
 /* ------------------------------------------------------------ */
-/* FABRICACIÓN — título, texto y galería de fotos (dinámica)      */
+/* FABRICACIÓN — título, texto y galería principal (fija)         */
 /* ------------------------------------------------------------ */
 function SeccionFabricacion({ fabricacion, onGuardado }) {
   const [form, setForm] = useState(fabricacion);
@@ -303,7 +328,7 @@ function SeccionFabricacion({ fabricacion, onGuardado }) {
     <section className="admin-card p-5 flex flex-col gap-4">
       <h2 className="text-xl font-bold text-ink">🔨 Fabricación</h2>
       <p className="text-sm text-ink-muted -mt-2">
-        Se usa en la página "Fabricación". Agrega, quita o reordena tantas fotos como quieras.
+        Se usa arriba de todo en la página "Fabricación". Agrega, quita o reordena tantas fotos como quieras.
       </p>
 
       <Campo label="Título">
@@ -326,7 +351,6 @@ function SeccionFabricacion({ fabricacion, onGuardado }) {
 
       <div className="flex flex-col gap-2">
         <span className="text-base font-semibold text-ink">Fotos del taller</span>
-        <p className="text-sm text-ink-muted -mt-1">La primera foto es la más grande en /fabricacion.</p>
         <div className="flex flex-wrap gap-3">
           {(form.imagenes ?? []).map((url, i) => (
             <div key={url + i} className="relative w-24">
@@ -606,7 +630,7 @@ function bloqueVacio(tipo) {
 /* la página de inicio: el admin elige el tipo, el orden, las      */
 /* fotos y cómo se ven, sin tocar código.                          */
 /* ------------------------------------------------------------ */
-function SeccionBloques({ bloques, onGuardado }) {
+function SeccionBloques({ contenidoKey, titulo, descripcion, bloques, onGuardado }) {
   const [lista, setLista] = useState(bloques);
   const [expandidoId, setExpandidoId] = useState(null);
   const [guardando, setGuardando] = useState(false);
@@ -641,7 +665,7 @@ function SeccionBloques({ bloques, onGuardado }) {
     setGuardando(true);
     setMensaje(null);
     try {
-      await guardarContenido("secciones_home", { bloques: lista });
+      await guardarContenido(contenidoKey, { bloques: lista });
       onGuardado(lista);
       sonidoConfirmar();
       setMensaje("Guardado correctamente.");
@@ -655,11 +679,8 @@ function SeccionBloques({ bloques, onGuardado }) {
   return (
     <section className="admin-card p-5 flex flex-col gap-4">
       <div>
-        <h2 className="text-xl font-bold text-ink">🧩 Secciones Personalizadas</h2>
-        <p className="text-sm text-ink-muted mt-1">
-          Arma la página de inicio a tu gusto: agrega tantas secciones como quieras, en el orden que quieras, con
-          las fotos y el tamaño que prefieras. Se muestran debajo de "Excelencia en Manufactura".
-        </p>
+        <h2 className="text-xl font-bold text-ink">🧩 {titulo}</h2>
+        <p className="text-sm text-ink-muted mt-1">{descripcion}</p>
       </div>
 
       {lista.length === 0 && (

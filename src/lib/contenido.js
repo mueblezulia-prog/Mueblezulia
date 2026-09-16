@@ -34,6 +34,35 @@ export const CONTENIDO_DEFAULT = {
     ],
     ajusteImagen: "cover",
   },
+  // Página "Fabricación": arrancamos con el mismo contenido de siempre
+  // (una galería con el texto de "Pasión por el Detalle"), pero ya como
+  // bloque editable — el admin puede agregar, quitar o reordenar todas
+  // las secciones que quiera desde /admin/contenido.
+  secciones_fabricacion: {
+    bloques: [
+      {
+        id: "fabricacion-inicial",
+        tipo: "galeria",
+        titulo: "Pasión por el Detalle",
+        texto:
+          "En Muebles Zulia, la excelencia no es negociable. Supervisamos rigurosamente cada etapa de la confección, asegurándonos de que manos expertas trabajen con los mejores materiales para lograr los acabados impecables que tu hogar merece.",
+        imagenes: [
+          "/assets/carpinteria.jpg",
+          "/assets/trabajador-4.jpg",
+          "/assets/trabajador-2.png",
+          "/assets/trabajador-3.png",
+        ],
+        alto: "mediano",
+        ajusteImagen: "cover",
+      },
+    ],
+  },
+  // Secciones extra para la página "Ubicación" (Contacto) — vacío por
+  // defecto; la dirección, foto y mapa de "Nuestra Sede" y la lista de
+  // "Métodos de Pago" tienen su propio editor especial más abajo.
+  secciones_ubicacion: {
+    bloques: [],
+  },
   metodos_pago: {
     metodos: [
       { nombre: "Efectivo", detalle: "Pago contra entrega o directo en nuestra sede.", icono: "💵" },

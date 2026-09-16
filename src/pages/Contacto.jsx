@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import SectionBanner from "../components/SectionBanner";
 import Reveal from "../components/Reveal";
+import BloqueContenido from "../components/BloqueContenido";
 import { obtenerContenido, CONTENIDO_DEFAULT } from "../lib/contenido";
 import { sonidoConfirmar, sonidoNavegar } from "../lib/sonido";
 
@@ -9,11 +10,13 @@ const WHATSAPP_LINK = "https://wa.me/584127519141?text=" + encodeURIComponent("H
 export default function Contacto() {
   const [sede, setSede] = useState(CONTENIDO_DEFAULT.nuestra_sede);
   const [metodos, setMetodos] = useState(CONTENIDO_DEFAULT.metodos_pago.metodos);
+  const [bloques, setBloques] = useState([]);
 
   useEffect(() => {
     let activo = true;
     obtenerContenido("nuestra_sede").then((d) => activo && setSede(d));
     obtenerContenido("metodos_pago").then((d) => activo && setMetodos(d.metodos ?? []));
+    obtenerContenido("secciones_ubicacion").then((d) => activo && setBloques(d.bloques ?? []));
     return () => {
       activo = false;
     };
@@ -109,6 +112,15 @@ export default function Contacto() {
           Escribir por WhatsApp
         </a>
       </section>
+
+      {/* Secciones libres, armadas y ordenadas desde /admin/contenido
+          ("Página de Ubicación") — más fotos, más texto, banners, en
+          el orden que el admin quiera. */}
+      {bloques.map((bloque) => (
+        <Reveal key={bloque.id} as="div" className="border-t border-carbon-border">
+          <BloqueContenido bloque={bloque} />
+        </Reveal>
+      ))}
     </div>
   );
 }

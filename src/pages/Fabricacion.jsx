@@ -1,14 +1,17 @@
 import { useEffect, useState } from "react";
 import SectionBanner from "../components/SectionBanner";
 import Reveal from "../components/Reveal";
+import BloqueContenido from "../components/BloqueContenido";
 import { obtenerContenido, CONTENIDO_DEFAULT } from "../lib/contenido";
 
 export default function Fabricacion() {
   const [datos, setDatos] = useState(CONTENIDO_DEFAULT.fabricacion);
+  const [bloques, setBloques] = useState([]);
 
   useEffect(() => {
     let activo = true;
     obtenerContenido("fabricacion").then((d) => activo && setDatos(d));
+    obtenerContenido("secciones_fabricacion").then((d) => activo && setBloques(d.bloques ?? []));
     return () => {
       activo = false;
     };
@@ -53,6 +56,15 @@ export default function Fabricacion() {
           </div>
         </Reveal>
       </section>
+
+      {/* Secciones libres, armadas y ordenadas desde /admin/contenido
+          ("Página de Fabricación") — el admin agrega tantas como
+          quiera: más fotos, más texto, banners, en el orden que arme. */}
+      {bloques.map((bloque) => (
+        <Reveal key={bloque.id} as="div" className="border-t border-carbon-border">
+          <BloqueContenido bloque={bloque} />
+        </Reveal>
+      ))}
     </div>
   );
 }
