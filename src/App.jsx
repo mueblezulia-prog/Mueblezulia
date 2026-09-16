@@ -14,7 +14,6 @@ import ProductForm from "./admin/ProductForm";
 import AdminProductosLista from "./admin/AdminProductosLista";
 import AdminCategorias from "./admin/AdminCategorias";
 import AdminTelas from "./admin/AdminTelas";
-import AdminContenido from "./admin/AdminContenido";
 
 export default function App() {
   const { pathname } = useLocation();
@@ -47,7 +46,6 @@ export default function App() {
           <Route path="/admin/productos/:id/editar" element={<EditarProducto />} />
           <Route path="/admin/categorias" element={<AdminCategorias />} />
           <Route path="/admin/telas" element={<AdminTelas />} />
-          <Route path="/admin/contenido" element={<AdminContenido />} />
           <Route path="/admin" element={<Navigate to="/admin/productos" replace />} />
           <Route path="*" element={<NoEncontrado />} />
         </Routes>

@@ -1,44 +1,24 @@
-import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import Hero from "../components/Hero";
 import CategoriasGrid from "../components/CategoriasGrid";
-import SectionBanner from "../components/SectionBanner";
-import BloqueContenido from "../components/BloqueContenido";
-import Reveal from "../components/Reveal";
-import { obtenerContenido, CONTENIDO_DEFAULT } from "../lib/contenido";
-import { sonidoNavegar } from "../lib/sonido";
 
 export default function Home() {
-  const [sede, setSede] = useState(CONTENIDO_DEFAULT.nuestra_sede);
-  const [fabricacion, setFabricacion] = useState(CONTENIDO_DEFAULT.fabricacion);
-  const [bloques, setBloques] = useState([]);
-
-  useEffect(() => {
-    let activo = true;
-    obtenerContenido("nuestra_sede").then((d) => activo && setSede(d));
-    obtenerContenido("fabricacion").then((d) => activo && setFabricacion(d));
-    obtenerContenido("secciones_home").then((d) => activo && setBloques(d.bloques ?? []));
-    return () => {
-      activo = false;
-    };
-  }, []);
-
-  const fotoFabricacion = fabricacion.imagenes?.[0] ?? CONTENIDO_DEFAULT.fabricacion.imagenes[0];
+  const navigate = useNavigate();
 
   return (
     <div>
       <Hero />
 
-      {/* Vitrina de categorías: cada tarjeta lleva directo a su página
-          dedicada /categoria/:slug (ver CategoriasGrid). */}
+      {/* Vitrina de categorías: aquí solo se navega al catálogo dedicado,
+          no se filtra en la misma página. */}
       <div id="catalogo" className="px-4 py-6 max-w-6xl mx-auto scroll-mt-16">
-        <CategoriasGrid />
+        <CategoriasGrid
+          onCategoriaClick={(cat) => navigate(`/categoria/${cat.id}`)}
+        />
         <div className="text-center">
           <Link
             to="/catalogo"
-            onClick={sonidoNavegar}
-            className="min-h-tap inline-flex items-center justify-center px-6 rounded-control glass-gold text-ink font-bold
-                       hover:bg-gold/25 active:scale-[0.98] transition-all duration-200"
+            className="min-h-tap inline-flex items-center justify-center px-6 rounded-control bg-gold text-carbon font-bold"
           >
             Ver Catálogo Completo
           </Link>
@@ -46,64 +26,62 @@ export default function Home() {
       </div>
 
       {/* NUESTRA SEDE (resumen — la versión completa vive en /contacto) */}
-      <section className="pb-10 max-w-5xl mx-auto border-t border-carbon-border pt-8">
-        <div className="mb-5">
-          <SectionBanner titulo="Nuestra Sede" icono="📍" imagenFondo={sede.imagen} tinte="dorado" />
+      <section className="pb-10 max-w-5xl mx-auto border-t border-carbon-border">
+        <div className="bg-gold py-3 mb-6">
+          <h2 className="text-center text-carbon font-extrabold text-xl uppercase tracking-wide">
+            Nuestra Sede
+          </h2>
         </div>
-        <Reveal className="px-4 glass rounded-card overflow-hidden grid sm:grid-cols-2" delay={80}>
+        <div className="px-4 grid sm:grid-cols-2 gap-4 items-center">
           <img
-            src={sede.imagen}
+            src="/assets/ubicacion.jpg"
             alt="Fachada de Muebles Zulia"
-            className="w-full h-56 sm:h-full object-cover"
+            className="w-full h-56 sm:h-72 object-cover rounded-card border border-carbon-border"
           />
-          <div className="p-5 flex flex-col justify-center">
-            <h3 className="text-xl font-bold text-ink mb-2">{sede.titulo}</h3>
-            <p className="text-ink-muted mb-2">{sede.texto}</p>
-            <p className="text-ink font-semibold mb-4">{sede.direccion}</p>
+          <div>
+            <h3 className="text-xl font-bold text-ink mb-2">¡Te esperamos en Muebles Zulia! 📍</h3>
+            <p className="text-ink-muted mb-2">
+              Ven a conocer la calidad y el diseño que cambiarán tu hogar.
+            </p>
+            <p className="text-ink font-semibold mb-4">Av. 15 Delicias, frente a Alkosto.</p>
             <Link
               to="/contacto"
-              onClick={sonidoNavegar}
-              className="min-h-tap inline-flex items-center px-5 rounded-control border-2 border-ink/60 text-ink font-bold w-fit
-                         hover:bg-ink hover:text-carbon active:scale-[0.98] transition-all duration-200"
+              className="min-h-tap inline-flex items-center px-5 rounded-control border-2 border-ink text-ink font-bold"
             >
               Ver mapa y métodos de pago
             </Link>
           </div>
-        </Reveal>
+        </div>
       </section>
 
       {/* EXCELENCIA EN MANUFACTURA (resumen — versión completa en /fabricacion) */}
-      <section className="pb-10 max-w-5xl mx-auto border-t border-carbon-border pt-8">
-        <div className="mb-5">
-          <SectionBanner titulo="Excelencia en Manufactura" icono="🔨" imagenFondo="/assets/carpinteria.jpg" tinte="oscuro" />
+      <section className="pb-10 max-w-5xl mx-auto border-t border-carbon-border">
+        <div className="bg-ink py-3 mb-6">
+          <h2 className="text-center text-carbon font-extrabold text-xl uppercase tracking-wide">
+            Excelencia en Manufactura
+          </h2>
         </div>
-        <Reveal className="px-4 glass rounded-card overflow-hidden grid sm:grid-cols-2" delay={80}>
+        <div className="px-4 grid sm:grid-cols-2 gap-4 items-center">
           <img
-            src={fotoFabricacion}
-            alt="Taller de carpintería de Muebles Zulia"
-            className="w-full h-56 sm:h-full object-cover"
+            src="/assets/taller.jpg"
+            alt="Artesano trabajando en el taller de Muebles Zulia"
+            className="w-full h-56 sm:h-72 object-cover rounded-card border border-carbon-border"
           />
-          <div className="p-5 flex flex-col justify-center">
-            <h3 className="text-xl font-bold text-gold mb-2">{fabricacion.titulo}</h3>
-            <p className="text-ink-muted mb-4 line-clamp-3">{fabricacion.texto}</p>
+          <div>
+            <h3 className="text-xl font-bold text-gold mb-2">Pasión por el Detalle</h3>
+            <p className="text-ink-muted mb-4">
+              En Muebles Zulia, la excelencia no es negociable. Supervisamos
+              cada etapa de la confección para lograr acabados impecables.
+            </p>
             <Link
               to="/fabricacion"
-              onClick={sonidoNavegar}
-              className="min-h-tap inline-flex items-center px-5 rounded-control border-2 border-ink/60 text-ink font-bold w-fit
-                         hover:bg-ink hover:text-carbon active:scale-[0.98] transition-all duration-200"
+              className="min-h-tap inline-flex items-center px-5 rounded-control border-2 border-ink text-ink font-bold"
             >
               Conocer nuestro proceso
             </Link>
           </div>
-        </Reveal>
+        </div>
       </section>
-
-      {/* Secciones libres, armadas y ordenadas desde /admin/contenido */}
-      {bloques.map((bloque) => (
-        <Reveal key={bloque.id} as="div" className="border-t border-carbon-border">
-          <BloqueContenido bloque={bloque} />
-        </Reveal>
-      ))}
     </div>
   );
 }

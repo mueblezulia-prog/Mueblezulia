@@ -15,9 +15,16 @@
 -- ============================================================
 
 -- 1) Guarda la tabla de productos vieja como respaldo, por si acaso
---    (no se borra nada — solo se renombra). Si ya la habías respaldado
---    antes, esta línea no hace nada.
-alter table if exists productos rename to productos_legacy_v1;
+--    (no se borra nada — solo se renombra). Esta versión SÍ es segura
+--    de correr varias veces: si ya se hizo el respaldo antes, no hace nada.
+do $$
+begin
+  if exists (select 1 from information_schema.tables where table_schema = 'public' and table_name = 'productos')
+     and not exists (select 1 from information_schema.tables where table_schema = 'public' and table_name = 'productos_legacy_v1')
+  then
+    alter table productos rename to productos_legacy_v1;
+  end if;
+end $$;
 
 -- 2) Categorías: se reutiliza la tabla existente, solo se agrega la
 --    columna "imagen" si todavía no la tiene.

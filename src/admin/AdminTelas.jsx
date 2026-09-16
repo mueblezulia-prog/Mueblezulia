@@ -78,7 +78,10 @@ export default function AdminTelas() {
   return (
     <div className="max-w-3xl mx-auto p-6 flex flex-col gap-8">
       <div>
-        <h1 className="text-2xl font-extrabold text-ink">Telas y Colores</h1>
+        <h1 className="text-2xl font-extrabold text-ink flex items-center gap-2">
+          <img src="/assets/icons/tela.png" alt="" className="w-6 h-6" />
+          Telas y Colores
+        </h1>
         <p className="text-ink-muted text-base mt-1">
           Catálogo compartido: crea aquí cada tela una sola vez, y luego elige cuáles aplican a cada mueble desde su formulario.
         </p>

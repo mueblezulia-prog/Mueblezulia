@@ -6,64 +6,26 @@
   html {
     /* Evita que iOS agrande el texto al rotar, mantiene nuestra escala fija */
     -webkit-text-size-adjust: 100%;
-    scroll-behavior: smooth;
   }
   body {
     @apply bg-carbon text-ink;
     font-family: "Inter", system-ui, -apple-system, sans-serif;
   }
-  a, button {
-    -webkit-tap-highlight-color: transparent;
-  }
-  a:focus-visible, button:focus-visible {
-    outline: 2px solid theme("colors.gold.DEFAULT");
-    outline-offset: 2px;
-  }
-
-  /* Animaciones sutiles y minimalistas — solo opacidad + un pequeño
-     desplazamiento, nunca rebotes ni giros. Se usan en el Hero (que
-     siempre está a la vista al cargar) y las reutiliza el componente
-     Reveal para todo lo demás. Respeta a quienes prefieren menos
-     movimiento en su sistema operativo. */
-  @media (prefers-reduced-motion: no-preference) {
-    @keyframes entrada-suave {
-      from { opacity: 0; transform: translateY(14px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    .animar-entrada {
-      animation: entrada-suave 0.8s ease-out both;
-    }
-  }
 }
 
 @layer components {
-  /* Efecto vidrio (glassmorphism) — panel translúcido con blur, para dar
-     sensación premium sobre fotos. Variantes: neutro, oscuro y dorado. */
-  .glass {
-    @apply bg-white/10 backdrop-blur-md border border-white/15 shadow-lg shadow-black/20;
-  }
-  .glass-dark {
-    @apply bg-black/35 backdrop-blur-md border border-white/10 shadow-lg shadow-black/30;
-  }
-  .glass-gold {
-    @apply bg-gold/15 backdrop-blur-md border border-gold/40 shadow-lg shadow-black/20;
-  }
-
   /* Botón primario — usado en tarjeta de catálogo y detalle de producto */
   .btn-primary {
-    @apply w-full min-h-tap rounded-control bg-gold/90 backdrop-blur-sm text-carbon font-bold text-lg
-           border border-gold/50
+    @apply w-full min-h-tap rounded-control bg-gold text-carbon font-bold text-lg
            flex items-center justify-center
-           shadow-lg shadow-black/25
-           hover:bg-gold active:scale-[0.98] transition-all duration-200;
+           active:scale-[0.98] transition-transform;
   }
   /* Botón secundario — "Compra Personalizada" */
   .btn-secondary {
-    @apply w-full min-h-tap rounded-control bg-white/5 backdrop-blur-md text-ink font-bold text-lg
-           border-2 border-ink/40
+    @apply w-full min-h-tap rounded-control bg-transparent text-ink font-bold text-lg
+           border-2 border-ink
            flex items-center justify-center
-           hover:bg-ink hover:text-carbon
-           active:scale-[0.98] transition-all duration-200;
+           active:scale-[0.98] transition-transform;
   }
   /* Input estándar de los formularios del panel admin */
   .campo-input {

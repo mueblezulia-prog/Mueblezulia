@@ -8,7 +8,10 @@ export default function ColorSwatchSelector({ colores, seleccionado, onSeleccion
 
   return (
     <div className="flex flex-col gap-2">
-      <span className="text-lg font-bold text-ink">Colores disponibles</span>
+      <span className="text-lg font-bold text-ink flex items-center gap-2">
+        <img src="/assets/icons/tela.png" alt="" className="w-5 h-5" />
+        Colores disponibles
+      </span>
       <div className="flex flex-wrap gap-3">
         {colores.map((color) => {
           const activo = seleccionado?.id === color.id;
