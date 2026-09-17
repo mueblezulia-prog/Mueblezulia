@@ -10,6 +10,7 @@ const TABS = [
   { label: "Muebles", ruta: "/admin/productos" },
   { label: "Categorías", ruta: "/admin/categorias" },
   { label: "Telas", ruta: "/admin/telas" },
+  { label: "Etiquetas", ruta: "/admin/etiquetas" },
   { label: "Contenido", ruta: "/admin/contenido" },
 ];
 

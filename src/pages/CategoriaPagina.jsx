@@ -61,7 +61,7 @@ export default function CategoriaPagina() {
 
       const { data: productosData, error: errorProductos } = await supabase
         .from("productos")
-        .select("*")
+        .select("*, producto_etiquetas(etiquetas(*))")
         .eq("categoria_id", categoriaData.id)
         .eq("activo", true)
         .order("orden", { ascending: true });

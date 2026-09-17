@@ -6,6 +6,7 @@ import { convertirSiEsHeic } from "../lib/heic";
 import ImageCropModule from "./ImageCropModule";
 import GaleriaImagenes from "./GaleriaImagenes";
 import SelectorTelas from "./SelectorTelas";
+import EtiquetasSelector from "./EtiquetasSelector";
 import PreviewModal from "./PreviewModal";
 
 const BUCKET = "productos";
@@ -58,6 +59,7 @@ export default function ProductForm({ productoExistente, onGuardado }) {
 
   const [fotos, setFotos] = useState([]);
   const [telasSeleccionadas, setTelasSeleccionadas] = useState([]);
+  const [etiquetasSeleccionadas, setEtiquetasSeleccionadas] = useState([]);
   const [disponibleTodasTelas, setDisponibleTodasTelas] = useState(productoExistente?.disponible_todas_telas ?? false);
   const [colorAEleccion, setColorAEleccion] = useState(productoExistente?.color_a_eleccion ?? false);
   const [previewAbierto, setPreviewAbierto] = useState(false);
@@ -75,6 +77,24 @@ export default function ProductForm({ productoExistente, onGuardado }) {
       .then(({ data, error }) => {
         if (activo && !error && data) {
           setTelasSeleccionadas(data.map((f) => f.tela_id).filter(Boolean));
+        }
+      });
+    return () => {
+      activo = false;
+    };
+  }, [productoExistente?.id]);
+
+  // Carga las etiquetas ya asignadas a este producto al editarlo.
+  useEffect(() => {
+    if (!productoExistente?.id) return;
+    let activo = true;
+    supabase
+      .from("producto_etiquetas")
+      .select("etiqueta_id")
+      .eq("producto_id", productoExistente.id)
+      .then(({ data, error }) => {
+        if (activo && !error && data) {
+          setEtiquetasSeleccionadas(data.map((f) => f.etiqueta_id).filter(Boolean));
         }
       });
     return () => {
@@ -188,6 +208,18 @@ export default function ProductForm({ productoExistente, onGuardado }) {
     if (error) throw error;
   }
 
+  // Reemplaza las etiquetas asignadas a este producto (borra + inserta).
+  async function guardarEtiquetas(productoId) {
+    await supabase.from("producto_etiquetas").delete().eq("producto_id", productoId);
+    if (!etiquetasSeleccionadas.length) return;
+    const filas = etiquetasSeleccionadas.map((etiquetaId) => ({
+      producto_id: productoId,
+      etiqueta_id: etiquetaId,
+    }));
+    const { error } = await supabase.from("producto_etiquetas").insert(filas);
+    if (error) throw error;
+  }
+
   // Reemplaza la galería de fotos del producto (las fotos ya están subidas
   // a Storage — aquí solo se guarda la lista final + orden).
   async function guardarFotos(productoId) {
@@ -255,9 +287,10 @@ export default function ProductForm({ productoExistente, onGuardado }) {
       // Colores y fotos se guardan por separado (Promise.allSettled): si uno
       // de los dos falla, el otro se guarda igual — antes, un error en las
       // telas impedía que las fotos de la galería llegaran a guardarse.
-      const [resultadoColores, resultadoFotos] = await Promise.allSettled([
+      const [resultadoColores, resultadoFotos, resultadoEtiquetas] = await Promise.allSettled([
         guardarColores(productoId),
         guardarFotos(productoId),
+        guardarEtiquetas(productoId),
       ]);
 
       const advertencias = [];
@@ -266,6 +299,9 @@ export default function ProductForm({ productoExistente, onGuardado }) {
       }
       if (resultadoFotos.status === "rejected") {
         advertencias.push(`fotos de la galería (${resultadoFotos.reason.message})`);
+      }
+      if (resultadoEtiquetas.status === "rejected") {
+        advertencias.push(`etiquetas (${resultadoEtiquetas.reason.message})`);
       }
 
       if (advertencias.length) {
@@ -419,6 +455,8 @@ export default function ProductForm({ productoExistente, onGuardado }) {
             colorAEleccion={colorAEleccion}
             onCambiarColorEleccion={setColorAEleccion}
           />
+
+          <EtiquetasSelector seleccionadas={etiquetasSeleccionadas} onChange={setEtiquetasSeleccionadas} />
 
           <GaleriaImagenes fotos={fotos} onChange={setFotos} />
         </div>

@@ -25,7 +25,7 @@ export default function CatalogoProductos() {
       try {
         const { data, error } = await supabase
           .from("productos")
-          .select("*")
+          .select("*, producto_etiquetas(etiquetas(*))")
           .eq("activo", true)
           .order("orden", { ascending: true });
 
@@ -67,32 +67,44 @@ export default function CatalogoProductos() {
 
         <CategoriasGrid />
 
-        <div className="border-t border-white/10 pt-6">
-          <h2 className="text-xl sm:text-2xl font-extrabold text-ink mb-4">Todos los productos</h2>
+        <div className="relative rounded-card overflow-hidden border-t border-white/10 mt-2">
+          {/* A diferencia del fondo de la página (una sola foto estirada
+              y difuminada), aquí la textura se REPITE en mosaico detrás
+              de un panel de vidrio — para que se sienta como una
+              superficie, no como una foto de fondo. */}
+          <div
+            className="absolute inset-0 -z-10"
+            style={{ backgroundImage: "url(/assets/textura-vidrio.jpg)", backgroundRepeat: "repeat", backgroundSize: "96px 96px" }}
+          />
+          <div className="absolute inset-0 -z-10 glass-dark" />
 
-          {cargando && (
-            <p className="text-center text-ink-muted text-lg py-16">Cargando catálogo…</p>
-          )}
+          <div className="relative px-4 py-6">
+            <h2 className="text-xl sm:text-2xl font-extrabold text-ink mb-4">Todos los productos</h2>
 
-          {!cargando && error && (
-            <p className="text-center text-terracota text-lg py-16">
-              No se pudo cargar el catálogo: {error}
-            </p>
-          )}
+            {cargando && (
+              <p className="text-center text-ink-muted text-lg py-16">Cargando catálogo…</p>
+            )}
 
-          {!cargando && !error && productos.length === 0 && (
-            <p className="text-center text-ink-muted text-lg py-16">Todavía no hay productos cargados.</p>
-          )}
+            {!cargando && error && (
+              <p className="text-center text-terracota text-lg py-16">
+                No se pudo cargar el catálogo: {error}
+              </p>
+            )}
 
-          {!cargando && !error && productos.length > 0 && (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-              {productos.map((producto, i) => (
-                <Reveal key={producto.id} delay={(i % 8) * 60}>
-                  <ProductCard producto={producto} />
-                </Reveal>
-              ))}
-            </div>
-          )}
+            {!cargando && !error && productos.length === 0 && (
+              <p className="text-center text-ink-muted text-lg py-16">Todavía no hay productos cargados.</p>
+            )}
+
+            {!cargando && !error && productos.length > 0 && (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                {productos.map((producto, i) => (
+                  <Reveal key={producto.id} delay={(i % 8) * 60}>
+                    <ProductCard producto={producto} />
+                  </Reveal>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

@@ -1,5 +1,7 @@
 import { Link } from "react-router-dom";
 import { sonidoNavegar } from "../lib/sonido";
+import { obtenerEtiquetasProducto } from "../lib/etiquetas";
+import EtiquetasBadges from "./EtiquetasBadges";
 
 /**
  * Tarjeta de producto para el catálogo (cliente). Imagen grande con
@@ -7,7 +9,8 @@ import { sonidoNavegar } from "../lib/sonido";
  * tarjeta es un solo link al detalle del producto.
  */
 export default function ProductCard({ producto }) {
-  const { id, titulo, precio, imagen_recortada_url, medida, disponible_todas_telas, color_a_eleccion } = producto;
+  const { id, titulo, precio, imagen_recortada_url, medida } = producto;
+  const etiquetas = obtenerEtiquetasProducto(producto);
 
   return (
     <Link
@@ -25,7 +28,8 @@ export default function ProductCard({ producto }) {
           loading="lazy"
         />
         <span className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/75 via-black/10 to-transparent" />
-        <span className="absolute bottom-2.5 left-2.5 bg-gold text-carbon text-sm sm:text-base font-extrabold px-2.5 py-1 rounded-control shadow-md shadow-black/30">
+        <span className="absolute bottom-2.5 left-2.5 flex items-center gap-1 bg-gold text-carbon text-sm sm:text-base font-extrabold px-2.5 py-1 rounded-control shadow-md shadow-black/30">
+          <img src="/assets/icons/precio-tag.png" alt="" className="w-4 h-4 sm:w-5 sm:h-5" />
           ${Number(precio).toLocaleString("es-VE")}
         </span>
       </div>
@@ -39,16 +43,7 @@ export default function ProductCard({ producto }) {
               📏 {medida}
             </span>
           )}
-          {disponible_todas_telas && (
-            <span className="inline-flex items-center gap-1 self-start text-xs font-semibold text-gold bg-gold/15 border border-gold/40 rounded-control px-2 py-0.5">
-              <img src="/assets/icons/tela.png" alt="" className="w-3.5 h-3.5" /> Todas las telas
-            </span>
-          )}
-          {color_a_eleccion && (
-            <span className="inline-flex items-center gap-1 self-start text-xs font-semibold text-gold bg-gold/15 border border-gold/40 rounded-control px-2 py-0.5">
-              🎨 A tu color
-            </span>
-          )}
+          <EtiquetasBadges etiquetas={etiquetas} compacto tamano="sm" />
         </div>
       </div>
     </Link>

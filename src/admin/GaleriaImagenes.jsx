@@ -6,6 +6,14 @@ import ImageCropModule from "./ImageCropModule";
 
 const BUCKET = "productos";
 
+function esArchivoVideo(file) {
+  return file.type?.startsWith("video/");
+}
+
+function esUrlVideo(url) {
+  return /\.(mp4|mov|webm|m4v)(\?|$)/i.test(url ?? "");
+}
+
 /**
  * Gestor de varias fotos por mueble (tabla `producto_imagenes`).
  *
@@ -13,6 +21,11 @@ const BUCKET = "productos";
  * la agrega (no se espera al "Guardar" general del formulario) — así el
  * botón "Guardar" del producto solo necesita escribir la lista final de
  * URLs + orden en `producto_imagenes`, igual que ya hace con los colores.
+ *
+ * También acepta videos cortos (Boomerang, Live Photo exportada como
+ * video, clips de unos segundos): no se recortan, se suben tal cual y
+ * se reproducen en bucle sin sonido en el detalle del producto — para
+ * dar ese efecto de "foto en movimiento".
  *
  * `fotos`: [{ id, url, orden }]  (id puede ser temporal o el id real de
  * la fila en producto_imagenes si el producto ya existía)
@@ -26,6 +39,7 @@ export default function GaleriaImagenes({ fotos, onChange }) {
   const [totalLote, setTotalLote] = useState(0);
   const [cropState, setCropState] = useState({ crop: { x: 0, y: 0 }, zoom: 1, croppedAreaPixels: null, aspecto: 4 / 5 });
   const [subiendo, setSubiendo] = useState(false);
+  const [subiendoVideo, setSubiendoVideo] = useState(false);
   const [error, setError] = useState(null);
 
   const editando = cola[0] ?? null;
@@ -35,18 +49,47 @@ export default function GaleriaImagenes({ fotos, onChange }) {
     if (files.length === 0) return;
     e.target.value = ""; // permite volver a elegir los mismos archivos después
     setError(null);
-    try {
-      const listas = await Promise.all(
-        files.map(async (file) => {
-          const fileListo = await convertirSiEsHeic(file);
-          return { id: crypto.randomUUID(), file: fileListo, originalUrl: URL.createObjectURL(fileListo) };
-        })
-      );
-      setCola((c) => [...c, ...listas]);
-      setTotalLote((t) => (cola.length === 0 ? listas.length : t + listas.length));
-      setCropState({ crop: { x: 0, y: 0 }, zoom: 1, croppedAreaPixels: null, aspecto: 4 / 5 });
-    } catch (err) {
-      setError(`No se pudo procesar una de las fotos: ${err.message}`);
+
+    // Los videos (Boomerang, clips cortos) no pasan por el recortador:
+    // se suben directo, cada uno por su cuenta.
+    const videos = files.filter(esArchivoVideo);
+    const imagenes = files.filter((f) => !esArchivoVideo(f));
+
+    if (videos.length > 0) {
+      setSubiendoVideo(true);
+      try {
+        for (const file of videos) {
+          const id = crypto.randomUUID();
+          const extension = (file.name.match(/\.\w+$/)?.[0] ?? ".mp4").toLowerCase();
+          const nombreArchivo = `galeria/${id}${extension}`;
+          const { error: errorSubida } = await supabase.storage.from(BUCKET).upload(nombreArchivo, file, {
+            contentType: file.type || "video/mp4",
+          });
+          if (errorSubida) throw errorSubida;
+          const url = supabase.storage.from(BUCKET).getPublicUrl(nombreArchivo).data.publicUrl;
+          onChange((actual) => [...actual, { id, url, orden: actual.length }]);
+        }
+      } catch (err) {
+        setError(`No se pudo subir el video: ${err.message}`);
+      } finally {
+        setSubiendoVideo(false);
+      }
+    }
+
+    if (imagenes.length > 0) {
+      try {
+        const listas = await Promise.all(
+          imagenes.map(async (file) => {
+            const fileListo = await convertirSiEsHeic(file);
+            return { id: crypto.randomUUID(), file: fileListo, originalUrl: URL.createObjectURL(fileListo) };
+          })
+        );
+        setCola((c) => [...c, ...listas]);
+        setTotalLote((t) => (cola.length === 0 ? listas.length : t + listas.length));
+        setCropState({ crop: { x: 0, y: 0 }, zoom: 1, croppedAreaPixels: null, aspecto: 4 / 5 });
+      } catch (err) {
+        setError(`No se pudo procesar una de las fotos: ${err.message}`);
+      }
     }
   }
 
@@ -105,14 +148,32 @@ export default function GaleriaImagenes({ fotos, onChange }) {
     <div className="flex flex-col gap-3">
       <span className="text-lg font-bold text-ink">Galería (varias fotos)</span>
       <p className="text-sm text-ink-muted">
-        La primera foto es la que se usa en la tarjeta del catálogo. El resto se puede deslizar en el detalle del producto.
+        La primera foto es la que se usa en la tarjeta del catálogo. El resto se puede deslizar en el detalle del
+        producto. También puedes agregar un video corto (Boomerang, clip de unos segundos) — se reproduce en bucle
+        sin sonido, como una foto en movimiento.
       </p>
 
       {fotos.length > 0 && (
         <div className="flex flex-wrap gap-3">
           {fotos.map((foto, i) => (
             <div key={foto.id} className="relative w-24">
-              <img src={foto.url} alt={`Foto ${i + 1}`} className="w-24 h-24 object-cover rounded-control border border-carbon-border" />
+              {esUrlVideo(foto.url) ? (
+                <video
+                  src={foto.url}
+                  className="w-24 h-24 object-cover rounded-control border border-carbon-border bg-carbon"
+                  muted
+                  loop
+                  autoPlay
+                  playsInline
+                />
+              ) : (
+                <img src={foto.url} alt={`Foto ${i + 1}`} className="w-24 h-24 object-cover rounded-control border border-carbon-border" />
+              )}
+              {esUrlVideo(foto.url) && (
+                <span className="absolute top-1 right-1 bg-black/60 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
+                  🎥 Video
+                </span>
+              )}
               {i === 0 && (
                 <span className="absolute top-1 left-1 bg-gold text-carbon text-xs font-bold px-1.5 py-0.5 rounded">
                   Portada
@@ -130,6 +191,8 @@ export default function GaleriaImagenes({ fotos, onChange }) {
           ))}
         </div>
       )}
+
+      {subiendoVideo && <p className="text-sm text-gold font-semibold">Subiendo video…</p>}
 
       {editando ? (
         <div className="flex flex-col gap-3 border-t border-carbon-border pt-3">
@@ -162,8 +225,14 @@ export default function GaleriaImagenes({ fotos, onChange }) {
         </div>
       ) : (
         <label className="min-h-tap flex items-center justify-center rounded-control border-2 border-dashed border-carbon-border text-ink-muted cursor-pointer w-fit px-5 hover:border-gold/50 hover:text-ink transition-colors duration-150">
-          <input type="file" accept="image/*,.heic,.heif" multiple onChange={handleSeleccionarArchivos} className="hidden" />
-          + Agregar fotos a la galería
+          <input
+            type="file"
+            accept="image/*,.heic,.heif,video/mp4,video/quicktime,.mov,.webm"
+            multiple
+            onChange={handleSeleccionarArchivos}
+            className="hidden"
+          />
+          + Agregar fotos o video a la galería
         </label>
       )}
     </div>

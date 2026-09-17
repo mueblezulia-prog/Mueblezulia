@@ -3,6 +3,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 import ColorSwatchSelector from "../components/ColorSwatchSelector";
 import Reveal from "../components/Reveal";
+import EtiquetasBadges from "../components/EtiquetasBadges";
+import { obtenerEtiquetasProducto } from "../lib/etiquetas";
 import { sonidoConfirmar } from "../lib/sonido";
 
 const WHATSAPP_NUMERO = "584127519141"; // +58 412 751 9141
@@ -31,7 +33,7 @@ export default function ProductoDetalle() {
         { data: imagenesData, error: errorImagenes },
         { data: coloresData, error: errorColores },
       ] = await Promise.all([
-        supabase.from("productos").select("*").eq("id", id).single(),
+        supabase.from("productos").select("*, producto_etiquetas(etiquetas(*))").eq("id", id).single(),
         supabase.from("producto_imagenes").select("*").eq("producto_id", id).order("orden"),
         supabase.from("producto_colores").select("*").eq("producto_id", id).order("orden"),
       ]);
@@ -120,14 +122,26 @@ export default function ProductoDetalle() {
           onScroll={alHacerScroll}
           className="flex overflow-x-auto snap-x snap-mandatory no-scrollbar"
         >
-          {imagenes.map((url, i) => (
-            <img
-              key={i}
-              src={url}
-              alt={`${producto.titulo} — foto ${i + 1}`}
-              className="w-full shrink-0 snap-center object-cover"
-            />
-          ))}
+          {imagenes.map((url, i) =>
+            /\.(mp4|mov|webm|m4v)(\?|$)/i.test(url) ? (
+              <video
+                key={i}
+                src={url}
+                className="w-full shrink-0 snap-center object-cover"
+                muted
+                loop
+                autoPlay
+                playsInline
+              />
+            ) : (
+              <img
+                key={i}
+                src={url}
+                alt={`${producto.titulo} — foto ${i + 1}`}
+                className="w-full shrink-0 snap-center object-cover"
+              />
+            )
+          )}
         </div>
 
         {imagenes.length > 1 && (
@@ -196,24 +210,20 @@ export default function ProductoDetalle() {
           {/* Precio y medida con su ícono respectivo */}
           <div className="flex flex-wrap items-center gap-3">
             <span className="inline-flex items-center gap-2 text-price font-extrabold text-gold glass-gold px-3 py-1 rounded-control">
-              💲 {Number(producto.precio).toLocaleString("es-VE")}
+              <img src="/assets/icons/precio-tag.png" alt="" className="w-6 h-6" />
+              ${Number(producto.precio).toLocaleString("es-VE")}
             </span>
             {producto.medida && (
               <span className="inline-flex items-center gap-2 text-lg font-semibold text-ink-muted glass px-3 py-1 rounded-control">
                 📏 {producto.medida}
               </span>
             )}
-            {producto.disponible_todas_telas && (
-              <span className="inline-flex items-center gap-2 text-base font-bold text-gold glass-gold px-3 py-1 rounded-control">
-                <img src="/assets/icons/tela.png" alt="" className="w-4 h-4" /> Todas las telas
-              </span>
-            )}
-            {producto.color_a_eleccion && (
-              <span className="inline-flex items-center gap-2 text-base font-bold text-gold glass-gold px-3 py-1 rounded-control">
-                🎨 El color de tu preferencia
-              </span>
-            )}
           </div>
+
+          {/* Insignias: telas/color a elección + etiquetas personalizadas
+              que el admin haya asignado desde /admin/etiquetas. Aquí, con
+              más espacio que en la tarjeta, siempre se ven completas. */}
+          <EtiquetasBadges etiquetas={obtenerEtiquetasProducto(producto)} tamano="md" />
 
           {producto.descripcion_corta && (
             <p className="text-ink-muted text-lg leading-relaxed">
