@@ -11,8 +11,9 @@ const TEXTOS = {
  * bajo pedido. Al tocarla, revela con una animación un texto corto
  * explicando qué significa (no navega ni cierra el enlace del padre).
  */
-export default function BadgeDisponibilidad({ disponible, className = "" }) {
+export default function BadgeDisponibilidad({ disponible, className = "", tooltipHacia = "arriba" }) {
   const [abierto, setAbierto] = useState(false);
+  const haciaArriba = tooltipHacia === "arriba";
 
   function alTocar(e) {
     // Estas insignias suelen vivir dentro del <Link> de la tarjeta de
@@ -40,14 +41,19 @@ export default function BadgeDisponibilidad({ disponible, className = "" }) {
         {disponible ? "Entrega Inmediata" : "Bajo Pedido"}
       </button>
 
-      {/* Explicación — se revela con un fundido + pequeño despliegue,
-          hacia ARRIBA del ícono (la tarjeta recorta el contenido que se
-          sale por abajo, por los bordes redondeados). */}
+      {/* Explicación — se revela con un fundido + pequeño despliegue.
+          Por defecto hacia ARRIBA del ícono (para cuando la insignia
+          vive al fondo de una tarjeta con overflow-hidden); con
+          tooltipHacia="abajo" se despliega hacia abajo en su lugar
+          (para cuando la insignia está arriba de todo, ej. sobre la foto). */}
       <span
         className={[
-          "absolute z-20 left-0 bottom-full mb-1.5 w-56 glass-dark text-ink text-xs leading-snug rounded-control p-2.5",
-          "origin-bottom transition-all duration-200 ease-out",
-          abierto ? "opacity-100 scale-y-100 translate-y-0" : "opacity-0 scale-y-90 translate-y-1 pointer-events-none",
+          "absolute z-20 left-0 w-56 glass-dark text-ink text-xs leading-snug rounded-control p-2.5",
+          "transition-all duration-200 ease-out",
+          haciaArriba ? "bottom-full mb-1.5 origin-bottom" : "top-full mt-1.5 origin-top",
+          abierto
+            ? "opacity-100 scale-y-100 translate-y-0"
+            : `opacity-0 scale-y-90 pointer-events-none ${haciaArriba ? "translate-y-1" : "-translate-y-1"}`,
         ].join(" ")}
       >
         {disponible ? TEXTOS.disponible : TEXTOS.pedido}

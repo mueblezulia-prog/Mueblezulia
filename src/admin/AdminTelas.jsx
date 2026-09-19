@@ -1,17 +1,34 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { convertirSiEsHeic } from "../lib/heic";
+
+const BUCKET = "productos";
+
+async function subirFotoTela(file) {
+  const fileListo = await convertirSiEsHeic(file);
+  const nombreArchivo = `telas/${crypto.randomUUID()}.jpg`;
+  const { error } = await supabase.storage.from(BUCKET).upload(nombreArchivo, fileListo);
+  if (error) throw error;
+  return supabase.storage.from(BUCKET).getPublicUrl(nombreArchivo).data.publicUrl;
+}
 
 /**
  * Catálogo global de telas/colores (tabla `telas`). Se administra UNA vez
  * aquí y luego cada producto elige cuáles de estas telas ofrece (ver
  * SelectorTelas.jsx) — así no hay que volver a escribir el mismo color
  * a mano en cada mueble.
+ *
+ * Cada tela puede tener, además del color plano, una FOTO real de la
+ * tela (textura/acercamiento) — es la base de un catálogo de telas de
+ * verdad. Por ahora esto solo vive aquí en el admin; la parte pública
+ * ("Telas" dentro del sitio) queda para una fase futura.
  */
 export default function AdminTelas() {
   const [telas, setTelas] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
   const [guardandoId, setGuardandoId] = useState(null);
+  const [subiendoId, setSubiendoId] = useState(null);
 
   const [nuevoNombre, setNuevoNombre] = useState("");
   const [nuevoHex, setNuevoHex] = useState("#F2B90C");
@@ -37,7 +54,7 @@ export default function AdminTelas() {
     setGuardandoId(tela.id);
     const { error } = await supabase
       .from("telas")
-      .update({ nombre: tela.nombre, hex: tela.hex })
+      .update({ nombre: tela.nombre, hex: tela.hex, imagen: tela.imagen ?? null })
       .eq("id", tela.id);
     setGuardandoId(null);
     if (error) alert(`No se pudo guardar: ${error.message}`);
@@ -54,6 +71,23 @@ export default function AdminTelas() {
       return;
     }
     setTelas((actual) => actual.filter((t) => t.id !== tela.id));
+  }
+
+  async function handleSubirFoto(tela, file) {
+    if (!file) return;
+    setSubiendoId(tela.id);
+    try {
+      const url = await subirFotoTela(file);
+      actualizarLocal(tela.id, { imagen: url });
+    } catch (err) {
+      alert(`No se pudo subir la foto: ${err.message}`);
+    } finally {
+      setSubiendoId(null);
+    }
+  }
+
+  function quitarFoto(tela) {
+    actualizarLocal(tela.id, { imagen: null });
   }
 
   async function handleCrear(e) {
@@ -83,7 +117,9 @@ export default function AdminTelas() {
           Telas y Colores
         </h1>
         <p className="text-ink-muted text-base mt-1">
-          Catálogo compartido: crea aquí cada tela una sola vez, y luego elige cuáles aplican a cada mueble desde su formulario.
+          Catálogo compartido: crea aquí cada tela una sola vez, y luego elige cuáles aplican a cada mueble desde su
+          formulario. Toca el cuadro de la izquierda para subirle una foto real de la tela (opcional) — si no le
+          subes foto, se sigue mostrando el color plano.
         </p>
       </div>
 
@@ -94,11 +130,28 @@ export default function AdminTelas() {
         <div className="flex flex-col gap-3">
           {telas.map((tela) => (
             <div key={tela.id} className="bg-carbon-light border border-carbon-border rounded-card p-3 flex flex-wrap items-center gap-3">
+              <label className="relative w-12 h-12 rounded-control border border-carbon-border shrink-0 cursor-pointer overflow-hidden group">
+                {tela.imagen ? (
+                  <img src={tela.imagen} alt={tela.nombre} className="w-full h-full object-cover" />
+                ) : (
+                  <span className="block w-full h-full" style={{ backgroundColor: tela.hex }} />
+                )}
+                <span className="absolute inset-0 bg-black/0 group-hover:bg-black/60 flex items-center justify-center text-[9px] text-white opacity-0 group-hover:opacity-100 transition-all duration-150 text-center leading-tight">
+                  {subiendoId === tela.id ? "…" : "Subir foto"}
+                </span>
+                <input
+                  type="file"
+                  accept="image/*,.heic,.heif"
+                  className="hidden"
+                  onChange={(e) => handleSubirFoto(tela, e.target.files?.[0])}
+                />
+              </label>
               <input
                 type="color"
                 value={tela.hex}
                 onChange={(e) => actualizarLocal(tela.id, { hex: e.target.value })}
-                className="w-12 h-12 rounded-control border border-carbon-border bg-carbon shrink-0"
+                className="w-9 h-9 rounded-control border border-carbon-border bg-carbon shrink-0"
+                title="Color plano (se usa si no hay foto)"
               />
               <input
                 type="text"
@@ -114,6 +167,15 @@ export default function AdminTelas() {
                 className="campo-input w-28"
                 aria-label="Valor HEX"
               />
+              {tela.imagen && (
+                <button
+                  type="button"
+                  onClick={() => quitarFoto(tela)}
+                  className="text-xs text-ink-muted hover:text-terracota underline transition-colors"
+                >
+                  Quitar foto
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => guardarFila(tela)}
@@ -161,6 +223,9 @@ export default function AdminTelas() {
           {creando ? "Creando…" : "+ Añadir tela"}
         </button>
       </form>
+      <p className="text-xs text-ink-muted -mt-4">
+        Después de crearla, toca su cuadro de color en la lista de arriba para subirle una foto real de la tela.
+      </p>
     </div>
   );
 }
