@@ -4,6 +4,7 @@ import { supabase } from "../lib/supabaseClient";
 import ColorSwatchSelector from "../components/ColorSwatchSelector";
 import Reveal from "../components/Reveal";
 import EtiquetasBadges from "../components/EtiquetasBadges";
+import BadgeDisponibilidad from "../components/BadgeDisponibilidad";
 import { obtenerEtiquetasProducto } from "../lib/etiquetas";
 import { sonidoConfirmar } from "../lib/sonido";
 
@@ -218,6 +219,7 @@ export default function ProductoDetalle() {
                 📏 {producto.medida}
               </span>
             )}
+            <BadgeDisponibilidad disponible={producto.disponible_entrega ?? true} />
           </div>
 
           {/* Insignias: telas/color a elección + etiquetas personalizadas

@@ -60,6 +60,18 @@
   @media (prefers-reduced-motion: reduce) {
     .glass-float { animation: none; }
   }
+  /* Brillo llamativo (pero no molesto) de la insignia verde "Entrega
+     Inmediata" — un pulso suave de sombra, no de tamaño ni posición. */
+  .glow-verde {
+    animation: glow-verde 2.2s ease-in-out infinite;
+  }
+  @keyframes glow-verde {
+    0%, 100% { box-shadow: 0 0 0px 0px rgba(74, 222, 128, 0.35); }
+    50% { box-shadow: 0 0 10px 2px rgba(74, 222, 128, 0.55); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .glow-verde { animation: none; }
+  }
   /* Fundido cruzado entre fotos del carrusel de "modo presentación" */
   .carrusel-slide {
     transition: opacity 1.1s ease-in-out;

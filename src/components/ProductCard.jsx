@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { sonidoNavegar } from "../lib/sonido";
 import { obtenerEtiquetasProducto } from "../lib/etiquetas";
 import EtiquetasBadges from "./EtiquetasBadges";
+import BadgeDisponibilidad from "./BadgeDisponibilidad";
 
 /**
  * Tarjeta de producto para el catálogo (cliente). Imagen grande con
@@ -38,6 +39,7 @@ export default function ProductCard({ producto }) {
           {titulo}
         </h3>
         <div className="flex flex-wrap gap-1">
+          <BadgeDisponibilidad disponible={producto.disponible_entrega ?? true} />
           {medida && (
             <span className="inline-flex items-center gap-1 self-start text-xs text-ink-muted bg-white/5 border border-white/10 rounded-control px-2 py-0.5">
               📏 {medida}

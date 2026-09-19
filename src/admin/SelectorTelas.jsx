@@ -11,7 +11,16 @@ import { supabase } from "../lib/supabaseClient";
  * `onChange(idsSeleccionados)` — el padre guarda esos ids en
  * `producto_colores` (columna `tela_id`) al presionar "Guardar".
  */
-export default function SelectorTelas({ seleccionadas, onChange, disponibleTodasTelas, onCambiarTodasTelas, colorAEleccion, onCambiarColorEleccion }) {
+export default function SelectorTelas({
+  seleccionadas,
+  onChange,
+  disponibleTodasTelas,
+  onCambiarTodasTelas,
+  colorAEleccion,
+  onCambiarColorEleccion,
+  disponibleEntrega,
+  onCambiarDisponibleEntrega,
+}) {
   const [telas, setTelas] = useState([]);
   const [cargando, setCargando] = useState(true);
 
@@ -80,6 +89,23 @@ export default function SelectorTelas({ seleccionadas, onChange, disponibleTodas
           })}
         </div>
       )}
+
+      {/* Disponibilidad de entrega — decide si en el catálogo se muestra
+          la insignia verde "Entrega Inmediata" o "Bajo Pedido". */}
+      <div className="flex flex-col gap-2 pt-2 border-t border-carbon-border">
+        <span className="text-[11px] font-semibold text-ink-muted uppercase tracking-wide">Disponibilidad</span>
+        <EtiquetaEspecial
+          icono="🚚"
+          titulo={disponibleEntrega ? "Entrega inmediata (en stock)" : "Bajo pedido"}
+          ayuda={
+            disponibleEntrega
+              ? "Se muestra la insignia verde de 'Entrega Inmediata' en el catálogo."
+              : "Se muestra como 'Bajo Pedido' — actívalo cuando lo tengas listo en tienda."
+          }
+          activa={disponibleEntrega}
+          onClick={() => onCambiarDisponibleEntrega(!disponibleEntrega)}
+        />
+      </div>
 
       {/* Etiquetas especiales — no son telas del catálogo, son avisos
           para el cliente. Se muestran como insignia dorada en la tarjeta

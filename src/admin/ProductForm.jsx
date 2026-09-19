@@ -62,6 +62,7 @@ export default function ProductForm({ productoExistente, onGuardado }) {
   const [etiquetasSeleccionadas, setEtiquetasSeleccionadas] = useState([]);
   const [disponibleTodasTelas, setDisponibleTodasTelas] = useState(productoExistente?.disponible_todas_telas ?? false);
   const [colorAEleccion, setColorAEleccion] = useState(productoExistente?.color_a_eleccion ?? false);
+  const [disponibleEntrega, setDisponibleEntrega] = useState(productoExistente?.disponible_entrega ?? true);
   const [previewAbierto, setPreviewAbierto] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [mensaje, setMensaje] = useState(null);
@@ -165,6 +166,7 @@ export default function ProductForm({ productoExistente, onGuardado }) {
       medida,
       disponible_todas_telas: disponibleTodasTelas,
       color_a_eleccion: colorAEleccion,
+      disponible_entrega: disponibleEntrega,
       // Mientras no se guarda, la vista previa usa el blob local (imagenOriginalUrl
       // apunta al object URL de la foto recién subida o a la ya guardada).
       imagen_recortada_url: imagenOriginalUrl,
@@ -263,6 +265,7 @@ export default function ProductForm({ productoExistente, onGuardado }) {
         subcategoria: subcategoria || null,
         disponible_todas_telas: disponibleTodasTelas,
         color_a_eleccion: colorAEleccion,
+        disponible_entrega: disponibleEntrega,
         imagen_original_url: urlOriginal,
         imagen_recortada_url: urlRecortada,
         crop_data: {
@@ -454,6 +457,8 @@ export default function ProductForm({ productoExistente, onGuardado }) {
             onCambiarTodasTelas={setDisponibleTodasTelas}
             colorAEleccion={colorAEleccion}
             onCambiarColorEleccion={setColorAEleccion}
+            disponibleEntrega={disponibleEntrega}
+            onCambiarDisponibleEntrega={setDisponibleEntrega}
           />
 
           <EtiquetasSelector seleccionadas={etiquetasSeleccionadas} onChange={setEtiquetasSeleccionadas} />
