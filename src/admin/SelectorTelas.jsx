@@ -145,8 +145,8 @@ function BotonTela({ tela, activa, onClick }) {
       ].join(" ")}
     >
       <span
-        className="w-6 h-6 rounded-full border border-carbon-border shrink-0"
-        style={{ backgroundColor: tela.hex }}
+        className="w-6 h-6 rounded-full border border-carbon-border shrink-0 bg-cover bg-center"
+        style={tela.imagen ? { backgroundImage: `url(${tela.imagen})` } : { backgroundColor: tela.hex }}
       />
       <span className="text-base text-ink">{tela.nombre}</span>
       {activa && <span className="text-gold font-bold">✓</span>}

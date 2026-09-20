@@ -113,7 +113,10 @@ export default function SelectorTelaReal({ telaColorId, onChange, onTambienAgreg
                         activo ? "border-gold bg-carbon" : "border-carbon-border bg-transparent hover:border-carbon-border/60",
                       ].join(" ")}
                     >
-                      <span className="w-6 h-6 rounded-full border border-carbon-border shrink-0" style={{ backgroundColor: tela.hex }} />
+                      <span
+                        className="w-6 h-6 rounded-full border border-carbon-border shrink-0 bg-cover bg-center"
+                        style={tela.imagen ? { backgroundImage: `url(${tela.imagen})` } : { backgroundColor: tela.hex }}
+                      />
                       <span className="text-sm text-ink font-semibold">{tela.nombre}</span>
                       {activo && <span className="text-gold font-bold">✓</span>}
                     </button>

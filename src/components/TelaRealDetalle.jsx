@@ -93,7 +93,10 @@ export default function TelaRealDetalle({ producto }) {
         className="flex items-center gap-2.5 bg-carbon-light border border-carbon-border rounded-control px-3.5 py-2.5 min-h-tap text-left"
       >
         <span className="text-base leading-none">🧵</span>
-        <span className="w-5 h-5 rounded-full border border-white/15 shrink-0" style={{ backgroundColor: tela.hex }} />
+        <span
+          className="w-5 h-5 rounded-full border border-white/15 shrink-0 bg-cover bg-center"
+          style={tela.imagen ? { backgroundImage: `url(${tela.imagen})` } : { backgroundColor: tela.hex }}
+        />
         <span className="flex-1 text-sm font-semibold text-ink">
           {familia ? `${familia.nombre} — ${tela.nombre}` : tela.nombre}
         </span>
@@ -134,7 +137,10 @@ export default function TelaRealDetalle({ producto }) {
                         c.id === tela.id ? "border-gold bg-carbon-light" : "border-carbon-border",
                       ].join(" ")}
                     >
-                      <span className="w-5 h-5 rounded-full border border-white/15" style={{ backgroundColor: c.hex }} />
+                      <span
+                        className="w-5 h-5 rounded-full border border-white/15 bg-cover bg-center"
+                        style={c.imagen ? { backgroundImage: `url(${c.imagen})` } : { backgroundColor: c.hex }}
+                      />
                       <span className="text-sm font-semibold text-ink">{c.nombre}</span>
                     </span>
                   ))}
