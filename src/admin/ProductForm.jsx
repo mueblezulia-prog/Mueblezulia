@@ -43,11 +43,18 @@ export default function ProductForm({ productoExistente, onGuardado }) {
   const subcategoriasDisponibles = categoriaSeleccionada?.subcategorias ?? [];
 
   useEffect(() => {
+    // BUG corregido: antes este efecto corría apenas se montaba el
+    // formulario, ANTES de que "categorias" terminara de cargar desde
+    // Supabase — en ese instante "subcategoriasDisponibles" siempre
+    // estaba vacío, así que borraba la subcategoría ya guardada del
+    // mueble aunque fuera válida. Ahora espera a que las categorías
+    // hayan cargado antes de decidir si hay que limpiarla.
+    if (categorias.length === 0) return;
     if (subcategoria && !subcategoriasDisponibles.includes(subcategoria)) {
       setSubcategoria("");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [categoriaId]);
+  }, [categoriaId, categorias]);
 
   const [imagenOriginalUrl, setImagenOriginalUrl] = useState(productoExistente?.imagen_original_url ?? null);
   const [imagenOriginalFile, setImagenOriginalFile] = useState(null);
