@@ -29,6 +29,11 @@ export default function ProductCard({ producto }) {
           loading="lazy"
         />
         <span className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/75 via-black/10 to-transparent" />
+        {/* Siempre visible arriba de la foto, sin importar cuántas otras
+            etiquetas tenga el producto abajo. */}
+        <span className="absolute top-2.5 left-2.5">
+          <BadgeDisponibilidad disponible={producto.disponible_entrega ?? true} />
+        </span>
         <span className="absolute bottom-2.5 left-2.5 flex items-center gap-1 bg-gold text-carbon text-sm sm:text-base font-extrabold px-2.5 py-1 rounded-control shadow-md shadow-black/30">
           <img src="/assets/icons/precio-tag.png" alt="" className="w-4 h-4 sm:w-5 sm:h-5" />
           ${Number(precio).toLocaleString("es-VE")}
@@ -39,7 +44,6 @@ export default function ProductCard({ producto }) {
           {titulo}
         </h3>
         <div className="flex flex-wrap gap-1">
-          <BadgeDisponibilidad disponible={producto.disponible_entrega ?? true} />
           {medida && (
             <span className="inline-flex items-center gap-1 self-start text-xs text-ink-muted bg-white/5 border border-white/10 rounded-control px-2 py-0.5">
               📏 {medida}
