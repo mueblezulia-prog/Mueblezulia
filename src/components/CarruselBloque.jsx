@@ -45,9 +45,10 @@ export default function CarruselBloque({ imagenes, titulo, texto, tinte = "dorad
         />
       ))}
 
-      {/* Puntos indicadores */}
+      {/* Puntos indicadores — arriba, para no chocar con la franja de
+          vidrio de abajo (que ahora ocupa todo el ancho). */}
       {total > 1 && (
-        <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5 z-10">
+        <div className="absolute top-3 left-0 right-0 flex justify-center gap-1.5 z-10">
           {imagenes.map((_, i) => (
             <span
               key={i}
@@ -59,11 +60,12 @@ export default function CarruselBloque({ imagenes, titulo, texto, tinte = "dorad
         </div>
       )}
 
-      {/* Cierre en vidrio — solo sobre la última foto, con título y texto */}
+      {/* Cierre en vidrio — solo sobre la última foto, con título y texto.
+          Ocupa todo el ancho del marco (de borde a borde), quieto, sin
+          flotar. */}
       {esUltima && (titulo || texto) && (
         <div
-          className={`carrusel-slide absolute inset-x-3 bottom-3 sm:inset-x-6 sm:bottom-6
-            rounded-card p-4 sm:p-5 glass-float ${claseVidrio}
+          className={`carrusel-slide absolute inset-x-0 bottom-0 p-4 sm:p-6 ${claseVidrio}
             ${esUltima ? "opacity-100" : "opacity-0"}`}
         >
           {titulo && <h3 className="text-lg sm:text-xl font-extrabold text-ink drop-shadow-sm">{titulo}</h3>}

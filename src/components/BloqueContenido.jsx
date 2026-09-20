@@ -81,7 +81,7 @@ export default function BloqueContenido({ bloque }) {
             playsInline
           />
           {(bloque.vidrioSiempre ?? true) && (bloque.titulo || bloque.texto) && (
-            <div className={`carrusel-slide absolute inset-x-3 bottom-3 sm:inset-x-6 sm:bottom-6 rounded-card p-4 sm:p-5 glass-float ${CLASE_TINTE[bloque.tinte] ?? CLASE_TINTE.dorado}`}>
+            <div className={`absolute inset-x-0 bottom-0 p-4 sm:p-6 ${CLASE_TINTE[bloque.tinte] ?? CLASE_TINTE.dorado}`}>
               {bloque.titulo && <h3 className="text-lg sm:text-xl font-extrabold text-ink drop-shadow-sm">{bloque.titulo}</h3>}
               {bloque.texto && <p className="text-ink/90 text-sm sm:text-base mt-1 leading-snug drop-shadow-sm whitespace-pre-line">{bloque.texto}</p>}
             </div>
@@ -106,7 +106,7 @@ export default function BloqueContenido({ bloque }) {
             />
           ))}
           {(bloque.vidrioSiempre ?? true) && (bloque.titulo || bloque.texto) && (
-            <div className={`absolute inset-x-3 bottom-3 sm:inset-x-6 sm:bottom-6 rounded-card p-4 sm:p-5 ${CLASE_TINTE[bloque.tinte] ?? CLASE_TINTE.dorado}`}>
+            <div className={`absolute inset-x-0 bottom-0 p-4 sm:p-6 ${CLASE_TINTE[bloque.tinte] ?? CLASE_TINTE.dorado}`}>
               {bloque.titulo && <h3 className="text-lg sm:text-xl font-extrabold text-ink drop-shadow-sm">{bloque.titulo}</h3>}
               {bloque.texto && <p className="text-ink/90 text-sm sm:text-base mt-1 leading-snug drop-shadow-sm whitespace-pre-line">{bloque.texto}</p>}
             </div>
