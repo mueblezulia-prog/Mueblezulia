@@ -40,7 +40,7 @@ export default function BadgeDisponibilidad({ disponible, className = "" }) {
             : "bg-black/45 border border-white/15 text-ink-muted",
         ].join(" ")}
       >
-        <span className="text-sm leading-none">🚚</span>
+        <img src="/assets/icons/entrega-inmediata.png" alt="" className="w-3.5 h-3.5 shrink-0" />
         {disponible ? "Entrega Inmediata" : "Bajo Pedido"}
       </button>
 

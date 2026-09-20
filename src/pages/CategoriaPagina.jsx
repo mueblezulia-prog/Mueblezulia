@@ -4,6 +4,7 @@ import { supabase } from "../lib/supabaseClient";
 import ProductCard from "../components/ProductCard";
 import SectionBanner from "../components/SectionBanner";
 import Reveal from "../components/Reveal";
+import FiltroEntregaInmediata from "../components/FiltroEntregaInmediata";
 import { sonidoNavegar } from "../lib/sonido";
 
 // Solo para el banner (título + ícono) mientras la categoría no tenga
@@ -26,6 +27,7 @@ export default function CategoriaPagina() {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
   const [subActiva, setSubActiva] = useState("todas");
+  const [soloEntrega, setSoloEntrega] = useState(false);
 
   useEffect(() => {
     let activo = true;
@@ -86,6 +88,14 @@ export default function CategoriaPagina() {
   const subcategorias = categoria?.subcategorias ?? [];
   const productosFiltrados =
     subActiva === "todas" ? productos : productos.filter((p) => p.subcategoria === subActiva);
+  // El interruptor de "Entrega Inmediata" ORDENA, no oculta: los
+  // disponibles pasan primero y el resto queda atrás, al final de la
+  // grilla, para que el cliente los siga viendo si baja.
+  const productosOrdenados = soloEntrega
+    ? [...productosFiltrados].sort(
+        (a, b) => Number(b.disponible_entrega ?? true) - Number(a.disponible_entrega ?? true)
+      )
+    : productosFiltrados;
 
   return (
     <div className="py-6">
@@ -118,16 +128,25 @@ export default function CategoriaPagina() {
         </p>
       )}
 
-      {!cargando && !error && subcategorias.length > 0 && (
-        <div className="flex flex-wrap gap-2 mb-5">
-          <PestanaSub activa={subActiva === "todas"} onClick={() => { setSubActiva("todas"); sonidoNavegar(); }}>
-            Todas
-          </PestanaSub>
-          {subcategorias.map((s) => (
-            <PestanaSub key={s} activa={subActiva === s} onClick={() => { setSubActiva(s); sonidoNavegar(); }}>
-              {s}
-            </PestanaSub>
-          ))}
+      {!cargando && !error && productos.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2 mb-5">
+          {subcategorias.length > 0 && (
+            <>
+              <PestanaSub activa={subActiva === "todas"} onClick={() => { setSubActiva("todas"); sonidoNavegar(); }}>
+                Todas
+              </PestanaSub>
+              {subcategorias.map((s) => (
+                <PestanaSub key={s} activa={subActiva === s} onClick={() => { setSubActiva(s); sonidoNavegar(); }}>
+                  {s}
+                </PestanaSub>
+              ))}
+            </>
+          )}
+          <FiltroEntregaInmediata
+            activo={soloEntrega}
+            onClick={() => { setSoloEntrega((v) => !v); sonidoNavegar(); }}
+            className="ml-auto"
+          />
         </div>
       )}
 
@@ -145,7 +164,7 @@ export default function CategoriaPagina() {
 
       {!cargando && !error && productosFiltrados.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
-          {productosFiltrados.map((producto, i) => (
+          {productosOrdenados.map((producto, i) => (
             <Reveal key={producto.id} delay={(i % 9) * 60}>
               <ProductCard producto={producto} />
             </Reveal>

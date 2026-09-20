@@ -3,6 +3,7 @@ import { supabase } from "../lib/supabaseClient";
 import ProductCard from "../components/ProductCard";
 import CategoriasGrid from "../components/CategoriasGrid";
 import Reveal from "../components/Reveal";
+import FiltroEntregaInmediata from "../components/FiltroEntregaInmediata";
 
 /**
  * Catálogo general: muestra TODOS los muebles activos. Para entrar a una
@@ -15,6 +16,7 @@ export default function CatalogoProductos() {
   const [productos, setProductos] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
+  const [soloEntrega, setSoloEntrega] = useState(false);
 
   useEffect(() => {
     let activo = true;
@@ -79,7 +81,12 @@ export default function CatalogoProductos() {
           <div className="absolute inset-0 -z-10 glass-dark" />
 
           <div className="relative px-4 py-6">
-            <h2 className="text-xl sm:text-2xl font-extrabold text-ink mb-4">Todos los productos</h2>
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+              <h2 className="text-xl sm:text-2xl font-extrabold text-ink">Todos los productos</h2>
+              {!cargando && !error && productos.length > 0 && (
+                <FiltroEntregaInmediata activo={soloEntrega} onClick={() => setSoloEntrega((v) => !v)} />
+              )}
+            </div>
 
             {cargando && (
               <p className="text-center text-ink-muted text-lg py-16">Cargando catálogo…</p>
@@ -97,7 +104,12 @@ export default function CatalogoProductos() {
 
             {!cargando && !error && productos.length > 0 && (
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-                {productos.map((producto, i) => (
+                {(soloEntrega
+                  ? [...productos].sort(
+                      (a, b) => Number(b.disponible_entrega ?? true) - Number(a.disponible_entrega ?? true)
+                    )
+                  : productos
+                ).map((producto, i) => (
                   <Reveal key={producto.id} delay={(i % 8) * 60}>
                     <ProductCard producto={producto} />
                   </Reveal>
