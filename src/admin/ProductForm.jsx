@@ -6,6 +6,7 @@ import { convertirSiEsHeic } from "../lib/heic";
 import ImageCropModule from "./ImageCropModule";
 import GaleriaImagenes from "./GaleriaImagenes";
 import SelectorTelas from "./SelectorTelas";
+import SelectorTelaReal from "./SelectorTelaReal";
 import EtiquetasSelector from "./EtiquetasSelector";
 import PreviewModal from "./PreviewModal";
 
@@ -59,6 +60,7 @@ export default function ProductForm({ productoExistente, onGuardado }) {
 
   const [fotos, setFotos] = useState([]);
   const [telasSeleccionadas, setTelasSeleccionadas] = useState([]);
+  const [telaColorId, setTelaColorId] = useState(productoExistente?.tela_color_id ?? null);
   const [etiquetasSeleccionadas, setEtiquetasSeleccionadas] = useState([]);
   const [disponibleTodasTelas, setDisponibleTodasTelas] = useState(productoExistente?.disponible_todas_telas ?? false);
   const [colorAEleccion, setColorAEleccion] = useState(productoExistente?.color_a_eleccion ?? false);
@@ -263,6 +265,7 @@ export default function ProductForm({ productoExistente, onGuardado }) {
         medida: medida || null,
         categoria_id: categoriaId ? Number(categoriaId) : null,
         subcategoria: subcategoria || null,
+        tela_color_id: telaColorId || null,
         disponible_todas_telas: disponibleTodasTelas,
         color_a_eleccion: colorAEleccion,
         disponible_entrega: disponibleEntrega,
@@ -449,6 +452,14 @@ export default function ProductForm({ productoExistente, onGuardado }) {
               className="campo-input resize-none"
             />
           </Campo>
+
+          <SelectorTelaReal
+            telaColorId={telaColorId}
+            onChange={setTelaColorId}
+            onTambienAgregarDisponible={(id) =>
+              setTelasSeleccionadas((actual) => (actual.includes(id) ? actual : [...actual, id]))
+            }
+          />
 
           <SelectorTelas
             seleccionadas={telasSeleccionadas}

@@ -28,9 +28,6 @@ export default function ProductCard({ producto }) {
           className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.07]"
           loading="lazy"
         />
-        <span className="absolute top-2.5 left-2.5 right-2.5 flex justify-start">
-          <BadgeDisponibilidad disponible={producto.disponible_entrega ?? true} tooltipHacia="abajo" />
-        </span>
         <span className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/75 via-black/10 to-transparent" />
         <span className="absolute bottom-2.5 left-2.5 flex items-center gap-1 bg-gold text-carbon text-sm sm:text-base font-extrabold px-2.5 py-1 rounded-control shadow-md shadow-black/30">
           <img src="/assets/icons/precio-tag.png" alt="" className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -42,6 +39,7 @@ export default function ProductCard({ producto }) {
           {titulo}
         </h3>
         <div className="flex flex-wrap gap-1">
+          <BadgeDisponibilidad disponible={producto.disponible_entrega ?? true} />
           {medida && (
             <span className="inline-flex items-center gap-1 self-start text-xs text-ink-muted bg-white/5 border border-white/10 rounded-control px-2 py-0.5">
               📏 {medida}

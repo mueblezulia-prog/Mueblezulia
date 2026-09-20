@@ -1,44 +1,44 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
-import { convertirSiEsHeic } from "../lib/heic";
-
-const BUCKET = "productos";
-
-async function subirFotoTela(file) {
-  const fileListo = await convertirSiEsHeic(file);
-  const nombreArchivo = `telas/${crypto.randomUUID()}.jpg`;
-  const { error } = await supabase.storage.from(BUCKET).upload(nombreArchivo, fileListo);
-  if (error) throw error;
-  return supabase.storage.from(BUCKET).getPublicUrl(nombreArchivo).data.publicUrl;
-}
 
 /**
- * Catálogo global de telas/colores (tabla `telas`). Se administra UNA vez
- * aquí y luego cada producto elige cuáles de estas telas ofrece (ver
- * SelectorTelas.jsx) — así no hay que volver a escribir el mismo color
- * a mano en cada mueble.
+ * Catálogo global de telas, en dos niveles:
  *
- * Cada tela puede tener, además del color plano, una FOTO real de la
- * tela (textura/acercamiento) — es la base de un catálogo de telas de
- * verdad. Por ahora esto solo vive aquí en el admin; la parte pública
- * ("Telas" dentro del sitio) queda para una fase futura.
+ *   Familia de tela (telas_familias) — ej. "Terciopelo Premium"
+ *     └─ Colores de esa familia (telas, con familia_id) — ej. Gris Perla
+ *
+ * Cada color se sigue administrando exactamente igual que antes (nombre +
+ * hex, guardar, borrar) — lo único que cambia es que ahora vive dentro de
+ * una familia en vez de suelto. Los colores creados ANTES de esta versión
+ * (familia_id = null) aparecen en "Sin familia" para asignarles una sin
+ * perder nada.
+ *
+ * Requiere haber corrido supabase/fase_1_10_familias_tela.sql.
  */
 export default function AdminTelas() {
+  const [familias, setFamilias] = useState([]);
   const [telas, setTelas] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
   const [guardandoId, setGuardandoId] = useState(null);
-  const [subiendoId, setSubiendoId] = useState(null);
 
-  const [nuevoNombre, setNuevoNombre] = useState("");
-  const [nuevoHex, setNuevoHex] = useState("#F2B90C");
-  const [creando, setCreando] = useState(false);
+  const [nuevaFamiliaNombre, setNuevaFamiliaNombre] = useState("");
+  const [creandoFamilia, setCreandoFamilia] = useState(false);
 
   async function cargar() {
     setCargando(true);
-    const { data, error } = await supabase.from("telas").select("*").order("orden");
-    if (error) setError(error.message);
-    else setTelas(data ?? []);
+    setError(null);
+    const [{ data: familiasData, error: errorFamilias }, { data: telasData, error: errorTelas }] =
+      await Promise.all([
+        supabase.from("telas_familias").select("*").order("orden"),
+        supabase.from("telas").select("*").order("orden"),
+      ]);
+    if (errorFamilias || errorTelas) {
+      setError((errorFamilias ?? errorTelas).message);
+    } else {
+      setFamilias(familiasData ?? []);
+      setTelas(telasData ?? []);
+    }
     setCargando(false);
   }
 
@@ -54,15 +54,15 @@ export default function AdminTelas() {
     setGuardandoId(tela.id);
     const { error } = await supabase
       .from("telas")
-      .update({ nombre: tela.nombre, hex: tela.hex, imagen: tela.imagen ?? null })
+      .update({ nombre: tela.nombre, hex: tela.hex })
       .eq("id", tela.id);
     setGuardandoId(null);
     if (error) alert(`No se pudo guardar: ${error.message}`);
   }
 
-  async function borrarFila(tela) {
+  async function borrarColor(tela) {
     const confirmado = window.confirm(
-      `¿Borrar la tela "${tela.nombre}"? Se quitará de todos los productos que la tengan.`
+      `¿Borrar el color "${tela.nombre}"? Se quitará de todos los productos que lo tengan.`
     );
     if (!confirmado) return;
     const { error } = await supabase.from("telas").delete().eq("id", tela.id);
@@ -73,53 +73,102 @@ export default function AdminTelas() {
     setTelas((actual) => actual.filter((t) => t.id !== tela.id));
   }
 
-  async function handleSubirFoto(tela, file) {
-    if (!file) return;
-    setSubiendoId(tela.id);
-    try {
-      const url = await subirFotoTela(file);
-      actualizarLocal(tela.id, { imagen: url });
-    } catch (err) {
-      alert(`No se pudo subir la foto: ${err.message}`);
-    } finally {
-      setSubiendoId(null);
-    }
-  }
-
-  function quitarFoto(tela) {
-    actualizarLocal(tela.id, { imagen: null });
-  }
-
-  async function handleCrear(e) {
-    e.preventDefault();
-    if (!nuevoNombre.trim()) return;
-    setCreando(true);
+  async function agregarColor(familiaId) {
+    const nombre = window.prompt("Nombre del nuevo color (ej: Gris Perla):");
+    if (!nombre || !nombre.trim()) return;
+    const colorEnFamilia = telas.filter((t) => t.familia_id === familiaId).length;
     const { data, error } = await supabase
       .from("telas")
-      .insert({ nombre: nuevoNombre.trim(), hex: nuevoHex, orden: telas.length })
+      .insert({ nombre: nombre.trim(), hex: "#F2B90C", orden: colorEnFamilia, familia_id: familiaId })
       .select()
       .single();
-    setCreando(false);
     if (error) {
       alert(`Error: ${error.message}`);
       return;
     }
     setTelas((actual) => [...actual, data]);
-    setNuevoNombre("");
-    setNuevoHex("#F2B90C");
   }
+
+  async function asignarFamilia(telaId, familiaId) {
+    const { error } = await supabase
+      .from("telas")
+      .update({ familia_id: familiaId || null })
+      .eq("id", telaId);
+    if (error) {
+      alert(`No se pudo asignar: ${error.message}`);
+      return;
+    }
+    actualizarLocal(telaId, { familia_id: familiaId || null });
+  }
+
+  async function crearFamilia(e) {
+    e.preventDefault();
+    if (!nuevaFamiliaNombre.trim()) return;
+    setCreandoFamilia(true);
+    const { data, error } = await supabase
+      .from("telas_familias")
+      .insert({ nombre: nuevaFamiliaNombre.trim(), orden: familias.length })
+      .select()
+      .single();
+    setCreandoFamilia(false);
+    if (error) {
+      alert(`Error: ${error.message}`);
+      return;
+    }
+    setFamilias((actual) => [...actual, data]);
+    setNuevaFamiliaNombre("");
+  }
+
+  async function guardarFamilia(familia) {
+    const { error } = await supabase
+      .from("telas_familias")
+      .update({ nombre: familia.nombre, descripcion: familia.descripcion })
+      .eq("id", familia.id);
+    if (error) alert(`No se pudo guardar: ${error.message}`);
+  }
+
+  function actualizarFamiliaLocal(id, cambios) {
+    setFamilias((actual) => actual.map((f) => (f.id === id ? { ...f, ...cambios } : f)));
+  }
+
+  async function borrarFamilia(familia) {
+    const coloresDeEstaFamilia = telas.filter((t) => t.familia_id === familia.id);
+    let advertencia = `¿Borrar la familia "${familia.nombre}"?`;
+    if (coloresDeEstaFamilia.length > 0) {
+      advertencia += ` Tiene ${coloresDeEstaFamilia.length} color(es) — también se van a borrar, y se quitarán de cualquier mueble que los tenga.`;
+    }
+    if (!window.confirm(advertencia)) return;
+
+    if (coloresDeEstaFamilia.length > 0) {
+      const { error: errorColores } = await supabase
+        .from("telas")
+        .delete()
+        .in("id", coloresDeEstaFamilia.map((t) => t.id));
+      if (errorColores) {
+        alert(`No se pudo borrar: ${errorColores.message}`);
+        return;
+      }
+    }
+    const { error } = await supabase.from("telas_familias").delete().eq("id", familia.id);
+    if (error) {
+      alert(`No se pudo borrar la familia: ${error.message}`);
+      return;
+    }
+    setTelas((actual) => actual.filter((t) => t.familia_id !== familia.id));
+    setFamilias((actual) => actual.filter((f) => f.id !== familia.id));
+  }
+
+  const telasSinFamilia = telas.filter((t) => !t.familia_id);
 
   return (
     <div className="max-w-3xl mx-auto p-6 flex flex-col gap-8">
       <div>
         <h1 className="text-2xl font-extrabold text-ink flex items-center gap-2">
           <img src="/assets/icons/tela.png" alt="" className="w-6 h-6" />
-          Telas y Colores
+          Telas
         </h1>
         <p className="text-ink-muted text-base mt-1">
-          Catálogo compartido: crea aquí cada tela una sola vez, y luego elige cuáles aplican a cada mueble desde su
-          formulario. Toca el cuadro de la izquierda para subirle una foto real de la tela (opcional) — si no le
-          subes foto, se sigue mostrando el color plano.
+          Familias de tela y sus colores. Crea cada una aquí una sola vez, y luego elige cuál trae puesta cada mueble desde su formulario.
         </p>
       </div>
 
@@ -127,105 +176,184 @@ export default function AdminTelas() {
       {error && <p className="text-terracota text-lg">Error: {error}</p>}
 
       {!cargando && !error && (
-        <div className="flex flex-col gap-3">
-          {telas.map((tela) => (
-            <div key={tela.id} className="bg-carbon-light border border-carbon-border rounded-card p-3 flex flex-wrap items-center gap-3">
-              <label className="relative w-12 h-12 rounded-control border border-carbon-border shrink-0 cursor-pointer overflow-hidden group">
-                {tela.imagen ? (
-                  <img src={tela.imagen} alt={tela.nombre} className="w-full h-full object-cover" />
-                ) : (
-                  <span className="block w-full h-full" style={{ backgroundColor: tela.hex }} />
-                )}
-                <span className="absolute inset-0 bg-black/0 group-hover:bg-black/60 flex items-center justify-center text-[9px] text-white opacity-0 group-hover:opacity-100 transition-all duration-150 text-center leading-tight">
-                  {subiendoId === tela.id ? "…" : "Subir foto"}
-                </span>
-                <input
-                  type="file"
-                  accept="image/*,.heic,.heif"
-                  className="hidden"
-                  onChange={(e) => handleSubirFoto(tela, e.target.files?.[0])}
-                />
-              </label>
-              <input
-                type="color"
-                value={tela.hex}
-                onChange={(e) => actualizarLocal(tela.id, { hex: e.target.value })}
-                className="w-9 h-9 rounded-control border border-carbon-border bg-carbon shrink-0"
-                title="Color plano (se usa si no hay foto)"
-              />
-              <input
-                type="text"
-                value={tela.nombre}
-                onChange={(e) => actualizarLocal(tela.id, { nombre: e.target.value })}
-                className="campo-input flex-1 min-w-[140px]"
-                aria-label="Nombre de la tela"
-              />
-              <input
-                type="text"
-                value={tela.hex}
-                onChange={(e) => actualizarLocal(tela.id, { hex: e.target.value })}
-                className="campo-input w-28"
-                aria-label="Valor HEX"
-              />
-              {tela.imagen && (
-                <button
-                  type="button"
-                  onClick={() => quitarFoto(tela)}
-                  className="text-xs text-ink-muted hover:text-terracota underline transition-colors"
-                >
-                  Quitar foto
-                </button>
-              )}
-              <button
-                type="button"
-                onClick={() => guardarFila(tela)}
-                disabled={guardandoId === tela.id}
-                className="min-h-tap px-4 rounded-control bg-gold text-carbon font-bold disabled:opacity-60"
-              >
-                {guardandoId === tela.id ? "Guardando…" : "Guardar"}
-              </button>
-              <button
-                type="button"
-                onClick={() => borrarFila(tela)}
-                className="min-h-tap px-4 rounded-control border-2 border-terracota text-terracota font-bold"
-              >
-                Borrar
-              </button>
-            </div>
+        <div className="flex flex-col gap-4">
+          {familias.map((familia) => (
+            <FamiliaCard
+              key={familia.id}
+              familia={familia}
+              colores={telas.filter((t) => t.familia_id === familia.id)}
+              guardandoId={guardandoId}
+              onCambiarFamilia={(cambios) => actualizarFamiliaLocal(familia.id, cambios)}
+              onGuardarFamilia={() => guardarFamilia(familia)}
+              onBorrarFamilia={() => borrarFamilia(familia)}
+              onCambiarColor={actualizarLocal}
+              onGuardarColor={guardarFila}
+              onBorrarColor={borrarColor}
+              onAgregarColor={() => agregarColor(familia.id)}
+            />
           ))}
-          {telas.length === 0 && (
-            <p className="text-ink-muted text-base">Todavía no hay telas creadas.</p>
+
+          {familias.length === 0 && (
+            <p className="text-ink-muted text-base">Todavía no hay familias de tela creadas. Crea la primera abajo.</p>
+          )}
+
+          {telasSinFamilia.length > 0 && (
+            <div className="bg-carbon-light border border-dashed border-carbon-border rounded-card p-4 flex flex-col gap-3">
+              <div>
+                <span className="text-lg font-bold text-ink">Sin familia</span>
+                <p className="text-sm text-ink-muted">
+                  Colores creados antes de tener familias. Asígnales una para que queden ordenados (podés seguir usándolos igual mientras tanto).
+                </p>
+              </div>
+              {telasSinFamilia.map((tela) => (
+                <div key={tela.id} className="flex flex-wrap items-center gap-3">
+                  <input
+                    type="color"
+                    value={tela.hex}
+                    onChange={(e) => actualizarLocal(tela.id, { hex: e.target.value })}
+                    className="w-10 h-10 rounded-control border border-carbon-border bg-carbon shrink-0"
+                  />
+                  <input
+                    type="text"
+                    value={tela.nombre}
+                    onChange={(e) => actualizarLocal(tela.id, { nombre: e.target.value })}
+                    className="campo-input flex-1 min-w-[120px]"
+                    aria-label="Nombre del color"
+                  />
+                  <select
+                    value=""
+                    onChange={(e) => asignarFamilia(tela.id, e.target.value)}
+                    className="campo-input w-48"
+                  >
+                    <option value="">Asignar a familia…</option>
+                    {familias.map((f) => (
+                      <option key={f.id} value={f.id}>{f.nombre}</option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => guardarFila(tela)}
+                    disabled={guardandoId === tela.id}
+                    className="min-h-tap px-4 rounded-control bg-gold text-carbon font-bold disabled:opacity-60"
+                  >
+                    Guardar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => borrarColor(tela)}
+                    className="min-h-tap px-4 rounded-control border-2 border-terracota text-terracota font-bold"
+                  >
+                    Borrar
+                  </button>
+                </div>
+              ))}
+            </div>
           )}
         </div>
       )}
 
-      <form onSubmit={handleCrear} className="flex flex-wrap items-end gap-3 border-t border-carbon-border pt-6">
-        <div className="flex flex-col gap-1">
-          <label className="text-sm text-ink-muted">Color</label>
-          <input
-            type="color"
-            value={nuevoHex}
-            onChange={(e) => setNuevoHex(e.target.value)}
-            className="w-12 h-12 rounded-control border border-carbon-border bg-carbon-light"
-          />
-        </div>
-        <div className="flex flex-col gap-1">
-          <label className="text-sm text-ink-muted">Nombre de la tela</label>
+      <form onSubmit={crearFamilia} className="flex flex-wrap items-end gap-3 border-t border-carbon-border pt-6">
+        <div className="flex flex-col gap-1 flex-1 min-w-[200px]">
+          <label className="text-sm text-ink-muted">Nombre de la nueva familia</label>
           <input
             type="text"
-            value={nuevoNombre}
-            onChange={(e) => setNuevoNombre(e.target.value)}
-            placeholder="Ej: Gris Perla"
+            value={nuevaFamiliaNombre}
+            onChange={(e) => setNuevaFamiliaNombre(e.target.value)}
+            placeholder="Ej: Terciopelo Premium"
             className="campo-input"
           />
         </div>
-        <button type="submit" disabled={creando} className="min-h-tap px-5 rounded-control bg-gold text-carbon font-bold disabled:opacity-60">
-          {creando ? "Creando…" : "+ Añadir tela"}
+        <button type="submit" disabled={creandoFamilia} className="min-h-tap px-5 rounded-control bg-gold text-carbon font-bold disabled:opacity-60">
+          {creandoFamilia ? "Creando…" : "+ Agregar familia de tela"}
         </button>
       </form>
-      <p className="text-xs text-ink-muted -mt-4">
-        Después de crearla, toca su cuadro de color en la lista de arriba para subirle una foto real de la tela.
-      </p>
+    </div>
+  );
+}
+
+function FamiliaCard({
+  familia,
+  colores,
+  guardandoId,
+  onCambiarFamilia,
+  onGuardarFamilia,
+  onBorrarFamilia,
+  onCambiarColor,
+  onGuardarColor,
+  onBorrarColor,
+  onAgregarColor,
+}) {
+  return (
+    <div className="bg-carbon-light border border-carbon-border rounded-card p-4 flex flex-col gap-3">
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div className="flex-1 min-w-[200px] flex flex-col gap-2">
+          <input
+            type="text"
+            value={familia.nombre}
+            onChange={(e) => onCambiarFamilia({ nombre: e.target.value })}
+            onBlur={onGuardarFamilia}
+            className="campo-input font-bold text-lg"
+            aria-label="Nombre de la familia"
+          />
+          <textarea
+            value={familia.descripcion ?? ""}
+            onChange={(e) => onCambiarFamilia({ descripcion: e.target.value })}
+            onBlur={onGuardarFamilia}
+            placeholder="Características (opcional): composición, cuidados, sensación al tacto…"
+            rows={2}
+            className="campo-input resize-none text-sm"
+          />
+        </div>
+        <button
+          type="button"
+          onClick={onBorrarFamilia}
+          className="min-h-tap px-3 rounded-control border-2 border-terracota text-terracota font-bold text-sm shrink-0"
+        >
+          Borrar familia
+        </button>
+      </div>
+
+      <div className="flex flex-wrap gap-3">
+        {colores.map((tela) => (
+          <div key={tela.id} className="flex items-center gap-2 bg-carbon rounded-control border border-carbon-border p-2">
+            <input
+              type="color"
+              value={tela.hex}
+              onChange={(e) => onCambiarColor(tela.id, { hex: e.target.value })}
+              className="w-9 h-9 rounded-control border border-carbon-border bg-carbon shrink-0"
+            />
+            <input
+              type="text"
+              value={tela.nombre}
+              onChange={(e) => onCambiarColor(tela.id, { nombre: e.target.value })}
+              className="campo-input w-28 text-sm"
+              aria-label="Nombre del color"
+            />
+            <button
+              type="button"
+              onClick={() => onGuardarColor(tela)}
+              disabled={guardandoId === tela.id}
+              className="min-h-tap px-2 rounded-control bg-gold text-carbon font-bold text-xs disabled:opacity-60"
+            >
+              ✓
+            </button>
+            <button
+              type="button"
+              onClick={() => onBorrarColor(tela)}
+              className="min-h-tap px-2 rounded-control border border-terracota text-terracota font-bold text-xs"
+            >
+              ✕
+            </button>
+          </div>
+        ))}
+        <button
+          type="button"
+          onClick={onAgregarColor}
+          className="min-h-tap px-4 rounded-control border-2 border-dashed border-carbon-border text-gold font-bold text-sm"
+        >
+          + Agregar color
+        </button>
+      </div>
     </div>
   );
 }

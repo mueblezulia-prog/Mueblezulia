@@ -22,18 +22,26 @@ export default function SelectorTelas({
   onCambiarDisponibleEntrega,
 }) {
   const [telas, setTelas] = useState([]);
+  const [familias, setFamilias] = useState([]);
   const [cargando, setCargando] = useState(true);
 
   useEffect(() => {
-    supabase
-      .from("telas")
-      .select("*")
-      .order("orden")
-      .then(({ data, error }) => {
-        if (!error && data) setTelas(data);
-        setCargando(false);
-      });
+    Promise.all([
+      supabase.from("telas").select("*").order("orden"),
+      supabase.from("telas_familias").select("*").order("orden"),
+    ]).then(([{ data: telasData, error }, { data: familiasData }]) => {
+      if (!error && telasData) setTelas(telasData);
+      setFamilias(familiasData ?? []);
+      setCargando(false);
+    });
   }, []);
+
+  // Agrupadas por familia (más fácil de encontrar que una lista suelta) —
+  // las que todavía no tienen familia asignada van al final, sin encabezado.
+  const gruposPorFamilia = familias
+    .map((f) => ({ familia: f, telasDeLaFamilia: telas.filter((t) => t.familia_id === f.id) }))
+    .filter((g) => g.telasDeLaFamilia.length > 0);
+  const telasSinFamilia = telas.filter((t) => !t.familia_id);
 
   function alternar(id) {
     if (seleccionadas.includes(id)) {
@@ -64,29 +72,24 @@ export default function SelectorTelas({
       )}
 
       {!cargando && telas.length > 0 && (
-        <div className="flex flex-wrap gap-3">
-          {telas.map((tela) => {
-            const activa = seleccionadas.includes(tela.id);
-            return (
-              <button
-                key={tela.id}
-                type="button"
-                onClick={() => alternar(tela.id)}
-                aria-pressed={activa}
-                className={[
-                  "flex items-center gap-2 rounded-control border-2 px-3 py-2 min-h-tap transition-colors duration-150",
-                  activa ? "border-gold bg-carbon-light" : "border-carbon-border bg-transparent hover:border-carbon-border/60",
-                ].join(" ")}
-              >
-                <span
-                  className="w-6 h-6 rounded-full border border-carbon-border shrink-0"
-                  style={{ backgroundColor: tela.hex }}
-                />
-                <span className="text-base text-ink">{tela.nombre}</span>
-                {activa && <span className="text-gold font-bold">✓</span>}
-              </button>
-            );
-          })}
+        <div className="flex flex-col gap-3">
+          {gruposPorFamilia.map(({ familia, telasDeLaFamilia }) => (
+            <div key={familia.id} className="flex flex-col gap-1.5">
+              <span className="text-xs font-semibold text-ink-muted uppercase tracking-wide">{familia.nombre}</span>
+              <div className="flex flex-wrap gap-3">
+                {telasDeLaFamilia.map((tela) => (
+                  <BotonTela key={tela.id} tela={tela} activa={seleccionadas.includes(tela.id)} onClick={() => alternar(tela.id)} />
+                ))}
+              </div>
+            </div>
+          ))}
+          {telasSinFamilia.length > 0 && (
+            <div className="flex flex-wrap gap-3">
+              {telasSinFamilia.map((tela) => (
+                <BotonTela key={tela.id} tela={tela} activa={seleccionadas.includes(tela.id)} onClick={() => alternar(tela.id)} />
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -127,6 +130,27 @@ export default function SelectorTelas({
         />
       </div>
     </div>
+  );
+}
+
+function BotonTela({ tela, activa, onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={activa}
+      className={[
+        "flex items-center gap-2 rounded-control border-2 px-3 py-2 min-h-tap transition-colors duration-150",
+        activa ? "border-gold bg-carbon-light" : "border-carbon-border bg-transparent hover:border-carbon-border/60",
+      ].join(" ")}
+    >
+      <span
+        className="w-6 h-6 rounded-full border border-carbon-border shrink-0"
+        style={{ backgroundColor: tela.hex }}
+      />
+      <span className="text-base text-ink">{tela.nombre}</span>
+      {activa && <span className="text-gold font-bold">✓</span>}
+    </button>
   );
 }
 
