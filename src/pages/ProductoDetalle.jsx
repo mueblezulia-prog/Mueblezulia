@@ -205,12 +205,12 @@ export default function ProductoDetalle() {
             <div className="absolute inset-0 bg-carbon/85" />
           </>
         )}
-        <div className="relative glass px-5 pt-8 pb-8 flex flex-col gap-4 border-x-0 animar-entrada">
+        <div className="relative glass-dark px-5 pt-8 pb-8 flex flex-col gap-4 border-x-0 animar-entrada">
           <h1 className="text-3xl font-extrabold text-ink tracking-tight">{producto.titulo}</h1>
 
           {/* Precio y medida con su ícono respectivo */}
           <div className="flex flex-wrap items-center gap-3">
-            <span className="inline-flex items-center gap-2 text-price font-extrabold text-gold glass-gold px-3 py-1 rounded-control">
+            <span className="inline-flex items-center gap-2 text-price font-extrabold text-gold glass-gold backdrop-blur-lg shadow-lg shadow-black/30 px-3 py-1 rounded-control">
               <img src="/assets/icons/precio-tag.png" alt="" className="w-6 h-6" />
               ${Number(producto.precio).toLocaleString("es-VE")}
             </span>

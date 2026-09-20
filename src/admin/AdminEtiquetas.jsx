@@ -29,6 +29,7 @@ export default function AdminEtiquetas() {
 
   const [nuevoNombre, setNuevoNombre] = useState("");
   const [nuevoIcono, setNuevoIcono] = useState("🏷️");
+  const [subiendoNuevo, setSubiendoNuevo] = useState(false);
   const [creando, setCreando] = useState(false);
 
   async function cargar() {
@@ -80,6 +81,19 @@ export default function AdminEtiquetas() {
       alert(`No se pudo subir la imagen: ${err.message}`);
     } finally {
       setSubiendoId(null);
+    }
+  }
+
+  async function subirImagenNuevo(file) {
+    if (!file) return;
+    setSubiendoNuevo(true);
+    try {
+      const url = await subirIconoEtiqueta(file);
+      setNuevoIcono(url);
+    } catch (err) {
+      alert(`No se pudo subir la imagen: ${err.message}`);
+    } finally {
+      setSubiendoNuevo(false);
     }
   }
 
@@ -177,7 +191,26 @@ export default function AdminEtiquetas() {
 
       <form onSubmit={handleCrear} className="flex flex-wrap items-end gap-3 border-t border-carbon-border pt-6">
         <div className="flex flex-col gap-1">
-          <label className="text-sm text-ink-muted">Ícono (emoji)</label>
+          <label className="text-sm text-ink-muted">Logo (opcional)</label>
+          <label className="relative w-12 h-12 rounded-control border border-carbon-border bg-carbon-light cursor-pointer flex items-center justify-center text-xl overflow-hidden group">
+            {nuevoIcono?.startsWith("/") || nuevoIcono?.startsWith("http") ? (
+              <img src={nuevoIcono} alt="" className="w-full h-full object-contain" />
+            ) : (
+              nuevoIcono
+            )}
+            <span className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/60 text-white text-[9px] font-semibold text-center opacity-0 group-hover:opacity-100 transition-all duration-150">
+              {subiendoNuevo ? "…" : "Subir"}
+            </span>
+            <input
+              type="file"
+              accept="image/*,.heic,.heif"
+              className="hidden"
+              onChange={(e) => subirImagenNuevo(e.target.files?.[0])}
+            />
+          </label>
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-sm text-ink-muted">o un emoji</label>
           <input
             type="text"
             value={nuevoIcono}
@@ -200,7 +233,8 @@ export default function AdminEtiquetas() {
         </button>
       </form>
       <p className="text-xs text-ink-muted -mt-4">
-        Tip: crea la etiqueta con un emoji primero y guárdala; luego puedes tocar su ícono para subir una imagen propia en su lugar.
+        Puedes subirle un logo propio desde ya (botón "Subir" en el cuadrito) o empezar con un emoji y cambiarlo
+        después tocando el ícono de la etiqueta ya creada.
       </p>
     </div>
   );

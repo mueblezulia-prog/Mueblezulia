@@ -37,7 +37,9 @@ export default function BadgeDisponibilidad({ disponible, className = "", toolti
             : "bg-white/5 border border-white/15 text-ink-muted",
         ].join(" ")}
       >
-        <span className="text-sm leading-none">🚚</span>
+        <span className={`text-sm leading-none w-3.5 h-3.5 inline-flex ${disponible ? "" : "opacity-60"}`}>
+          <img src="/assets/icons/entrega-inmediata.png" alt="" className="w-full h-full object-contain" />
+        </span>
         {disponible ? "Entrega Inmediata" : "Bajo Pedido"}
       </button>
 
