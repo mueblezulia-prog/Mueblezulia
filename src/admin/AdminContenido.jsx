@@ -254,6 +254,26 @@ function SeccionSede({ sede, onGuardado }) {
         <SelectorAjuste valor={form.ajusteImagen} onCambiar={(v) => cambiar("ajusteImagen", v)} />
       </Campo>
 
+      <Campo label="Enlace de Google Maps (botón 'Compartir' → 'Copiar enlace' en la app de Maps)">
+        <input
+          type="text"
+          value={form.enlaceMaps ?? ""}
+          onChange={(e) => cambiar("enlaceMaps", e.target.value)}
+          placeholder="https://maps.app.goo.gl/..."
+          className="campo-input"
+        />
+      </Campo>
+
+      <Campo label="Horario (como en la ficha de Google Maps)">
+        <input
+          type="text"
+          value={form.horario ?? ""}
+          onChange={(e) => cambiar("horario", e.target.value)}
+          placeholder="Todos los días: 9:00 a.m. – 5:25 p.m."
+          className="campo-input"
+        />
+      </Campo>
+
       <div className="flex items-center gap-3">
         <button type="button" onClick={handleGuardar} disabled={guardando} className="btn-admin-primary text-sm">
           {guardando ? "Guardando…" : "Guardar Nuestra Sede"}

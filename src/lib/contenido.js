@@ -21,6 +21,14 @@ export const CONTENIDO_DEFAULT = {
     titulo: "¡Te esperamos en Muebles Zulia! 📍",
     texto: "Ven a conocer la calidad y el diseño que cambiarán tu hogar.",
     ajusteImagen: "contain", // "contain" = se ve la foto completa | "cover" = llena el marco (puede recortar)
+    // Enlace real que se abre al tocar "Ver en Google Maps" — el que se
+    // copia con el botón "Compartir" desde la app de Google Maps. Si se
+    // deja vacío, se arma un enlace de búsqueda a partir de la dirección
+    // de arriba (menos preciso: puede llevar a un lugar parecido, no al
+    // exacto).
+    enlaceMaps: "https://maps.app.goo.gl/7BH5HnExxbfUDWmJ9",
+    // Horario tal como aparece en la ficha de Google Maps del negocio.
+    horario: "Todos los días: 9:00 a.m. – 5:25 p.m.",
   },
   fabricacion: {
     titulo: "Pasión por el Detalle",

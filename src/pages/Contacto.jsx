@@ -23,7 +23,11 @@ export default function Contacto() {
   }, []);
 
   const mapsEmbedSrc = `https://www.google.com/maps?q=${encodeURIComponent(sede.direccion)}&output=embed`;
-  const mapsLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(sede.direccion)}`;
+  // Preferimos el enlace real copiado desde Google Maps (lleva exacto al
+  // punto marcado); si todavía no se ha llenado, usamos como respaldo uno
+  // armado con la dirección de texto.
+  const mapsLink =
+    sede.enlaceMaps || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(sede.direccion)}`;
 
   return (
     <div>
@@ -48,7 +52,12 @@ export default function Contacto() {
             <div className="relative -mt-10 sm:-mt-14 glass p-5 flex flex-col items-start animar-entrada">
               <h2 className="text-xl font-bold text-ink mb-2">{sede.titulo}</h2>
               <p className="text-ink-muted mb-4">{sede.texto}</p>
-              <p className="text-ink font-semibold mb-4">{sede.direccion}</p>
+              <p className="text-ink font-semibold mb-1">{sede.direccion}</p>
+              {sede.horario && (
+                <p className="text-ink-muted text-sm mb-4 flex items-center gap-1.5">
+                  <span aria-hidden="true">🕒</span> {sede.horario}
+                </p>
+              )}
               <a
                 href={mapsLink}
                 target="_blank"
