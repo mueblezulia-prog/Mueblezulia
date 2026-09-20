@@ -11,9 +11,8 @@ const TEXTOS = {
  * bajo pedido. Al tocarla, revela con una animación un texto corto
  * explicando qué significa (no navega ni cierra el enlace del padre).
  */
-export default function BadgeDisponibilidad({ disponible, className = "", tooltipHacia = "arriba" }) {
+export default function BadgeDisponibilidad({ disponible, className = "" }) {
   const [abierto, setAbierto] = useState(false);
-  const haciaArriba = tooltipHacia === "arriba";
 
   function alTocar(e) {
     // Estas insignias suelen vivir dentro del <Link> de la tarjeta de
@@ -31,31 +30,28 @@ export default function BadgeDisponibilidad({ disponible, className = "", toolti
         onClick={alTocar}
         aria-expanded={abierto}
         className={[
-          "inline-flex items-center gap-1.5 rounded-control px-2.5 py-1 text-xs font-bold transition-all duration-200",
+          // Fondo oscuro con desenfoque (glass) SIEMPRE detrás del texto,
+          // para que la insignia se lea igual de bien sin importar qué tan
+          // clara u oscura sea la foto de fondo — no depende del contraste
+          // de la foto.
+          "inline-flex items-center gap-1.5 rounded-control px-2.5 py-1 text-xs font-bold backdrop-blur-md transition-all duration-200",
           disponible
-            ? "bg-green-500/20 border border-green-400/60 text-green-300 glow-verde"
-            : "bg-white/5 border border-white/15 text-ink-muted",
+            ? "bg-black/45 border border-green-400/60 text-green-300 glow-verde"
+            : "bg-black/45 border border-white/15 text-ink-muted",
         ].join(" ")}
       >
-        <span className={`text-sm leading-none w-3.5 h-3.5 inline-flex ${disponible ? "" : "opacity-60"}`}>
-          <img src="/assets/icons/entrega-inmediata.png" alt="" className="w-full h-full object-contain" />
-        </span>
+        <span className="text-sm leading-none">🚚</span>
         {disponible ? "Entrega Inmediata" : "Bajo Pedido"}
       </button>
 
-      {/* Explicación — se revela con un fundido + pequeño despliegue.
-          Por defecto hacia ARRIBA del ícono (para cuando la insignia
-          vive al fondo de una tarjeta con overflow-hidden); con
-          tooltipHacia="abajo" se despliega hacia abajo en su lugar
-          (para cuando la insignia está arriba de todo, ej. sobre la foto). */}
+      {/* Explicación — se revela con un fundido + pequeño despliegue,
+          hacia ARRIBA del ícono (la tarjeta recorta el contenido que se
+          sale por abajo, por los bordes redondeados). */}
       <span
         className={[
-          "absolute z-20 left-0 w-56 glass-dark text-ink text-xs leading-snug rounded-control p-2.5",
-          "transition-all duration-200 ease-out",
-          haciaArriba ? "bottom-full mb-1.5 origin-bottom" : "top-full mt-1.5 origin-top",
-          abierto
-            ? "opacity-100 scale-y-100 translate-y-0"
-            : `opacity-0 scale-y-90 pointer-events-none ${haciaArriba ? "translate-y-1" : "-translate-y-1"}`,
+          "absolute z-20 left-0 bottom-full mb-1.5 w-56 glass-dark text-ink text-xs leading-snug rounded-control p-2.5",
+          "origin-bottom transition-all duration-200 ease-out",
+          abierto ? "opacity-100 scale-y-100 translate-y-0" : "opacity-0 scale-y-90 translate-y-1 pointer-events-none",
         ].join(" ")}
       >
         {disponible ? TEXTOS.disponible : TEXTOS.pedido}
