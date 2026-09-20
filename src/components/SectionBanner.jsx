@@ -1,5 +1,16 @@
 import Reveal from "./Reveal";
 
+/** Animaciones de ícono disponibles — el admin elige cuál en cada banner
+ * que arma desde /admin/contenido (ver EditorBloque → "Animación del
+ * ícono"). Las páginas fijas del sitio usan "suave" (la de siempre). */
+export const ANIMACIONES_ICONO = {
+  suave: "anim-icono-suave",
+  rebote: "anim-icono-rebote",
+  girar: "anim-icono-girar",
+  pulso: "anim-icono-pulso",
+  ninguna: "",
+};
+
 /**
  * Franja de título de borde a borde, con foto de fondo difuminada
  * (efecto gaussiano) y una capa de vidrio semitransparente encima.
@@ -10,9 +21,10 @@ import Reveal from "./Reveal";
  * tinte="blanco" -> vidrio blanco neutro (glass)
  * tinte="oscuro" -> vidrio oscuro/negro (glass-dark), para fondos de taller
  */
-export default function SectionBanner({ titulo, icono, imagenFondo, tinte = "dorado", tamano = "normal" }) {
+export default function SectionBanner({ titulo, icono, imagenFondo, tinte = "dorado", tamano = "normal", animacionIcono = "suave" }) {
   const claseVidrio = tinte === "blanco" ? "glass" : tinte === "oscuro" ? "glass-dark" : "glass-gold";
   const claseTexto = tinte === "oscuro" ? "text-ink" : "text-ink";
+  const claseAnimIcono = ANIMACIONES_ICONO[animacionIcono] ?? ANIMACIONES_ICONO.suave;
 
   return (
     <Reveal
@@ -34,11 +46,11 @@ export default function SectionBanner({ titulo, icono, imagenFondo, tinte = "dor
             <img
               src={icono}
               alt=""
-              className="w-7 h-7 sm:w-8 sm:h-8 shrink-0 animar-entrada"
+              className={`w-7 h-7 sm:w-8 sm:h-8 shrink-0 ${claseAnimIcono}`}
               style={{ animationDelay: "0ms" }}
             />
           ) : (
-            <span className="text-2xl sm:text-3xl leading-none animar-entrada" style={{ animationDelay: "0ms" }}>
+            <span className={`text-2xl sm:text-3xl leading-none ${claseAnimIcono}`} style={{ animationDelay: "0ms" }}>
               {icono}
             </span>
           ))}

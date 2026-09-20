@@ -644,6 +644,37 @@ function SelectorTinte({ valor, onCambiar }) {
   );
 }
 
+/** Elegir cómo aparece el ícono del banner (animación). */
+function SelectorAnimacionIcono({ valor, onCambiar }) {
+  const opciones = [
+    { valor: "suave", label: "Suave", ayuda: "aparece con un deslizar" },
+    { valor: "rebote", label: "Rebote", ayuda: "salta un poco al aparecer" },
+    { valor: "girar", label: "Girar", ayuda: "entra girando" },
+    { valor: "pulso", label: "Pulso", ayuda: "late todo el tiempo" },
+    { valor: "ninguna", label: "Ninguna", ayuda: "queda quieto" },
+  ];
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+      {opciones.map((o) => (
+        <button
+          key={o.valor}
+          type="button"
+          onClick={() => onCambiar(o.valor)}
+          className={[
+            "min-h-tap rounded-control border-2 px-2 py-2 text-sm font-semibold transition-all duration-150 text-left",
+            (valor ?? "suave") === o.valor
+              ? "border-gold bg-gold/10 text-ink"
+              : "border-carbon-border text-ink-muted hover:border-carbon-border/60",
+          ].join(" ")}
+        >
+          {o.label}
+          <span className="block text-[11px] font-normal text-ink-muted">{o.ayuda}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
 /** Elegir si la foto va a la izquierda o a la derecha del texto. */
 function SelectorPosicion({ valor, onCambiar }) {
   const opciones = [
@@ -694,6 +725,7 @@ function bloqueVacio(tipo) {
     imagenes: [],
     video: "",
     icono: "🏷️",
+    animacionIcono: "suave",
     tinte: "dorado",
     alto: "mediano",
     ajusteImagen: "cover",
@@ -1090,6 +1122,12 @@ function EditorBloque({ bloque, onCambiar }) {
       {bloque.tipo === "banner" && (
         <Campo label="Color del vidrio">
           <SelectorTinte valor={bloque.tinte} onCambiar={(v) => onCambiar({ tinte: v })} />
+        </Campo>
+      )}
+
+      {bloque.tipo === "banner" && (
+        <Campo label="Animación del ícono">
+          <SelectorAnimacionIcono valor={bloque.animacionIcono} onCambiar={(v) => onCambiar({ animacionIcono: v })} />
         </Campo>
       )}
     </>

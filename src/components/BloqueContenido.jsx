@@ -22,6 +22,7 @@ export default function BloqueContenido({ bloque }) {
         icono={bloque.icono}
         imagenFondo={imagenes[0]}
         tinte={bloque.tinte ?? "dorado"}
+        animacionIcono={bloque.animacionIcono ?? "suave"}
       />
     );
   }
