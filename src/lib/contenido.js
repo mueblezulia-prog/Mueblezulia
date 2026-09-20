@@ -98,6 +98,7 @@ export const ALTOS_BLOQUE = {
   pequeno: "h-48",
   mediano: "h-72",
   grande: "h-96",
+  completo: "h-[70vh] sm:h-[85vh]",
 };
 
 /**

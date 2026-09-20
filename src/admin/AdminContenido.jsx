@@ -13,6 +13,23 @@ async function subirImagenContenido(file) {
   if (error) throw error;
   return supabase.storage.from(BUCKET).getPublicUrl(nombreArchivo).data.publicUrl;
 }
+
+// Límite del video para que la página no cargue lenta en el celular del
+// cliente — unos 15-20 segundos de buena calidad caben cómodo en 20MB.
+const LIMITE_VIDEO_MB = 20;
+
+async function subirVideoContenido(file) {
+  if (file.size > LIMITE_VIDEO_MB * 1024 * 1024) {
+    throw new Error(
+      `El video pesa ${(file.size / (1024 * 1024)).toFixed(1)}MB — el máximo es ${LIMITE_VIDEO_MB}MB para que cargue rápido en el celular. Prueba un video más corto o comprimido.`
+    );
+  }
+  const extension = file.name?.split(".").pop()?.toLowerCase() || "mp4";
+  const nombreArchivo = `contenido/${crypto.randomUUID()}.${extension}`;
+  const { error } = await supabase.storage.from(BUCKET).upload(nombreArchivo, file, { contentType: file.type || "video/mp4" });
+  if (error) throw error;
+  return supabase.storage.from(BUCKET).getPublicUrl(nombreArchivo).data.publicUrl;
+}
 /**
  * Panel para editar el contenido del sitio sin tocar código: la
  * dirección y foto de "Nuestra Sede", el texto y las fotos de
@@ -576,16 +593,17 @@ function SelectorAlto({ valor, onCambiar }) {
     { valor: "pequeno", label: "Pequeño" },
     { valor: "mediano", label: "Mediano" },
     { valor: "grande", label: "Grande" },
+    { valor: "completo", label: "Pantalla completa" },
   ];
   return (
-    <div className="flex gap-2">
+    <div className="flex flex-wrap gap-2">
       {opciones.map((o) => (
         <button
           key={o.valor}
           type="button"
           onClick={() => onCambiar(o.valor)}
           className={[
-            "flex-1 min-h-tap rounded-control border-2 text-sm font-semibold transition-all duration-150",
+            "flex-1 min-w-[110px] min-h-tap rounded-control border-2 text-sm font-semibold transition-all duration-150",
             (valor ?? "mediano") === o.valor
               ? "border-gold bg-gold/10 text-ink"
               : "border-carbon-border text-ink-muted hover:border-carbon-border/60",
@@ -655,10 +673,17 @@ function SelectorPosicion({ valor, onCambiar }) {
 
 const TIPOS_BLOQUE = [
   { tipo: "banner", icono: "🏷️", label: "Banner de título", ayuda: "franja de borde a borde con foto de fondo" },
-  { tipo: "imagen_texto", icono: "🖼️", label: "Imagen + Texto", ayuda: "una foto al lado de un párrafo" },
+  { tipo: "imagen_texto", icono: "🖼️", label: "Imagen + Texto", ayuda: "una o varias fotos con un párrafo" },
   { tipo: "galeria", icono: "🧩", label: "Galería de Fotos", ayuda: "varias fotos en cuadrícula" },
+  { tipo: "video", icono: "🎬", label: "Video en bucle", ayuda: "un video corto que se repite solo, sin sonido" },
+  { tipo: "collage", icono: "🧱", label: "Collage", ayuda: "varias fotos acomodadas juntas, llenando el marco" },
   { tipo: "texto", icono: "📝", label: "Texto libre", ayuda: "solo título y párrafo, sin fotos" },
 ];
+
+// Tipos que muestran una foto/video de fondo (por eso tienen tamaño,
+// ajuste y el interruptor de vidrio) — "texto" no, porque no tiene nada
+// detrás.
+const TIPOS_CON_MEDIA = ["imagen_texto", "galeria", "video", "collage"];
 
 function bloqueVacio(tipo) {
   return {
@@ -667,13 +692,40 @@ function bloqueVacio(tipo) {
     titulo: "",
     texto: "",
     imagenes: [],
+    video: "",
     icono: "🏷️",
     tinte: "dorado",
     alto: "mediano",
     ajusteImagen: "cover",
     posicionImagen: "izquierda",
     modoPresentacion: false,
+    // El efecto vidrio (difuminado + transparencia) ahora está disponible
+    // en cualquier tipo de sección, no solo en el banner — por defecto
+    // viene activado porque es lo que se ve más profesional.
+    vidrioSiempre: true,
   };
+}
+
+/** Interruptor genérico Sí/No (se usa para "vidrio siempre disponible"). */
+function Interruptor({ valor, onCambiar, etiqueta, ayuda }) {
+  return (
+    <div className="flex items-center justify-between gap-3 bg-carbon border border-carbon-border rounded-control px-3.5 py-3">
+      <div className="min-w-0">
+        <div className="text-sm font-semibold text-ink">{etiqueta}</div>
+        {ayuda && <div className="text-xs text-ink-muted mt-0.5">{ayuda}</div>}
+      </div>
+      <button
+        type="button"
+        onClick={() => onCambiar(!valor)}
+        aria-pressed={valor}
+        className={`w-12 h-7 rounded-full shrink-0 transition-colors duration-200 relative ${valor ? "bg-gold" : "bg-carbon-border"}`}
+      >
+        <span
+          className={`absolute top-0.5 w-6 h-6 rounded-full bg-carbon shadow transition-all duration-200 ${valor ? "left-[22px]" : "left-0.5"}`}
+        />
+      </button>
+    </div>
+  );
 }
 
 /* ------------------------------------------------------------ */
@@ -849,6 +901,21 @@ function EditorBloque({ bloque, onCambiar }) {
     }
   }
 
+  async function subirVideo(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = "";
+    setSubiendo(true);
+    try {
+      const url = await subirVideoContenido(file);
+      onCambiar({ video: url });
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setSubiendo(false);
+    }
+  }
+
   function quitarFoto(i) {
     onCambiar({ imagenes: bloque.imagenes.filter((_, idx) => idx !== i) });
   }
@@ -894,8 +961,8 @@ function EditorBloque({ bloque, onCambiar }) {
         </Campo>
       )}
 
-      {/* Foto única: banner e imagen_texto */}
-      {(bloque.tipo === "banner" || bloque.tipo === "imagen_texto") && (
+      {/* Foto única: solo el banner (franja de borde a borde) */}
+      {bloque.tipo === "banner" && (
         <Campo label="Foto">
           <label className="relative w-full h-32 rounded-control overflow-hidden bg-carbon-light border border-carbon-border cursor-pointer group block">
             {bloque.imagenes?.[0] && (
@@ -909,8 +976,9 @@ function EditorBloque({ bloque, onCambiar }) {
         </Campo>
       )}
 
-      {/* Galería de varias fotos */}
-      {bloque.tipo === "galeria" && (
+      {/* Varias fotos: Imagen + Texto, Galería y Collage — con 2 o más,
+          "Imagen + Texto" y "Galería" pueden pasar solas como diapositiva. */}
+      {(bloque.tipo === "imagen_texto" || bloque.tipo === "galeria" || bloque.tipo === "collage") && (
         <Campo label="Fotos">
           <div className="flex flex-wrap gap-3">
             {(bloque.imagenes ?? []).map((url, i) => (
@@ -931,22 +999,51 @@ function EditorBloque({ bloque, onCambiar }) {
               {subiendo ? "…" : "+ Foto"}
             </label>
           </div>
+          {bloque.tipo === "imagen_texto" && (bloque.imagenes?.length ?? 0) === 0 && (
+            <p className="text-xs text-ink-muted mt-1">Con 1 foto se ve fija; con 2 o más, pasan solas como diapositiva.</p>
+          )}
+          {bloque.tipo === "collage" && (
+            <p className="text-xs text-ink-muted mt-1">Se ve mejor con 3 fotos (la primera queda más grande). Si subes más de 3, solo se usan las primeras 3.</p>
+          )}
         </Campo>
       )}
 
-      {(bloque.tipo === "imagen_texto" || bloque.tipo === "galeria") && (
+      {/* Video en bucle */}
+      {bloque.tipo === "video" && (
+        <Campo label={`Video (máximo ${LIMITE_VIDEO_MB}MB, se repite solo sin sonido)`}>
+          <label className="relative w-full h-32 rounded-control overflow-hidden bg-carbon-light border border-carbon-border cursor-pointer group block">
+            {bloque.video ? (
+              <video src={bloque.video} className="w-full h-full object-cover" muted playsInline />
+            ) : (
+              <span className="absolute inset-0 flex items-center justify-center text-ink-muted text-sm">Ningún video subido todavía</span>
+            )}
+            <span className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/55 text-white text-sm font-semibold opacity-0 group-hover:opacity-100 transition-all duration-200">
+              {subiendo ? "Subiendo…" : bloque.video ? "Cambiar video" : "+ Subir video"}
+            </span>
+            <input type="file" accept="video/mp4,video/quicktime,video/webm" className="hidden" onChange={subirVideo} />
+          </label>
+        </Campo>
+      )}
+
+      {TIPOS_CON_MEDIA.includes(bloque.tipo) && (
         <>
-          <Campo label="Alto del marco">
+          <Campo label="Tamaño del bloque">
             <SelectorAlto valor={bloque.alto} onCambiar={(v) => onCambiar({ alto: v })} />
           </Campo>
-          <Campo label="Ajuste de la foto">
+          <Campo label="Ajuste de la foto/video">
             <SelectorAjuste valor={bloque.ajusteImagen} onCambiar={(v) => onCambiar({ ajusteImagen: v })} />
           </Campo>
+          <Interruptor
+            valor={bloque.vidrioSiempre ?? true}
+            onCambiar={(v) => onCambiar({ vidrioSiempre: v })}
+            etiqueta="Efecto vidrio (difuminado + transparencia)"
+            ayuda="El título y el texto quedan sobre una tarjeta de vidrio que se adapta a lo que escribas, en vez de una caja fija."
+          />
         </>
       )}
 
       {bloque.tipo === "galeria" && (bloque.imagenes?.length ?? 0) > 1 && (
-        <Campo label="Estilo de la galería">
+        <Campo label="Estilo con varias fotos">
           <div className="flex gap-2">
             <button
               type="button"
@@ -971,7 +1068,7 @@ function EditorBloque({ bloque, onCambiar }) {
                   : "border-carbon-border text-ink-muted hover:border-carbon-border/60",
               ].join(" ")}
             >
-              Presentación
+              Diapositiva
               <span className="block text-xs font-normal text-ink-muted">pasan solas + vidrio al final</span>
             </button>
           </div>
@@ -984,9 +1081,9 @@ function EditorBloque({ bloque, onCambiar }) {
         </Campo>
       )}
 
-      {bloque.tipo === "imagen_texto" && (
-        <Campo label="Posición">
-          <SelectorPosicion valor={bloque.posicionImagen} onCambiar={(v) => onCambiar({ posicionImagen: v })} />
+      {(bloque.tipo === "collage" || bloque.tipo === "imagen_texto" || bloque.tipo === "video") && (bloque.vidrioSiempre ?? true) && (
+        <Campo label="Color del vidrio (sobre el título/texto)">
+          <SelectorTinte valor={bloque.tinte} onCambiar={(v) => onCambiar({ tinte: v })} />
         </Campo>
       )}
 

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-const CLASE_TINTE = {
+export const CLASE_TINTE = {
   dorado: "glass-gold",
   blanco: "glass",
   oscuro: "glass-dark",

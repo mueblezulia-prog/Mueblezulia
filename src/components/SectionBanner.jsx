@@ -31,11 +31,21 @@ export default function SectionBanner({ titulo, icono, imagenFondo, tinte = "dor
       <div className="relative flex items-center gap-3 px-4">
         {icono &&
           (icono.startsWith("/") ? (
-            <img src={icono} alt="" className="w-7 h-7 sm:w-8 sm:h-8 shrink-0" />
+            <img
+              src={icono}
+              alt=""
+              className="w-7 h-7 sm:w-8 sm:h-8 shrink-0 animar-entrada"
+              style={{ animationDelay: "0ms" }}
+            />
           ) : (
-            <span className="text-2xl sm:text-3xl leading-none">{icono}</span>
+            <span className="text-2xl sm:text-3xl leading-none animar-entrada" style={{ animationDelay: "0ms" }}>
+              {icono}
+            </span>
           ))}
-        <h2 className={`${claseTexto} font-extrabold text-xl sm:text-2xl text-center uppercase tracking-wide drop-shadow-md`}>
+        <h2
+          className={`${claseTexto} font-extrabold text-xl sm:text-2xl text-center uppercase tracking-wide drop-shadow-md animar-entrada`}
+          style={{ animationDelay: "120ms" }}
+        >
           {titulo}
         </h2>
       </div>

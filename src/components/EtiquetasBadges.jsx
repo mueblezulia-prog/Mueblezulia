@@ -26,7 +26,7 @@ export default function EtiquetasBadges({ etiquetas, compacto = false, tamano = 
 
   return (
     <div className="flex flex-wrap gap-1">
-      {etiquetas.map((etiqueta) => {
+      {etiquetas.map((etiqueta, i) => {
         const abierta = abiertaId === etiqueta.id;
         const revelar = !modoIconos || abierta;
         return (
@@ -44,11 +44,12 @@ export default function EtiquetasBadges({ etiquetas, compacto = false, tamano = 
             }
             className={[
               "inline-flex items-center gap-1 self-start font-semibold text-gold bg-gold/15 border border-gold/40 rounded-control",
-              "transition-all duration-300 ease-out overflow-hidden",
+              "transition-all duration-300 ease-out overflow-hidden animar-entrada",
               tamTexto,
               padding,
               modoIconos ? "cursor-pointer" : "cursor-default",
             ].join(" ")}
+            style={{ animationDelay: `${i * 70}ms` }}
           >
             <span className={`${tamIcono} shrink-0 flex items-center justify-center`}>
               {esImagen(etiqueta.icono) ? (
