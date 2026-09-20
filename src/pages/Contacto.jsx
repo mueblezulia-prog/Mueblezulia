@@ -22,7 +22,12 @@ export default function Contacto() {
     };
   }, []);
 
-  const mapsEmbedSrc = `https://www.google.com/maps?q=${encodeURIComponent(sede.direccion)}&output=embed`;
+  // Con solo la dirección de texto, la búsqueda a veces cae en un local
+  // vecino (p. ej. "Alkosto") en vez de la mueblería. Si hay coordenadas
+  // exactas guardadas, el mapa se centra ahí sin ambigüedad.
+  const mapsEmbedSrc = sede.coordenadas
+    ? `https://www.google.com/maps?q=${encodeURIComponent(sede.coordenadas)}&z=18&output=embed`
+    : `https://www.google.com/maps?q=${encodeURIComponent(sede.direccion)}&output=embed`;
   // Preferimos el enlace real copiado desde Google Maps (lleva exacto al
   // punto marcado); si todavía no se ha llenado, usamos como respaldo uno
   // armado con la dirección de texto.
@@ -34,7 +39,7 @@ export default function Contacto() {
       {/* NUESTRA SEDE */}
       <section className="max-w-5xl mx-auto">
         <div className="mb-6">
-          <SectionBanner titulo="Nuestra Sede" icono="📍" imagenFondo={sede.imagen} tinte="blanco" />
+          <SectionBanner titulo="Nuestra Sede" icono="/assets/icons/ubicacion.png" imagenFondo={sede.imagen} tinte="blanco" />
         </div>
 
         <div className="px-4">
@@ -87,7 +92,7 @@ export default function Contacto() {
       {/* MÉTODOS DE PAGO */}
       <section className="pb-10 max-w-5xl mx-auto">
         <div className="my-8">
-          <SectionBanner titulo="Métodos de Pago" icono="💳" imagenFondo="/assets/interior-tienda.jpg" tinte="blanco" />
+          <SectionBanner titulo="Métodos de Pago" icono="/assets/icons/pago-general.png" imagenFondo="/assets/interior-tienda.jpg" tinte="blanco" />
         </div>
         <div className="px-4 grid sm:grid-cols-2 gap-4">
           {metodos.map((m, i) => (

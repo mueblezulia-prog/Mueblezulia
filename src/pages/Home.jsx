@@ -48,7 +48,7 @@ export default function Home() {
       {/* NUESTRA SEDE (resumen — la versión completa vive en /contacto) */}
       <section className="pb-10 max-w-5xl mx-auto border-t border-carbon-border pt-8">
         <div className="mb-5">
-          <SectionBanner titulo="Nuestra Sede" icono="📍" imagenFondo={sede.imagen} tinte="dorado" />
+          <SectionBanner titulo="Nuestra Sede" icono="/assets/icons/ubicacion.png" imagenFondo={sede.imagen} tinte="dorado" />
         </div>
         <Reveal className="px-4 glass rounded-card overflow-hidden grid sm:grid-cols-2" delay={80}>
           <img
@@ -75,7 +75,7 @@ export default function Home() {
       {/* EXCELENCIA EN MANUFACTURA (resumen — versión completa en /fabricacion) */}
       <section className="pb-10 max-w-5xl mx-auto border-t border-carbon-border pt-8">
         <div className="mb-5">
-          <SectionBanner titulo="Excelencia en Manufactura" icono="🔨" imagenFondo="/assets/carpinteria.jpg" tinte="oscuro" />
+          <SectionBanner titulo="Excelencia en Manufactura" icono="/assets/icons/fabricacion.png" imagenFondo="/assets/carpinteria.jpg" tinte="oscuro" />
         </div>
         <Reveal className="px-4 glass rounded-card overflow-hidden grid sm:grid-cols-2" delay={80}>
           <img

@@ -210,7 +210,9 @@ function SeccionSede({ sede, onGuardado }) {
 
   return (
     <section className="admin-card p-5 flex flex-col gap-4">
-      <h2 className="text-xl font-bold text-ink">📍 Nuestra Sede</h2>
+      <h2 className="text-xl font-bold text-ink flex items-center gap-2">
+        <img src="/assets/icons/ubicacion.png" alt="" className="w-5 h-5" /> Nuestra Sede
+      </h2>
       <p className="text-sm text-ink-muted -mt-2">
         Se usa en la página de Catálogo (fondo de categorías) y en Contacto (foto, dirección y mapa).
       </p>
@@ -273,6 +275,20 @@ function SeccionSede({ sede, onGuardado }) {
           className="campo-input"
         />
       </Campo>
+
+      <Campo label="Coordenadas exactas (para que el mapa apunte al local, no a un vecino)">
+        <input
+          type="text"
+          value={form.coordenadas ?? ""}
+          onChange={(e) => cambiar("coordenadas", e.target.value)}
+          placeholder="10.6804354,-71.6224744"
+          className="campo-input"
+        />
+      </Campo>
+      <p className="text-xs text-ink-muted -mt-3">
+        Para sacarlas: abre el enlace de Google Maps de arriba en el navegador, toca el nombre del negocio y luego
+        "Compartir" → copia el enlace; los dos números después de "@" son las coordenadas (ej. 10.6804354,-71.6224744).
+      </p>
 
       <div className="flex items-center gap-3">
         <button type="button" onClick={handleGuardar} disabled={guardando} className="btn-admin-primary text-sm">
@@ -346,7 +362,9 @@ function SeccionFabricacion({ fabricacion, onGuardado }) {
 
   return (
     <section className="admin-card p-5 flex flex-col gap-4">
-      <h2 className="text-xl font-bold text-ink">🔨 Fabricación</h2>
+      <h2 className="text-xl font-bold text-ink flex items-center gap-2">
+        <img src="/assets/icons/fabricacion.png" alt="" className="w-5 h-5" /> Fabricación
+      </h2>
       <p className="text-sm text-ink-muted -mt-2">
         Se usa arriba de todo en la página "Fabricación". Agrega, quita o reordena tantas fotos como quieras.
       </p>
@@ -445,7 +463,9 @@ function SeccionMetodosPago({ metodos, onGuardado }) {
 
   return (
     <section className="admin-card p-5 flex flex-col gap-4">
-      <h2 className="text-xl font-bold text-ink">💳 Métodos de Pago</h2>
+      <h2 className="text-xl font-bold text-ink flex items-center gap-2">
+        <img src="/assets/icons/pago-general.png" alt="" className="w-5 h-5" /> Métodos de Pago
+      </h2>
       <p className="text-sm text-ink-muted -mt-2">Se usa en la página de Contacto. Agrega o quita los que necesites.</p>
 
       <div className="flex flex-col gap-3">

@@ -24,7 +24,7 @@ export default function Fabricacion() {
       <div className="mb-8">
         <SectionBanner
           titulo="Excelencia en Manufactura"
-          icono="🔨"
+          icono="/assets/icons/fabricacion.png"
           imagenFondo="/assets/carpinteria.jpg"
           tinte="oscuro"
         />

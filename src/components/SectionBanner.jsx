@@ -29,7 +29,12 @@ export default function SectionBanner({ titulo, icono, imagenFondo, tinte = "dor
       )}
       <div className={`absolute inset-0 ${claseVidrio}`} />
       <div className="relative flex items-center gap-3 px-4">
-        {icono && <span className="text-2xl sm:text-3xl leading-none">{icono}</span>}
+        {icono &&
+          (icono.startsWith("/") ? (
+            <img src={icono} alt="" className="w-7 h-7 sm:w-8 sm:h-8 shrink-0" />
+          ) : (
+            <span className="text-2xl sm:text-3xl leading-none">{icono}</span>
+          ))}
         <h2 className={`${claseTexto} font-extrabold text-xl sm:text-2xl text-center uppercase tracking-wide drop-shadow-md`}>
           {titulo}
         </h2>
