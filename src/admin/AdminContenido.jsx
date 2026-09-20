@@ -42,7 +42,6 @@ export default function AdminContenido() {
 
   const [hero, setHero] = useState(CONTENIDO_DEFAULT.hero);
   const [sede, setSede] = useState(CONTENIDO_DEFAULT.nuestra_sede);
-  const [fabricacion, setFabricacion] = useState(CONTENIDO_DEFAULT.fabricacion);
   const [metodos, setMetodos] = useState(CONTENIDO_DEFAULT.metodos_pago.metodos);
   const [bloquesHome, setBloquesHome] = useState([]);
   const [bloquesFabricacion, setBloquesFabricacion] = useState([]);
@@ -60,11 +59,38 @@ export default function AdminContenido() {
     ]).then(([h, s, fab, m, bh, bf, bu]) => {
       setHero(h);
       setSede(s);
-      setFabricacion(fab);
       setMetodos(m.metodos ?? []);
       setBloquesHome(bh.bloques ?? []);
-      setBloquesFabricacion(bf.bloques ?? []);
       setBloquesUbicacion(bu.bloques ?? []);
+
+      // Migración de una sola vez: la vieja sección fija "Fabricación"
+      // (título + texto + fotos del taller) pasa a ser la primera
+      // sección editable de "secciones_fabricacion" — así queda con las
+      // mismas opciones que las demás (cambiar tipo, borrar, reordenar),
+      // sin perder lo que ya estaba guardado.
+      let bloquesFab = bf.bloques ?? [];
+      const yaMigrado = bloquesFab.some((b) => b.id === "fabricacion-legado");
+      if (!yaMigrado) {
+        const bloqueLegado = {
+          id: "fabricacion-legado",
+          tipo: "galeria",
+          titulo: fab.titulo ?? "",
+          texto: fab.texto ?? "",
+          imagenes: fab.imagenes ?? [],
+          icono: "🏷️",
+          animacionIcono: "suave",
+          tinte: "dorado",
+          alto: "mediano",
+          ajusteImagen: fab.ajusteImagen ?? "cover",
+          posicionImagen: "izquierda",
+          modoPresentacion: false,
+          vidrioSiempre: true,
+        };
+        bloquesFab = [bloqueLegado, ...bloquesFab];
+        guardarContenido("secciones_fabricacion", { bloques: bloquesFab }).catch(() => {});
+      }
+      setBloquesFabricacion(bloquesFab);
+
       setCargando(false);
     });
   }, []);
@@ -92,13 +118,13 @@ export default function AdminContenido() {
         bloques={bloquesUbicacion}
         onGuardado={setBloquesUbicacion}
       />
-      <SeccionFabricacion fabricacion={fabricacion} onGuardado={setFabricacion} />
       <SeccionBloques
         contenidoKey="secciones_fabricacion"
-        titulo="Página de Fabricación — Secciones extra"
-        descripcion='Agrega más contenido debajo de lo de arriba: más fotos, más texto, banners — como si construyeras la página tú mismo.'
+        titulo="Página de Fabricación"
+        descripcion='La primera sección de la lista es la introducción ("Excelencia en Manufactura") — ya la puedes editar, cambiarle el tipo (a video, collage, etc.) o borrarla, igual que cualquier otra de aquí abajo. Agrega tantas más como quieras.'
         bloques={bloquesFabricacion}
         onGuardado={setBloquesFabricacion}
+        espejoClave="fabricacion"
       />
       <SeccionBloques
         contenidoKey="secciones_home"
@@ -319,129 +345,6 @@ function SeccionSede({ sede, onGuardado }) {
   );
 }
 
-/* ------------------------------------------------------------ */
-/* FABRICACIÓN — título, texto y galería principal (fija)         */
-/* ------------------------------------------------------------ */
-function SeccionFabricacion({ fabricacion, onGuardado }) {
-  const [form, setForm] = useState(fabricacion);
-  const [subiendo, setSubiendo] = useState(false);
-  const [guardando, setGuardando] = useState(false);
-  const [mensaje, setMensaje] = useState(null);
-
-  function cambiar(campo, valor) {
-    setForm((f) => ({ ...f, [campo]: valor }));
-  }
-
-  async function handleAgregarFoto(e) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    e.target.value = "";
-    setSubiendo(true);
-    setMensaje(null);
-    try {
-      const url = await subirImagenContenido(file);
-      setForm((f) => ({ ...f, imagenes: [...(f.imagenes ?? []), url] }));
-    } catch (err) {
-      setMensaje(`Error al subir la foto: ${err.message}`);
-    } finally {
-      setSubiendo(false);
-    }
-  }
-
-  function quitarFoto(i) {
-    setForm((f) => ({ ...f, imagenes: f.imagenes.filter((_, idx) => idx !== i) }));
-  }
-
-  function moverFoto(i, direccion) {
-    setForm((f) => {
-      const j = i + direccion;
-      if (j < 0 || j >= f.imagenes.length) return f;
-      const copia = [...f.imagenes];
-      [copia[i], copia[j]] = [copia[j], copia[i]];
-      return { ...f, imagenes: copia };
-    });
-  }
-
-  async function handleGuardar() {
-    setGuardando(true);
-    setMensaje(null);
-    try {
-      await guardarContenido("fabricacion", form);
-      onGuardado(form);
-      sonidoConfirmar();
-      setMensaje("Guardado correctamente.");
-    } catch (err) {
-      setMensaje(`Error al guardar: ${err.message}`);
-    } finally {
-      setGuardando(false);
-    }
-  }
-
-  return (
-    <section className="admin-card p-5 flex flex-col gap-4">
-      <h2 className="text-xl font-bold text-ink flex items-center gap-2">
-        <img src="/assets/icons/fabricacion.png" alt="" className="w-5 h-5" /> Fabricación
-      </h2>
-      <p className="text-sm text-ink-muted -mt-2">
-        Se usa arriba de todo en la página "Fabricación". Agrega, quita o reordena tantas fotos como quieras.
-      </p>
-
-      <Campo label="Título">
-        <input
-          type="text"
-          value={form.titulo}
-          onChange={(e) => cambiar("titulo", e.target.value)}
-          className="campo-input"
-        />
-      </Campo>
-
-      <Campo label="Texto">
-        <textarea
-          rows={5}
-          value={form.texto}
-          onChange={(e) => cambiar("texto", e.target.value)}
-          className="campo-input resize-none"
-        />
-      </Campo>
-
-      <div className="flex flex-col gap-2">
-        <span className="text-base font-semibold text-ink">Fotos del taller</span>
-        <div className="flex flex-wrap gap-3">
-          {(form.imagenes ?? []).map((url, i) => (
-            <div key={url + i} className="relative w-24">
-              <img src={url} alt={`Foto ${i + 1}`} className="w-24 h-24 object-cover rounded-control border border-carbon-border" />
-              <div className="flex justify-center gap-1 mt-1">
-                <button type="button" onClick={() => moverFoto(i, -1)} disabled={i === 0}
-                  className="min-h-tap min-w-tap text-ink-muted disabled:opacity-30 hover:text-ink transition-colors" aria-label="Mover antes">←</button>
-                <button type="button" onClick={() => quitarFoto(i)}
-                  className="min-h-tap min-w-tap text-terracota font-bold hover:text-ink transition-colors" aria-label="Quitar foto">×</button>
-                <button type="button" onClick={() => moverFoto(i, 1)} disabled={i === form.imagenes.length - 1}
-                  className="min-h-tap min-w-tap text-ink-muted disabled:opacity-30 hover:text-ink transition-colors" aria-label="Mover después">→</button>
-              </div>
-            </div>
-          ))}
-          <label className="w-24 h-24 flex items-center justify-center rounded-control border-2 border-dashed border-carbon-border text-ink-muted text-xs text-center cursor-pointer hover:border-gold/50 hover:text-ink transition-colors duration-150">
-            <input type="file" accept="image/*,.heic,.heif" className="hidden" onChange={handleAgregarFoto} />
-            {subiendo ? "Subiendo…" : "+ Agregar"}
-          </label>
-        </div>
-      </div>
-
-      <Campo label="Ajuste de las fotos">
-        <SelectorAjuste valor={form.ajusteImagen} onCambiar={(v) => cambiar("ajusteImagen", v)} />
-      </Campo>
-
-      <div className="flex items-center gap-3">
-        <button type="button" onClick={handleGuardar} disabled={guardando} className="btn-admin-primary text-sm">
-          {guardando ? "Guardando…" : "Guardar Fabricación"}
-        </button>
-        {mensaje && (
-          <span className={mensaje.startsWith("Error") ? "text-terracota text-sm" : "text-gold text-sm"}>{mensaje}</span>
-        )}
-      </div>
-    </section>
-  );
-}
 
 /* ------------------------------------------------------------ */
 /* MÉTODOS DE PAGO — lista dinámica (nombre + detalle + ícono)    */
@@ -765,7 +668,7 @@ function Interruptor({ valor, onCambiar, etiqueta, ayuda }) {
 /* la página de inicio: el admin elige el tipo, el orden, las      */
 /* fotos y cómo se ven, sin tocar código.                          */
 /* ------------------------------------------------------------ */
-function SeccionBloques({ contenidoKey, titulo, descripcion, bloques, onGuardado }) {
+function SeccionBloques({ contenidoKey, titulo, descripcion, bloques, onGuardado, espejoClave }) {
   const [lista, setLista] = useState(bloques);
   const [expandidoId, setExpandidoId] = useState(null);
   const [guardando, setGuardando] = useState(false);
@@ -801,6 +704,17 @@ function SeccionBloques({ contenidoKey, titulo, descripcion, bloques, onGuardado
     setMensaje(null);
     try {
       await guardarContenido(contenidoKey, { bloques: lista });
+      // Algunas páginas (como la portada) muestran un resumen de la
+      // primera sección de aquí — lo mantenemos al día automáticamente
+      // para no tener que editarlo dos veces en dos lugares distintos.
+      if (espejoClave && lista[0]) {
+        await guardarContenido(espejoClave, {
+          titulo: lista[0].titulo ?? "",
+          texto: lista[0].texto ?? "",
+          imagenes: lista[0].imagenes ?? [],
+          ajusteImagen: lista[0].ajusteImagen ?? "cover",
+        });
+      }
       onGuardado(lista);
       sonidoConfirmar();
       setMensaje("Guardado correctamente.");
