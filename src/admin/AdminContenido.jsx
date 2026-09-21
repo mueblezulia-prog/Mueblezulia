@@ -83,9 +83,18 @@ export default function AdminContenido() {
       // sección editable de "secciones_fabricacion" — así queda con las
       // mismas opciones que las demás (cambiar tipo, borrar, reordenar),
       // sin perder lo que ya estaba guardado.
+      //
+      // IMPORTANTE: se controla con la bandera "migrado", NUNCA con "¿ya
+      // existe un bloque con este id?" — antes usaba esa segunda forma, y
+      // como cada "Guardar Secciones" reescribe todo el objeto guardado
+      // (sin la bandera), al borrar esa sección y guardar, la próxima vez
+      // que se abría el panel esta migración se disparaba OTRA VEZ y
+      // recreaba la sección sola — por eso "Confort Insuperable" volvía a
+      // aparecer aunque la borraras y guardaras. Con la bandera, una vez
+      // migrado queda migrado para siempre, la borres o no.
       let bloquesFab = bf.bloques ?? [];
-      const yaMigrado = bloquesFab.some((b) => b.id === "fabricacion-legado");
-      if (!yaMigrado) {
+      let necesitaGuardar = false;
+      if (!bf.migrado) {
         const bloqueLegado = {
           id: "fabricacion-legado",
           tipo: "galeria",
@@ -102,7 +111,31 @@ export default function AdminContenido() {
           vidrioSiempre: true,
         };
         bloquesFab = [bloqueLegado, ...bloquesFab];
-        guardarContenido("secciones_fabricacion", { bloques: bloquesFab }).catch(() => {});
+        necesitaGuardar = true;
+      }
+
+      // Limpieza automática de una sola vez: por el error de arriba, en
+      // sitios que ya tenían la migración repetida puede haber quedado
+      // más de una sección con el MISMO título guardada por accidente
+      // (el caso de "Confort Insuperable" duplicado). Se deja solo la
+      // primera de cada título repetido — si de verdad quieres dos
+      // secciones con el mismo título, cámbiale el nombre a una y no se
+      // va a volver a tocar.
+      const titulosVistos = new Set();
+      const bloquesFabSinDuplicados = bloquesFab.filter((b) => {
+        const clave = (b.titulo || "").trim().toLowerCase();
+        if (!clave) return true;
+        if (titulosVistos.has(clave)) return false;
+        titulosVistos.add(clave);
+        return true;
+      });
+      if (bloquesFabSinDuplicados.length !== bloquesFab.length) {
+        bloquesFab = bloquesFabSinDuplicados;
+        necesitaGuardar = true;
+      }
+
+      if (necesitaGuardar) {
+        guardarContenido("secciones_fabricacion", { bloques: bloquesFab, migrado: true }).catch(() => {});
       }
       setBloquesFabricacion(bloquesFab);
 
@@ -357,16 +390,18 @@ function SeccionSede({ sede, onGuardado }) {
     }
   }
 
-  async function fotoRecortadaLista(blob, aspectoCss) {
+  // Recibe el ítem de la cola que se acaba de recortar como parámetro
+  // explícito (en vez de volver a leer colaFotos[0] adentro) — así no hay
+  // forma de que quede desincronizado con cuál foto se subió.
+  async function fotoRecortadaLista(blob, aspectoCss, item) {
     setSubiendo(true);
     setMensaje(null);
-    const enProceso = colaFotos[0];
     try {
       const url = await subirBlobContenido(blob);
       setForm((f) => {
         let imagenes = [...(f.imagenes ?? [])];
-        if (enProceso?.reemplazarIndice != null) {
-          imagenes[enProceso.reemplazarIndice] = url;
+        if (item?.reemplazarIndice != null) {
+          imagenes[item.reemplazarIndice] = url;
         } else {
           imagenes = [...imagenes, url];
         }
@@ -551,7 +586,7 @@ function SeccionSede({ sede, onGuardado }) {
                 archivo={colaFotos[0].file}
                 aspectoInicial={16 / 9}
                 onCancelar={() => setColaFotos((c) => c.slice(1))}
-                onListo={fotoRecortadaLista}
+                onListo={(blob, aspectoCss) => fotoRecortadaLista(blob, aspectoCss, colaFotos[0])}
               />
             )}
             {form.tipoMedia !== "diapositiva" && imagenes.length > 1 && (
@@ -1164,13 +1199,21 @@ function SeccionBloques({ contenidoKey, titulo, descripcion, bloques, onGuardado
   const [expandidoId, setExpandidoId] = useState(null);
   const [guardando, setGuardando] = useState(false);
   const [mensaje, setMensaje] = useState(null);
+  // Si borras, reordenas o editas una sección y NO tocas "Guardar
+  // Secciones", nada de eso queda guardado — al recargar la página vuelve
+  // a aparecer todo tal como estaba antes. Este aviso es para que nunca
+  // se pierda un cambio por olvido (como el de la sección duplicada que
+  // "vuelve a aparecer" después de borrarla).
+  const [sinGuardar, setSinGuardar] = useState(false);
 
   function actualizarBloque(id, cambios) {
     setLista((l) => l.map((b) => (b.id === id ? { ...b, ...cambios } : b)));
+    setSinGuardar(true);
   }
 
   function quitarBloque(id) {
     setLista((l) => l.filter((b) => b.id !== id));
+    setSinGuardar(true);
   }
 
   function moverBloque(id, direccion) {
@@ -1182,19 +1225,25 @@ function SeccionBloques({ contenidoKey, titulo, descripcion, bloques, onGuardado
       [copia[i], copia[j]] = [copia[j], copia[i]];
       return copia;
     });
+    setSinGuardar(true);
   }
 
   function agregarBloque(tipo) {
     const nuevo = bloqueVacio(tipo);
     setLista((l) => [...l, nuevo]);
     setExpandidoId(nuevo.id);
+    setSinGuardar(true);
   }
 
   async function handleGuardar() {
     setGuardando(true);
     setMensaje(null);
     try {
-      await guardarContenido(contenidoKey, { bloques: lista });
+      // "migrado: true" no molesta a "secciones_home"/"secciones_ubicacion"
+      // (nadie lo lee ahí) pero es IMPRESCINDIBLE para "secciones_fabricacion":
+      // si se guarda sin esa bandera se borra, y la migración de la
+      // introducción se volvería a disparar sola en la próxima carga.
+      await guardarContenido(contenidoKey, { bloques: lista, migrado: true });
       // Algunas páginas (como la portada) muestran un resumen de la
       // primera sección de aquí — lo mantenemos al día automáticamente
       // para no tener que editarlo dos veces en dos lugares distintos.
@@ -1212,6 +1261,7 @@ function SeccionBloques({ contenidoKey, titulo, descripcion, bloques, onGuardado
       onGuardado(lista);
       sonidoConfirmar();
       setMensaje("Guardado correctamente.");
+      setSinGuardar(false);
     } catch (err) {
       setMensaje(`Error al guardar: ${err.message}`);
     } finally {
@@ -1225,6 +1275,13 @@ function SeccionBloques({ contenidoKey, titulo, descripcion, bloques, onGuardado
         <h2 className="text-xl font-bold text-ink">🧩 {titulo}</h2>
         <p className="text-sm text-ink-muted mt-1">{descripcion}</p>
       </div>
+
+      {sinGuardar && (
+        <p className="text-sm font-semibold text-gold bg-gold/10 border border-gold/40 rounded-control px-3.5 py-2.5">
+          ⚠ Tienes cambios sin guardar aquí abajo — presiona "Guardar Secciones" al final para que no se pierdan. Si
+          recargas la página antes de guardar, todo vuelve a como estaba.
+        </p>
+      )}
 
       {lista.length === 0 && (
         <p className="text-ink-muted text-base bg-carbon border border-dashed border-carbon-border rounded-control px-4 py-6 text-center">
@@ -1297,7 +1354,12 @@ function SeccionBloques({ contenidoKey, titulo, descripcion, bloques, onGuardado
       </div>
 
       <div className="flex items-center gap-3">
-        <button type="button" onClick={handleGuardar} disabled={guardando} className="btn-admin-primary text-sm">
+        <button
+          type="button"
+          onClick={handleGuardar}
+          disabled={guardando}
+          className={`btn-admin-primary text-sm ${sinGuardar ? "ring-2 ring-gold ring-offset-2 ring-offset-carbon animate-pulse" : ""}`}
+        >
           {guardando ? "Guardando…" : "Guardar Secciones"}
         </button>
         {mensaje && (
@@ -1341,15 +1403,18 @@ function EditorBloque({ bloque, onCambiar }) {
     }
   }
 
-  async function fotoRecortadaLista(blob, aspectoCss) {
+  // Recibe el `pendiente` como parámetro explícito (en vez de leerlo del
+  // estado adentro) para que nunca pueda quedar desincronizado con cuál
+  // foto se acaba de recortar.
+  async function fotoRecortadaLista(blob, aspectoCss, item) {
     setSubiendo(true);
     try {
       const url = await subirBlobContenido(blob);
-      if (pendiente?.modo === "unica") {
+      if (item?.modo === "unica") {
         onCambiar({ imagenes: [url], aspecto: aspectoCss });
-      } else if (pendiente?.modo === "reemplazar") {
+      } else if (item?.modo === "reemplazar") {
         const copia = [...(bloque.imagenes ?? [])];
-        copia[pendiente.index] = url;
+        copia[item.index] = url;
         onCambiar({ imagenes: copia, aspecto: aspectoCss });
       } else {
         onCambiar({ imagenes: [...(bloque.imagenes ?? []), url], aspecto: aspectoCss });
@@ -1403,7 +1468,7 @@ function EditorBloque({ bloque, onCambiar }) {
           archivo={pendiente.file}
           aspectoInicial={bloque.tipo === "banner" ? 16 / 9 : 4 / 5}
           onCancelar={() => setPendiente(null)}
-          onListo={fotoRecortadaLista}
+          onListo={(blob, aspectoCss) => fotoRecortadaLista(blob, aspectoCss, pendiente)}
         />
       )}
 
