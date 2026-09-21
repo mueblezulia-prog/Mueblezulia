@@ -1,12 +1,24 @@
 import { useEffect, useState } from "react";
+import Cropper from "react-easy-crop";
 import { supabase } from "../lib/supabaseClient";
-import { prepararImagen } from "../lib/imagenOptimizada";
+import { convertirSiEsHeic } from "../lib/heic";
+import { prepararImagen, optimizarBlob } from "../lib/imagenOptimizada";
+import { getCroppedImageBlob } from "../lib/cropImage";
 import { obtenerContenido, guardarContenido, CONTENIDO_DEFAULT, ALTOS_BLOQUE } from "../lib/contenido";
 import { sonidoConfirmar } from "../lib/sonido";
 import FondoMultimedia from "../components/FondoMultimedia";
 import BloqueContenido from "../components/BloqueContenido";
 
 const BUCKET = "productos"; // mismo bucket que ya usan fotos de mueble y categorías
+
+/** Sube un Blob YA recortado y optimizado (ver RecortadorContenido). */
+async function subirBlobContenido(blob) {
+  const extension = blob.type === "image/webp" ? "webp" : "jpg";
+  const nombreArchivo = `contenido/${crypto.randomUUID()}.${extension}`;
+  const { error } = await supabase.storage.from(BUCKET).upload(nombreArchivo, blob, { contentType: blob.type || "image/jpeg" });
+  if (error) throw error;
+  return supabase.storage.from(BUCKET).getPublicUrl(nombreArchivo).data.publicUrl;
+}
 
 async function subirImagenContenido(file) {
   const fileListo = await prepararImagen(file);
@@ -144,12 +156,48 @@ export default function AdminContenido() {
 /* HERO — la franja principal de la página de inicio              */
 /* ------------------------------------------------------------ */
 function SeccionHero({ hero, onGuardado }) {
-  const [form, setForm] = useState(hero);
+  const [form, setForm] = useState({ imagen: "/assets/fachada.jpg", video: "", tipoMedia: "foto", ...hero });
   const [guardando, setGuardando] = useState(false);
   const [mensaje, setMensaje] = useState(null);
+  const [pendiente, setPendiente] = useState(null);
+  const [subiendoVideo, setSubiendoVideo] = useState(false);
 
   function cambiar(campo, valor) {
     setForm((f) => ({ ...f, [campo]: valor }));
+  }
+
+  function elegirFoto(e) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setPendiente(file);
+  }
+
+  async function fotoRecortadaLista(blob) {
+    try {
+      const url = await subirBlobContenido(blob);
+      cambiar("imagen", url);
+    } catch (err) {
+      setMensaje(`Error al subir la foto: ${err.message}`);
+    } finally {
+      setPendiente(null);
+    }
+  }
+
+  async function handleSubirVideo(e) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setSubiendoVideo(true);
+    setMensaje(null);
+    try {
+      const url = await subirVideoContenido(file);
+      cambiar("video", url);
+    } catch (err) {
+      setMensaje(`Error al subir el video: ${err.message}`);
+    } finally {
+      setSubiendoVideo(false);
+    }
   }
 
   async function handleGuardar() {
@@ -171,6 +219,61 @@ function SeccionHero({ hero, onGuardado }) {
     <section className="admin-card p-5 flex flex-col gap-4">
       <h2 className="text-xl font-bold text-ink">🏠 Portada (Inicio)</h2>
       <p className="text-sm text-ink-muted -mt-2">La franja principal que se ve primero al entrar al sitio.</p>
+
+      <div className="relative h-40 rounded-control overflow-hidden border border-carbon-border bg-carbon">
+        {form.tipoMedia === "video" && form.video ? (
+          <video src={form.video} className="w-full h-full object-cover" muted loop autoPlay playsInline />
+        ) : (
+          <img src={form.imagen} alt="Fondo de la portada" className="w-full h-full object-cover" />
+        )}
+      </div>
+
+      <Campo label="Tipo de fondo">
+        <div className="flex gap-2">
+          {[
+            { valor: "foto", label: "Foto" },
+            { valor: "video", label: "Video" },
+          ].map((o) => (
+            <button
+              key={o.valor}
+              type="button"
+              onClick={() => cambiar("tipoMedia", o.valor)}
+              className={[
+                "flex-1 min-h-tap rounded-control border-2 text-sm font-semibold transition-all duration-150",
+                (form.tipoMedia ?? "foto") === o.valor
+                  ? "border-gold bg-gold/10 text-ink"
+                  : "border-carbon-border text-ink-muted hover:border-carbon-border/60",
+              ].join(" ")}
+            >
+              {o.label}
+            </button>
+          ))}
+        </div>
+      </Campo>
+
+      {form.tipoMedia === "video" ? (
+        <Campo label={`Video (máximo ${LIMITE_VIDEO_MB}MB, se repite solo sin sonido)`}>
+          <label className="btn-admin-secondary text-sm w-fit cursor-pointer">
+            {subiendoVideo ? "Subiendo…" : form.video ? "Cambiar video" : "Subir video"}
+            <input type="file" accept="video/*" className="hidden" onChange={handleSubirVideo} />
+          </label>
+        </Campo>
+      ) : (
+        <Campo label="Foto de fondo">
+          <label className="btn-admin-secondary text-sm w-fit cursor-pointer">
+            Cambiar foto
+            <input type="file" accept="image/*,.heic,.heif" className="hidden" onChange={elegirFoto} />
+          </label>
+          {pendiente && (
+            <RecortadorContenido
+              archivo={pendiente}
+              aspectoInicial={16 / 9}
+              onCancelar={() => setPendiente(null)}
+              onListo={fotoRecortadaLista}
+            />
+          )}
+        </Campo>
+      )}
 
       <Campo label="Etiqueta pequeña">
         <input
@@ -226,26 +329,33 @@ function SeccionSede({ sede, onGuardado }) {
   const [subiendoVideo, setSubiendoVideo] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [mensaje, setMensaje] = useState(null);
+  const [colaFotos, setColaFotos] = useState([]);
 
   function cambiar(campo, valor) {
     setForm((f) => ({ ...f, [campo]: valor }));
   }
 
-  async function handleAgregarFotos(e) {
+  function elegirFotos(e) {
     const files = Array.from(e.target.files || []);
+    e.target.value = "";
     if (files.length === 0) return;
+    setColaFotos((c) => [...c, ...files]);
+  }
+
+  async function fotoRecortadaLista(blob) {
     setSubiendo(true);
     setMensaje(null);
     try {
-      const urls = await Promise.all(files.map((file) => subirImagenContenido(file)));
+      const url = await subirBlobContenido(blob);
       setForm((f) => {
-        const imagenes = [...(f.imagenes ?? []), ...urls];
+        const imagenes = [...(f.imagenes ?? []), url];
         return { ...f, imagenes, imagen: imagenes[0] ?? f.imagen };
       });
     } catch (err) {
       setMensaje(`Error al subir la foto: ${err.message}`);
     } finally {
       setSubiendo(false);
+      setColaFotos((c) => c.slice(1));
     }
   }
 
@@ -319,7 +429,6 @@ function SeccionSede({ sede, onGuardado }) {
             tipoMedia={form.tipoMedia}
             alto={ALTOS_BLOQUE[form.alto] ?? ALTOS_BLOQUE.grande}
             ajuste={form.ajusteImagen === "contain" ? "object-contain bg-carbon" : "object-cover"}
-            enfoque={form.enfoque}
             alt="Fachada de Muebles Zulia"
           />
           <div className="relative -mt-10 sm:-mt-14 glass p-5">
@@ -390,9 +499,17 @@ function SeccionSede({ sede, onGuardado }) {
               ))}
               <label className="h-24 rounded-control border-2 border-dashed border-carbon-border flex items-center justify-center text-ink-muted text-sm cursor-pointer hover:border-gold hover:text-ink transition-colors">
                 {subiendo ? "Subiendo…" : "+ Añadir"}
-                <input type="file" accept="image/*,.heic,.heif" multiple className="hidden" onChange={handleAgregarFotos} />
+                <input type="file" accept="image/*,.heic,.heif" multiple className="hidden" onChange={elegirFotos} />
               </label>
             </div>
+            {colaFotos.length > 0 && (
+              <RecortadorContenido
+                archivo={colaFotos[0]}
+                aspectoInicial={16 / 9}
+                onCancelar={() => setColaFotos((c) => c.slice(1))}
+                onListo={fotoRecortadaLista}
+              />
+            )}
             {form.tipoMedia !== "diapositiva" && imagenes.length > 1 && (
               <p className="text-xs text-ink-muted">Solo se usa la primera foto en modo "Foto fija" — cambia a "Varias fotos" para que pasen todas.</p>
             )}
@@ -407,15 +524,9 @@ function SeccionSede({ sede, onGuardado }) {
       <Campo label="Ajuste de la foto/video">
         <SelectorAjuste valor={form.ajusteImagen} onCambiar={(v) => cambiar("ajusteImagen", v)} />
       </Campo>
-
-      <Campo label="Encuadre (qué parte se prioriza)">
-        <SelectorEnfoque
-          valor={form.enfoque}
-          onCambiar={(v) => cambiar("enfoque", v)}
-          mediaUrl={form.tipoMedia === "video" ? form.video : imagenes[0] ?? form.imagen}
-          esVideo={form.tipoMedia === "video"}
-        />
-      </Campo>
+      <p className="text-xs text-ink-muted -mt-2">
+        El encuadre (qué parte de la foto se ve) ya se ajusta al recortarla arriba, con el recuadro de "Encuadra tu foto".
+      </p>
 
       <Campo label="Dirección (usada también en el mapa de Google)">
         <input
@@ -496,45 +607,121 @@ function SeccionSede({ sede, onGuardado }) {
 
 
 /**
- * Cuadrícula de 9 puntos sobre una vista chica de la foto/video: el
- * admin toca el punto que SIEMPRE quiere que se vea, y ese punto se
- * usa como centro del recorte automático (object-position) sin
- * importar el tamaño de pantalla — así nunca se corta lo importante
- * ni queda "a medias".
+ * Ventana de recorte para fotos de "Contenido del Sitio" — el mismo tipo
+ * de herramienta que ya usa el formulario de productos (arrastrar para
+ * mover, deslizar para acercar/alejar), solo que aquí el admin también
+ * elige la proporción del marco (ancho, vertical o cuadrado) según para
+ * qué es la foto. Al confirmar, devuelve el recorte YA optimizado
+ * (liviano, en WebP) listo para subir.
  */
-function SelectorEnfoque({ valor, onCambiar, mediaUrl, esVideo }) {
-  const actual = valor || "50% 50%";
-  const puntos = ["0% 0%", "50% 0%", "100% 0%", "0% 50%", "50% 50%", "100% 50%", "0% 100%", "50% 100%", "100% 100%"];
+function RecortadorContenido({ archivo, aspectoInicial = 16 / 9, onCancelar, onListo }) {
+  const [archivoListo, setArchivoListo] = useState(null);
+  const [urlOriginal, setUrlOriginal] = useState(null);
+  const [error, setError] = useState(null);
+  const [aspecto, setAspecto] = useState(aspectoInicial);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [areaPixeles, setAreaPixeles] = useState(null);
+  const [procesando, setProcesando] = useState(false);
+
+  useEffect(() => {
+    let activo = true;
+    let url;
+    convertirSiEsHeic(archivo)
+      .then((listo) => {
+        if (!activo) return;
+        url = URL.createObjectURL(listo);
+        setArchivoListo(listo);
+        setUrlOriginal(url);
+      })
+      .catch((err) => activo && setError(err.message));
+    return () => {
+      activo = false;
+      if (url) URL.revokeObjectURL(url);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [archivo]);
+
+  async function confirmar() {
+    if (!urlOriginal) return;
+    setProcesando(true);
+    setError(null);
+    try {
+      const recorte = areaPixeles ? await getCroppedImageBlob(urlOriginal, areaPixeles) : archivoListo;
+      const listo = await optimizarBlob(recorte);
+      onListo(listo);
+    } catch (err) {
+      setError(`No se pudo recortar la foto: ${err.message}`);
+    } finally {
+      setProcesando(false);
+    }
+  }
 
   return (
-    <div className="flex flex-col gap-1.5">
-      <div className="relative w-full h-28 rounded-control overflow-hidden border border-carbon-border bg-carbon">
-        {mediaUrl ? (
-          esVideo ? (
-            <video src={mediaUrl} className="w-full h-full object-cover" style={{ objectPosition: actual }} muted loop autoPlay playsInline />
-          ) : (
-            <img src={mediaUrl} alt="" className="w-full h-full object-cover" style={{ objectPosition: actual }} />
-          )
-        ) : (
-          <span className="absolute inset-0 flex items-center justify-center text-ink-muted text-xs">Sube una foto/video primero</span>
-        )}
-        <div className="absolute inset-0 grid grid-cols-3 grid-rows-3">
-          {puntos.map((p) => (
+    <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+      <div className="bg-carbon-light rounded-card border border-carbon-border max-w-lg w-full p-4 flex flex-col gap-3">
+        <p className="text-ink font-bold">Encuadra tu foto</p>
+        <p className="text-xs text-ink-muted -mt-2">Arrastra para moverla y usa el control de abajo para acercar o alejar.</p>
+
+        <div className="flex gap-2">
+          {[
+            { label: "Ancho", valor: 16 / 9 },
+            { label: "Vertical", valor: 4 / 5 },
+            { label: "Cuadrado", valor: 1 },
+          ].map((o) => (
             <button
-              key={p}
+              key={o.label}
               type="button"
-              onClick={() => onCambiar(p)}
-              className="flex items-center justify-center hover:bg-white/10 transition-colors"
-              aria-label={`Enfocar ${p}`}
+              onClick={() => setAspecto(o.valor)}
+              className={[
+                "flex-1 min-h-tap rounded-control border-2 text-sm font-semibold transition-all duration-150",
+                aspecto === o.valor ? "border-gold bg-gold/10 text-ink" : "border-carbon-border text-ink-muted hover:border-carbon-border/60",
+              ].join(" ")}
             >
-              <span className={`w-3 h-3 rounded-full border-2 ${actual === p ? "bg-gold border-gold" : "bg-black/20 border-white/70"}`} />
+              {o.label}
             </button>
           ))}
         </div>
+
+        <div className="relative w-full h-64 bg-black rounded-control overflow-hidden">
+          {urlOriginal ? (
+            <Cropper
+              image={urlOriginal}
+              crop={crop}
+              zoom={zoom}
+              aspect={aspecto}
+              onCropChange={setCrop}
+              onZoomChange={setZoom}
+              onCropComplete={(_area, areaPx) => setAreaPixeles(areaPx)}
+              objectFit="contain"
+            />
+          ) : (
+            <p className="absolute inset-0 flex items-center justify-center text-ink-muted text-sm">Cargando…</p>
+          )}
+        </div>
+
+        <label className="text-sm font-semibold text-ink flex flex-col gap-1">
+          Zoom ({Math.round(zoom * 100)}%)
+          <input
+            type="range"
+            min={1}
+            max={3}
+            step={0.01}
+            value={zoom}
+            onChange={(e) => setZoom(Number(e.target.value))}
+            className="w-full accent-gold h-6"
+          />
+        </label>
+
+        {error && <p className="text-terracota text-sm">{error}</p>}
+
+        <div className="flex gap-2 justify-end pt-1">
+          <button type="button" onClick={onCancelar} className="btn-admin-secondary text-sm">Cancelar</button>
+          <button type="button" onClick={confirmar} disabled={procesando || !urlOriginal} className="btn-admin-primary text-sm">
+            {procesando ? "Procesando…" : "Usar esta foto"}
+          </button>
+        </div>
       </div>
-      <p className="text-xs text-ink-muted">
-        Toca el punto de la foto que siempre quieres que se vea — así se ajusta solo en cualquier pantalla, sin cortar lo importante.
-      </p>
     </div>
   );
 }
@@ -1011,33 +1198,36 @@ function SeccionBloques({ contenidoKey, titulo, descripcion, bloques, onGuardado
 /** Formulario de UN bloque — los campos que muestra dependen de `bloque.tipo`. */
 function EditorBloque({ bloque, onCambiar }) {
   const [subiendo, setSubiendo] = useState(false);
+  const [pendiente, setPendiente] = useState(null); // { modo: "unica" | "multiple", file }
 
-  async function subirUnica(e) {
+  function elegirUnica(e) {
     const file = e.target.files?.[0];
+    e.target.value = "";
     if (!file) return;
-    setSubiendo(true);
-    try {
-      const url = await subirImagenContenido(file);
-      onCambiar({ imagenes: [url] });
-    } catch (err) {
-      alert(`No se pudo subir la foto: ${err.message}`);
-    } finally {
-      setSubiendo(false);
-    }
+    setPendiente({ modo: "unica", file });
   }
 
-  async function agregarMultiple(e) {
+  function elegirMultiple(e) {
     const file = e.target.files?.[0];
-    if (!file) return;
     e.target.value = "";
+    if (!file) return;
+    setPendiente({ modo: "multiple", file });
+  }
+
+  async function fotoRecortadaLista(blob) {
     setSubiendo(true);
     try {
-      const url = await subirImagenContenido(file);
-      onCambiar({ imagenes: [...(bloque.imagenes ?? []), url] });
+      const url = await subirBlobContenido(blob);
+      if (pendiente?.modo === "unica") {
+        onCambiar({ imagenes: [url] });
+      } else {
+        onCambiar({ imagenes: [...(bloque.imagenes ?? []), url] });
+      }
     } catch (err) {
       alert(`No se pudo subir la foto: ${err.message}`);
     } finally {
       setSubiendo(false);
+      setPendiente(null);
     }
   }
 
@@ -1076,6 +1266,15 @@ function EditorBloque({ bloque, onCambiar }) {
         </p>
         <BloqueContenido bloque={bloque} />
       </div>
+
+      {pendiente && (
+        <RecortadorContenido
+          archivo={pendiente.file}
+          aspectoInicial={bloque.tipo === "banner" ? 16 / 9 : 4 / 5}
+          onCancelar={() => setPendiente(null)}
+          onListo={fotoRecortadaLista}
+        />
+      )}
 
       {bloque.tipo === "banner" && (
         <Campo label="Ícono (emoji)">
@@ -1118,7 +1317,7 @@ function EditorBloque({ bloque, onCambiar }) {
             <span className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/55 text-white text-sm font-semibold opacity-0 group-hover:opacity-100 transition-all duration-200">
               {subiendo ? "Subiendo…" : bloque.imagenes?.[0] ? "Cambiar foto" : "+ Subir foto"}
             </span>
-            <input type="file" accept="image/*,.heic,.heif" className="hidden" onChange={subirUnica} />
+            <input type="file" accept="image/*,.heic,.heif" className="hidden" onChange={elegirUnica} />
           </label>
         </Campo>
       )}
@@ -1142,7 +1341,7 @@ function EditorBloque({ bloque, onCambiar }) {
               </div>
             ))}
             <label className="w-20 h-20 flex items-center justify-center rounded-control border-2 border-dashed border-carbon-border text-ink-muted text-xs text-center cursor-pointer hover:border-gold/50 hover:text-ink transition-colors duration-150">
-              <input type="file" accept="image/*,.heic,.heif" className="hidden" onChange={agregarMultiple} />
+              <input type="file" accept="image/*,.heic,.heif" className="hidden" onChange={elegirMultiple} />
               {subiendo ? "…" : "+ Foto"}
             </label>
           </div>
@@ -1180,16 +1379,6 @@ function EditorBloque({ bloque, onCambiar }) {
           <Campo label="Ajuste de la foto/video">
             <SelectorAjuste valor={bloque.ajusteImagen} onCambiar={(v) => onCambiar({ ajusteImagen: v })} />
           </Campo>
-          {bloque.tipo !== "collage" && (
-            <Campo label="Encuadre (qué parte se prioriza)">
-              <SelectorEnfoque
-                valor={bloque.enfoque}
-                onCambiar={(v) => onCambiar({ enfoque: v })}
-                mediaUrl={bloque.tipo === "video" ? bloque.video : bloque.imagenes?.[0]}
-                esVideo={bloque.tipo === "video"}
-              />
-            </Campo>
-          )}
           <Interruptor
             valor={bloque.vidrioSiempre ?? true}
             onCambiar={(v) => onCambiar({ vidrioSiempre: v })}
@@ -1232,8 +1421,8 @@ function EditorBloque({ bloque, onCambiar }) {
         </Campo>
       )}
 
-      {bloque.tipo === "galeria" && bloque.modoPresentacion && (
-        <Campo label="Color del vidrio (sobre la última foto)">
+      {bloque.tipo === "galeria" && (
+        <Campo label={bloque.modoPresentacion ? "Color del vidrio (sobre las fotos)" : "Color del vidrio (debajo de las fotos)"}>
           <SelectorTinte valor={bloque.tinte} onCambiar={(v) => onCambiar({ tinte: v })} />
         </Campo>
       )}

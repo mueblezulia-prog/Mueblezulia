@@ -66,7 +66,14 @@ export default function BloqueContenido({ bloque }) {
             />
           ))}
         </div>
-        {bloque.texto && <p className="text-ink-muted text-center mt-4">{bloque.texto}</p>}
+        {/* El texto va en su propia tarjeta de vidrio, DEBAJO de las
+            fotos (nunca encima) — así nunca tapa la cuadrícula, pero
+            se ve igual de premium que el resto de los bloques. */}
+        {bloque.texto && (
+          <div className={`mt-4 rounded-card p-4 sm:p-5 ${CLASE_TINTE[bloque.tinte] ?? CLASE_TINTE.dorado}`}>
+            <p className="text-ink/90 text-sm sm:text-base leading-snug whitespace-pre-line">{bloque.texto}</p>
+          </div>
+        )}
       </section>
     );
   }

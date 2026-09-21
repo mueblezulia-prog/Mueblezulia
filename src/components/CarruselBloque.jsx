@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 
 export const CLASE_TINTE = {
-  dorado: "glass-gold",
-  blanco: "glass",
-  oscuro: "glass-dark",
+  dorado: "glass-caption-gold",
+  blanco: "glass-caption",
+  oscuro: "glass-caption-dark",
 };
 
 /**

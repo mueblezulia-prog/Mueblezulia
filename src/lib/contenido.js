@@ -14,6 +14,9 @@ export const CONTENIDO_DEFAULT = {
     etiqueta: "Calidad · Tradición · Confort",
     titulo: "La Mueblería de la Familia Zuliana",
     subtitulo: "Llevando confort a los hogares del Zulia",
+    imagen: "/assets/fachada.jpg",
+    video: "",
+    tipoMedia: "foto", // "foto" | "video"
   },
   nuestra_sede: {
     imagen: "/assets/ubicacion.jpg", // se mantiene por compatibilidad (fondo de los banners); la foto/video real que se ve ahora sale de "imagenes"/"video" de abajo
@@ -102,9 +105,9 @@ export const CONTENIDO_DEFAULT = {
 
 /** Tamaños de imagen disponibles al armar un bloque (alto del marco). */
 export const ALTOS_BLOQUE = {
-  pequeno: "h-48",
-  mediano: "h-72",
-  grande: "h-96",
+  pequeno: "h-64",
+  mediano: "h-80",
+  grande: "h-[28rem]",
   completo: "h-[70vh] sm:h-[85vh]",
 };
 

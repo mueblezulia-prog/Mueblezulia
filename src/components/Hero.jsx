@@ -16,14 +16,25 @@ export default function Hero() {
 
   return (
     <div className="relative overflow-hidden">
-      <div
-        className="absolute inset-0"
-        style={{
-          backgroundImage: "url(/assets/fachada.jpg)",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
-      />
+      {datos.tipoMedia === "video" && datos.video ? (
+        <video
+          src={datos.video}
+          className="absolute inset-0 w-full h-full object-cover"
+          autoPlay
+          muted
+          loop
+          playsInline
+        />
+      ) : (
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `url(${datos.imagen || "/assets/fachada.jpg"})`,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+          }}
+        />
+      )}
       {/* Overlay oscuro para que el texto blanco siempre se lea bien,
           sin importar qué tan clara sea la foto de fondo. */}
       <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/70 to-carbon" />
