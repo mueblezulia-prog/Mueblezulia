@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { prepararImagen } from "../lib/imagenOptimizada";
+import EditorTiraTela from "./EditorTiraTela";
 
 const BUCKET = "productos";
 
@@ -28,6 +29,11 @@ export default function AdminTelas() {
 
   const [nuevaFamiliaNombre, setNuevaFamiliaNombre] = useState("");
   const [creandoFamilia, setCreandoFamilia] = useState(false);
+
+  // Editor de "foto de tira de colores": recorta/gira una sola foto con
+  // varias franjas de color y crea todos esos colores de una vez.
+  const [tiraFamilia, setTiraFamilia] = useState(null);
+  const [tiraArchivo, setTiraArchivo] = useState(null);
 
   async function cargar() {
     setCargando(true);
@@ -190,6 +196,20 @@ export default function AdminTelas() {
     setFamilias((actual) => actual.filter((f) => f.id !== familia.id));
   }
 
+  function abrirEditorTira(familia, file) {
+    setTiraFamilia(familia);
+    setTiraArchivo(file);
+  }
+
+  function cerrarEditorTira() {
+    setTiraFamilia(null);
+    setTiraArchivo(null);
+  }
+
+  function coloresCreadosDesdeTira(nuevasFilas) {
+    setTelas((actual) => [...actual, ...nuevasFilas]);
+  }
+
   const telasSinFamilia = telas.filter((t) => !t.familia_id);
 
   return (
@@ -225,6 +245,7 @@ export default function AdminTelas() {
               onSubirFoto={subirFoto}
               onQuitarFoto={quitarFoto}
               subiendoId={subiendoId}
+              onSubirTira={(file) => abrirEditorTira(familia, file)}
             />
           ))}
 
@@ -285,6 +306,17 @@ export default function AdminTelas() {
           {creandoFamilia ? "Creando…" : "+ Agregar familia de tela"}
         </button>
       </form>
+
+      {tiraFamilia && tiraArchivo && (
+        <EditorTiraTela
+          key={tiraFamilia.id}
+          archivo={tiraArchivo}
+          familia={tiraFamilia}
+          ordenInicial={telas.filter((t) => t.familia_id === tiraFamilia.id).length}
+          onCerrar={cerrarEditorTira}
+          onColoresCreados={coloresCreadosDesdeTira}
+        />
+      )}
     </div>
   );
 }
@@ -303,7 +335,14 @@ function FamiliaCard({
   onAgregarColor,
   onSubirFoto,
   onQuitarFoto,
+  onSubirTira,
 }) {
+  function handleArchivoTira(e) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (file) onSubirTira(file);
+  }
+
   return (
     <div className="bg-carbon-light border border-carbon-border rounded-card p-4 flex flex-col gap-3">
       <div className="flex flex-wrap items-start justify-between gap-2">
@@ -348,13 +387,24 @@ function FamiliaCard({
             onQuitarFoto={() => onQuitarFoto(tela)}
           />
         ))}
-        <button
-          type="button"
-          onClick={onAgregarColor}
-          className="min-h-tap px-4 rounded-control border-2 border-dashed border-carbon-border text-gold font-bold text-sm self-start"
-        >
-          + Agregar color
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={onAgregarColor}
+            className="min-h-tap px-4 rounded-control border-2 border-dashed border-carbon-border text-gold font-bold text-sm self-start"
+          >
+            + Agregar color
+          </button>
+
+          <label className="min-h-tap px-4 rounded-control border-2 border-dashed border-gold/50 text-gold font-bold text-sm self-start cursor-pointer flex items-center">
+            📷 Subir foto de tira de colores
+            <input type="file" accept="image/*,.heic,.heif" onChange={handleArchivoTira} className="hidden" />
+          </label>
+        </div>
+        <p className="text-xs text-ink-muted -mt-1">
+          ¿Tienes una foto con varias franjas de color seguidas (como vienen las muestras de tela)? Súbela una sola vez arriba y
+          marca cada color sobre la misma foto — no hace falta subir una foto por color.
+        </p>
       </div>
     </div>
   );
