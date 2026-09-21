@@ -51,7 +51,7 @@ export default function Home() {
         <div className="mb-5">
           <SectionBanner titulo="Nuestra Sede" icono="/assets/icons/ubicacion.png" imagenFondo={sede.imagen} tinte="dorado" />
         </div>
-        <Reveal className="px-4 glass rounded-card overflow-hidden grid sm:grid-cols-2" delay={80}>
+        <Reveal className="px-4 glass border-0 rounded-card overflow-hidden grid sm:grid-cols-2" delay={80}>
           <FondoMultimedia
             imagenes={sede.tipoMedia === "diapositiva" ? sede.imagenes ?? [] : [sede.imagenes?.[0] ?? sede.imagen]}
             video={sede.video}
@@ -82,7 +82,7 @@ export default function Home() {
         <div className="mb-5">
           <SectionBanner titulo="Excelencia en Manufactura" icono="/assets/icons/fabricacion.png" imagenFondo="/assets/carpinteria.jpg" tinte="oscuro" />
         </div>
-        <Reveal className="px-4 glass rounded-card overflow-hidden grid sm:grid-cols-2" delay={80}>
+        <Reveal className="px-4 glass border-0 rounded-card overflow-hidden grid sm:grid-cols-2" delay={80}>
           <img
             src={fotoFabricacion}
             alt="Taller de carpintería de Muebles Zulia"

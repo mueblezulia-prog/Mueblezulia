@@ -1156,6 +1156,35 @@ function SelectorColorTexto({ valor, onCambiar }) {
   );
 }
 
+/** Elegir cómo se acomodan las fotos de un bloque tipo "Collage". */
+function SelectorEstiloCollage({ valor, onCambiar }) {
+  const opciones = [
+    { valor: "cuadricula", label: "Cuadrícula", ayuda: "la primera foto más grande, prolijo y parejo" },
+    { valor: "mosaico", label: "Mosaico inclinado", ayuda: "fotos superpuestas con inclinación, estilo Pinterest" },
+    { valor: "tarjetas", label: "Tarjetas", ayuda: "cada foto en su propia tarjeta, en fila" },
+  ];
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+      {opciones.map((o) => (
+        <button
+          key={o.valor}
+          type="button"
+          onClick={() => onCambiar(o.valor)}
+          className={[
+            "text-left min-h-tap px-3 py-2 rounded-control border-2 transition-all duration-150",
+            (valor ?? "cuadricula") === o.valor
+              ? "border-gold bg-gold/10 text-ink"
+              : "border-carbon-border text-ink-muted hover:border-carbon-border/60",
+          ].join(" ")}
+        >
+          <span className="block text-sm font-semibold">{o.label}</span>
+          <span className="block text-xs text-ink-muted mt-0.5">{o.ayuda}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
 /** Elegir cómo aparece el ícono del banner (animación). */
 function SelectorAnimacionIcono({ valor, onCambiar }) {
   const opciones = [
@@ -1246,6 +1275,10 @@ function bloqueVacio(tipo) {
     colorTexto: "blanco",
     posicionImagen: "izquierda",
     modoPresentacion: false,
+    // Solo aplica a tipo "collage": cómo se acomodan las fotos entre sí
+    // (ver SelectorEstiloCollage). "cuadricula" es el acomodo clásico que
+    // ya existía.
+    estiloCollage: "cuadricula",
     // El efecto vidrio (difuminado + transparencia) ahora está disponible
     // en cualquier tipo de sección, no solo en el banner — por defecto
     // viene activado porque es lo que se ve más profesional.
@@ -1653,9 +1686,24 @@ function EditorBloque({ bloque, onCambiar }) {
           {bloque.tipo === "imagen_texto" && (bloque.imagenes?.length ?? 0) === 0 && (
             <p className="text-xs text-ink-muted mt-1">Con 1 foto se ve fija; con 2 o más, pasan solas como diapositiva.</p>
           )}
-          {bloque.tipo === "collage" && (
+          {bloque.tipo === "collage" && (bloque.estiloCollage ?? "cuadricula") === "cuadricula" && (
             <p className="text-xs text-ink-muted mt-1">Se ve mejor con 3 fotos (la primera queda más grande). Si subes más de 3, solo se usan las primeras 3.</p>
           )}
+          {bloque.tipo === "collage" && (bloque.estiloCollage ?? "cuadricula") === "mosaico" && (
+            <p className="text-xs text-ink-muted mt-1">Se ve mejor con 3 a 5 fotos, superpuestas con una leve inclinación.</p>
+          )}
+          {bloque.tipo === "collage" && (bloque.estiloCollage ?? "cuadricula") === "tarjetas" && (
+            <p className="text-xs text-ink-muted mt-1">Cada foto queda en su propia tarjeta, en fila — se ve bien con 2 a 4 fotos.</p>
+          )}
+        </Campo>
+      )}
+
+      {bloque.tipo === "collage" && (
+        <Campo label="Forma de acomodar las fotos">
+          <SelectorEstiloCollage
+            valor={bloque.estiloCollage}
+            onCambiar={(v) => onCambiar({ estiloCollage: v })}
+          />
         </Campo>
       )}
 

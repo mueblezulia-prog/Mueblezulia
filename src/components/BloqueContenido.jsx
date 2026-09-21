@@ -127,25 +127,78 @@ export default function BloqueContenido({ bloque }) {
   }
 
   if (bloque.tipo === "collage") {
-    // Cuadrícula que llena todo el marco (2 a 4 fotos): la primera ocupa
-    // el doble de espacio para que no se vea parejo y aburrido. El texto
-    // va DEBAJO de la cuadrícula, en su propio bloque de vidrio — nunca
-    // encima tapando las fotos.
+    // Tres formas de acomodar las mismas fotos (ver SelectorEstiloCollage
+    // en el admin) — el texto SIEMPRE va debajo, en su propio bloque de
+    // vidrio, nunca encima tapando las fotos, sea cual sea la forma.
+    const estiloCollage = bloque.estiloCollage ?? "cuadricula";
+    let cuerpoFotos;
+
+    if (estiloCollage === "mosaico") {
+      // Mosaico inclinado (estilo Pinterest): fotos superpuestas, cada
+      // una con su propio marco blanco tipo polaroid y una leve
+      // inclinación alternada — se ve bien con 3 a 5 fotos.
+      const rotaciones = ["-rotate-6", "rotate-3", "-rotate-2", "rotate-6", "-rotate-3"];
+      cuerpoFotos = (
+        <div className="flex flex-wrap justify-center items-end gap-y-8 px-6 sm:px-10 py-10">
+          {imagenes.slice(0, 5).map((url, i) => (
+            <img
+              key={url + i}
+              src={url}
+              alt={bloque.titulo || `Foto ${i + 1}`}
+              className={`w-28 h-36 sm:w-36 sm:h-48 object-cover rounded-md border-[6px] border-white shadow-xl bg-white transition-transform duration-200 hover:scale-105 hover:rotate-0 hover:z-20 ${
+                rotaciones[i % rotaciones.length]
+              } ${i > 0 ? "-ml-8 sm:-ml-12" : ""}`}
+              style={{ zIndex: i }}
+            />
+          ))}
+        </div>
+      );
+    } else if (estiloCollage === "tarjetas") {
+      // Tarjetas: cada foto en su propio recuadro separado (con borde y
+      // sombra propios), en fila — se ve bien con 2 a 4 fotos.
+      const fotosMostradas = imagenes.slice(0, 4);
+      cuerpoFotos = (
+        <div className={`grid gap-3 p-3 ${fotosMostradas.length > 2 ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-2"}`}>
+          {fotosMostradas.map((url, i) => (
+            <img
+              key={url + i}
+              src={url}
+              alt={bloque.titulo || `Foto ${i + 1}`}
+              style={estiloAspecto}
+              className={`w-full ${alto} ${ajuste} rounded-card border border-carbon-border shadow-md shadow-black/20`}
+            />
+          ))}
+        </div>
+      );
+    } else {
+      // Cuadrícula (el acomodo clásico, de siempre): llena todo el marco,
+      // la primera foto ocupa el doble de espacio para que no se vea
+      // parejo y aburrido.
+      cuerpoFotos = (
+        <div className={`relative w-full ${alto} grid grid-cols-2 grid-rows-2 gap-1.5`} style={estiloAspecto}>
+          {imagenes.slice(0, 3).map((url, i) => (
+            <img
+              key={url + i}
+              src={url}
+              alt={bloque.titulo || `Foto ${i + 1}`}
+              className={`w-full h-full ${ajuste} ${i === 0 && imagenes.length > 1 ? "row-span-2" : ""}`}
+            />
+          ))}
+        </div>
+      );
+    }
+
+    // El mosaico inclinado necesita "respirar" (las fotos giradas y su
+    // sombra no deben cortarse contra un borde recto) — por eso, solo
+    // para ese estilo, la tarjeta no lleva marco propio ni recorta lo
+    // que se sale del cuadro.
+    const esMosaico = estiloCollage === "mosaico";
     return (
       <section className="px-4 py-8 max-w-5xl mx-auto">
-        <div className="w-full rounded-card overflow-hidden border border-carbon-border flex flex-col">
-          <div className={`relative w-full ${alto} grid grid-cols-2 grid-rows-2 gap-1.5`} style={estiloAspecto}>
-            {imagenes.slice(0, 3).map((url, i) => (
-              <img
-                key={url + i}
-                src={url}
-                alt={bloque.titulo || `Foto ${i + 1}`}
-                className={`w-full h-full ${ajuste} ${i === 0 && imagenes.length > 1 ? "row-span-2" : ""}`}
-              />
-            ))}
-          </div>
+        <div className={esMosaico ? "w-full flex flex-col" : "w-full rounded-card overflow-hidden border border-carbon-border flex flex-col"}>
+          {cuerpoFotos}
           {(bloque.vidrioSiempre ?? true) && (bloque.titulo || bloque.texto) && (
-            <div className={`relative overflow-hidden ${CLASE_TINTE[bloque.tinte] ?? CLASE_TINTE.dorado}`}>
+            <div className={`relative overflow-hidden ${esMosaico ? "rounded-card" : ""} ${CLASE_TINTE[bloque.tinte] ?? CLASE_TINTE.dorado}`}>
               {imagenes[0] && (
                 <div
                   className="absolute inset-0 bg-cover bg-center scale-125 blur-xl opacity-60"
@@ -191,7 +244,7 @@ export default function BloqueContenido({ bloque }) {
   const imagenDerecha = bloque.posicionImagen === "derecha";
   return (
     <section className="px-4 py-8 max-w-5xl mx-auto">
-      <div className="glass rounded-card overflow-hidden grid sm:grid-cols-2">
+      <div className="glass border-0 rounded-card overflow-hidden grid sm:grid-cols-2">
         <img
           src={imagenes[0]}
           alt={bloque.titulo || "Foto"}
