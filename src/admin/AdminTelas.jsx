@@ -26,6 +26,7 @@ export default function AdminTelas() {
   const [error, setError] = useState(null);
   const [guardandoId, setGuardandoId] = useState(null);
   const [subiendoId, setSubiendoId] = useState(null);
+  const [guardandoFamiliaId, setGuardandoFamiliaId] = useState(null);
 
   const [nuevaFamiliaNombre, setNuevaFamiliaNombre] = useState("");
   const [creandoFamilia, setCreandoFamilia] = useState(false);
@@ -196,6 +197,17 @@ export default function AdminTelas() {
     setFamilias((actual) => actual.filter((f) => f.id !== familia.id));
   }
 
+  // Guarda de una sola vez el nombre y el color/hex de TODOS los colores
+  // de una familia (ya no hay un botón "Guardar" por cada fila suelta).
+  async function guardarTodosLosColores(familiaId) {
+    const filas = telas.filter((t) => t.familia_id === familiaId);
+    if (filas.length === 0) return;
+    setGuardandoFamiliaId(familiaId);
+    const { error } = await supabase.from("telas").upsert(filas);
+    setGuardandoFamiliaId(null);
+    if (error) alert(`No se pudo guardar: ${error.message}`);
+  }
+
   function abrirEditorTira(familia, file) {
     setTiraFamilia(familia);
     setTiraArchivo(file);
@@ -234,18 +246,18 @@ export default function AdminTelas() {
               key={familia.id}
               familia={familia}
               colores={telas.filter((t) => t.familia_id === familia.id)}
-              guardandoId={guardandoId}
+              subiendoId={subiendoId}
               onCambiarFamilia={(cambios) => actualizarFamiliaLocal(familia.id, cambios)}
               onGuardarFamilia={() => guardarFamilia(familia)}
               onBorrarFamilia={() => borrarFamilia(familia)}
               onCambiarColor={actualizarLocal}
-              onGuardarColor={guardarFila}
               onBorrarColor={borrarColor}
               onAgregarColor={() => agregarColor(familia.id)}
               onSubirFoto={subirFoto}
               onQuitarFoto={quitarFoto}
-              subiendoId={subiendoId}
               onSubirTira={(file) => abrirEditorTira(familia, file)}
+              onGuardarTodosColores={() => guardarTodosLosColores(familia.id)}
+              guardandoTodos={guardandoFamiliaId === familia.id}
             />
           ))}
 
@@ -324,18 +336,18 @@ export default function AdminTelas() {
 function FamiliaCard({
   familia,
   colores,
-  guardandoId,
   subiendoId,
   onCambiarFamilia,
   onGuardarFamilia,
   onBorrarFamilia,
   onCambiarColor,
-  onGuardarColor,
   onBorrarColor,
   onAgregarColor,
   onSubirFoto,
   onQuitarFoto,
   onSubirTira,
+  onGuardarTodosColores,
+  guardandoTodos,
 }) {
   function handleArchivoTira(e) {
     const file = e.target.files?.[0];
@@ -378,15 +390,25 @@ function FamiliaCard({
           <FilaColor
             key={tela.id}
             tela={tela}
-            guardando={guardandoId === tela.id}
             subiendo={subiendoId === tela.id}
             onCambiar={(cambios) => onCambiarColor(tela.id, cambios)}
-            onGuardar={() => onGuardarColor(tela)}
             onBorrar={() => onBorrarColor(tela)}
             onSubirFoto={(file) => onSubirFoto(tela, file)}
             onQuitarFoto={() => onQuitarFoto(tela)}
           />
         ))}
+
+        {colores.length > 0 && (
+          <button
+            type="button"
+            onClick={onGuardarTodosColores}
+            disabled={guardandoTodos}
+            className="min-h-tap px-4 rounded-control bg-gold text-carbon font-bold text-sm self-start disabled:opacity-60"
+          >
+            {guardandoTodos ? "Guardando…" : "💾 Guardar todos los colores de esta familia"}
+          </button>
+        )}
+
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
@@ -402,8 +424,9 @@ function FamiliaCard({
           </label>
         </div>
         <p className="text-xs text-ink-muted -mt-1">
-          ¿Tienes una foto con varias franjas de color seguidas (como vienen las muestras de tela)? Súbela una sola vez arriba y
-          marca cada color sobre la misma foto — no hace falta subir una foto por color.
+          Cambia el nombre y el color de cualquier fila y toca "Guardar todos los colores de esta familia" una sola vez al final —
+          no hace falta guardar fila por fila. ¿Tienes una foto con varias franjas de color seguidas (como vienen las muestras de
+          tela)? Súbela con "📷 Subir foto de tira de colores" y marca cada color sobre la misma foto.
         </p>
       </div>
     </div>
@@ -418,6 +441,10 @@ function FamiliaCard({
  * familia asignarlo).
  */
 function FilaColor({ tela, guardando, subiendo, onCambiar, onGuardar, onBorrar, onSubirFoto, onQuitarFoto, extra }) {
+  // onGuardar solo se pasa en "Sin familia" (donde no hay un botón de
+  // guardado general): ahí cada fila mantiene su propio "Guardar". Dentro
+  // de una familia normal, los cambios se guardan todos juntos con el
+  // botón "Guardar todos los colores de esta familia".
   function handleArchivo(e) {
     const file = e.target.files?.[0];
     e.target.value = "";
@@ -459,14 +486,16 @@ function FilaColor({ tela, guardando, subiendo, onCambiar, onGuardar, onBorrar, 
 
       {extra}
 
-      <button
-        type="button"
-        onClick={onGuardar}
-        disabled={guardando}
-        className="min-h-tap px-3 rounded-control bg-gold text-carbon font-bold text-xs disabled:opacity-60"
-      >
-        {guardando ? "…" : "Guardar"}
-      </button>
+      {onGuardar && (
+        <button
+          type="button"
+          onClick={onGuardar}
+          disabled={guardando}
+          className="min-h-tap px-3 rounded-control bg-gold text-carbon font-bold text-xs disabled:opacity-60"
+        >
+          {guardando ? "…" : "Guardar"}
+        </button>
+      )}
       <button
         type="button"
         onClick={onBorrar}

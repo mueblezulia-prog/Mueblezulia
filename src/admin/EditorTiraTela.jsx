@@ -53,11 +53,20 @@ async function voltearHorizontal(blob) {
 function dibujarRecorteCuadrado(imgEl, xPct, yPct, ladoPct, salidaPx) {
   const naturalW = imgEl.naturalWidth;
   const naturalH = imgEl.naturalHeight;
-  const lado = ladoPct * Math.min(naturalW, naturalH);
-  let sx = xPct * naturalW - lado / 2;
-  let sy = yPct * naturalH - lado / 2;
-  sx = limitar(sx, 0, Math.max(0, naturalW - lado));
-  sy = limitar(sy, 0, Math.max(0, naturalH - lado));
+  const cx = xPct * naturalW;
+  const cy = yPct * naturalH;
+  let lado = ladoPct * Math.min(naturalW, naturalH);
+  // Antes, si el pin quedaba muy cerca de un borde (por ejemplo justo
+  // debajo de la etiqueta de la tela), el cuadro de recorte se
+  // "deslizaba" para no salirse de la foto — y terminaba mostrando otra
+  // parte de la foto (la etiqueta) en vez de lo que estaba justo debajo
+  // del pin. Ahora, en ese caso, el cuadro se ACHICA lo necesario para
+  // quedar siempre perfectamente centrado en el pin, nunca desplazado.
+  const margenMax = 2 * Math.min(cx, cy, naturalW - cx, naturalH - cy);
+  if (margenMax > 0) lado = Math.min(lado, margenMax);
+  lado = Math.max(lado, 4);
+  const sx = cx - lado / 2;
+  const sy = cy - lado / 2;
   const canvas = document.createElement("canvas");
   canvas.width = salidaPx;
   canvas.height = salidaPx;
