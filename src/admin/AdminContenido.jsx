@@ -260,9 +260,9 @@ function SeccionHero({ hero, onGuardado }) {
         </Campo>
       ) : (
         <Campo label="Foto de fondo">
-          <label className="btn-admin-secondary text-sm w-fit cursor-pointer">
-            Cambiar foto
-            <input type="file" accept="image/*,.heic,.heif" className="hidden" onChange={elegirFoto} />
+          <label className={`btn-admin-secondary text-sm w-fit ${pendiente ? "pointer-events-none opacity-60" : "cursor-pointer"}`}>
+            {pendiente ? "Recortando…" : "Cambiar foto"}
+            <input type="file" accept="image/*,.heic,.heif" className="hidden" onChange={elegirFoto} disabled={!!pendiente} />
           </label>
           {pendiente && (
             <RecortadorContenido
@@ -527,9 +527,23 @@ function SeccionSede({ sede, onGuardado }) {
                   )}
                 </div>
               ))}
-              <label className="h-24 rounded-control border-2 border-dashed border-carbon-border flex items-center justify-center text-ink-muted text-sm cursor-pointer hover:border-gold hover:text-ink transition-colors">
-                {subiendo ? "Subiendo…" : "+ Añadir"}
-                <input type="file" accept="image/*,.heic,.heif" multiple className="hidden" onChange={elegirFotos} />
+              <label
+                className={[
+                  "h-24 rounded-control border-2 border-dashed flex items-center justify-center text-sm transition-colors",
+                  colaFotos.length > 0
+                    ? "border-carbon-border/50 text-ink-muted/50 pointer-events-none"
+                    : "border-carbon-border text-ink-muted cursor-pointer hover:border-gold hover:text-ink",
+                ].join(" ")}
+              >
+                {subiendo ? "Subiendo…" : colaFotos.length > 0 ? "Recortando…" : "+ Añadir"}
+                <input
+                  type="file"
+                  accept="image/*,.heic,.heif"
+                  multiple
+                  className="hidden"
+                  onChange={elegirFotos}
+                  disabled={colaFotos.length > 0}
+                />
               </label>
             </div>
             {colaFotos.length > 0 && (
@@ -1428,14 +1442,14 @@ function EditorBloque({ bloque, onCambiar }) {
       {bloque.tipo === "banner" && (
         <Campo label="Foto">
           <div className="flex flex-col gap-2">
-            <label className="relative w-full h-32 rounded-control overflow-hidden bg-carbon-light border border-carbon-border cursor-pointer group block">
+            <label className={`relative w-full h-32 rounded-control overflow-hidden bg-carbon-light border border-carbon-border block ${pendiente ? "pointer-events-none opacity-60" : "cursor-pointer group"}`}>
               {bloque.imagenes?.[0] && (
                 <img src={bloque.imagenes[0]} alt="" className="w-full h-full object-cover" />
               )}
               <span className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/55 text-white text-sm font-semibold opacity-0 group-hover:opacity-100 transition-all duration-200">
-                {subiendo ? "Subiendo…" : bloque.imagenes?.[0] ? "Cambiar foto" : "+ Subir foto"}
+                {subiendo ? "Subiendo…" : pendiente ? "Recortando…" : bloque.imagenes?.[0] ? "Cambiar foto" : "+ Subir foto"}
               </span>
-              <input type="file" accept="image/*,.heic,.heif" className="hidden" onChange={elegirUnica} />
+              <input type="file" accept="image/*,.heic,.heif" className="hidden" onChange={elegirUnica} disabled={!!pendiente} />
             </label>
             {bloque.imagenes?.[0] && (
               <button type="button" onClick={() => recortarDeNuevo(0)} className="btn-admin-secondary text-xs w-fit">
@@ -1473,9 +1487,16 @@ function EditorBloque({ bloque, onCambiar }) {
                 </div>
               </div>
             ))}
-            <label className="w-20 h-20 flex items-center justify-center rounded-control border-2 border-dashed border-carbon-border text-ink-muted text-xs text-center cursor-pointer hover:border-gold/50 hover:text-ink transition-colors duration-150">
-              <input type="file" accept="image/*,.heic,.heif" className="hidden" onChange={elegirMultiple} />
-              {subiendo ? "…" : "+ Foto"}
+            <label
+              className={[
+                "w-20 h-20 flex items-center justify-center rounded-control border-2 border-dashed text-xs text-center transition-colors duration-150",
+                pendiente
+                  ? "border-carbon-border/50 text-ink-muted/50 pointer-events-none"
+                  : "border-carbon-border text-ink-muted cursor-pointer hover:border-gold/50 hover:text-ink",
+              ].join(" ")}
+            >
+              <input type="file" accept="image/*,.heic,.heif" className="hidden" onChange={elegirMultiple} disabled={!!pendiente} />
+              {subiendo ? "…" : pendiente ? "Recortando…" : "+ Foto"}
             </label>
           </div>
           {bloque.tipo === "imagen_texto" && (bloque.imagenes?.length ?? 0) === 0 && (
