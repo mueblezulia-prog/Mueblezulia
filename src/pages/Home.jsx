@@ -89,17 +89,29 @@ export default function Home() {
             style={fabricacion.aspecto ? { aspectRatio: fabricacion.aspecto } : undefined}
             className={`w-full object-cover ${fabricacion.aspecto ? "h-auto max-h-72 sm:max-h-full" : "h-56 sm:h-full"}`}
           />
-          <div className="p-5 flex flex-col justify-center">
-            <h3 className="text-xl font-bold text-ink mb-2">{fabricacion.titulo}</h3>
-            <p className="text-ink-muted mb-4 line-clamp-3">{fabricacion.texto}</p>
-            <Link
-              to="/fabricacion"
-              onClick={sonidoNavegar}
-              className="min-h-tap inline-flex items-center px-5 rounded-control border-2 border-ink/60 text-ink font-bold w-fit
-                         hover:bg-ink hover:text-carbon active:scale-[0.98] transition-all duration-200"
-            >
-              Conocer nuestro proceso
-            </Link>
+          <div className="relative overflow-hidden flex flex-col justify-center">
+            {/* Efecto espejo: la misma foto del taller, duplicada y
+                difuminada de fondo — así este lado nunca se ve como un
+                cuadro gris plano, aunque sea su propio bloque separado. */}
+            {fotoFabricacion && (
+              <div
+                className="absolute inset-0 bg-cover bg-center scale-125 blur-xl opacity-60"
+                style={{ backgroundImage: `url(${fotoFabricacion})` }}
+                aria-hidden="true"
+              />
+            )}
+            <div className="relative p-5">
+              <h3 className="text-xl font-bold text-ink mb-2 drop-shadow-sm">{fabricacion.titulo}</h3>
+              <p className="text-ink-muted mb-4 line-clamp-3 drop-shadow-sm">{fabricacion.texto}</p>
+              <Link
+                to="/fabricacion"
+                onClick={sonidoNavegar}
+                className="min-h-tap inline-flex items-center px-5 rounded-control border-2 border-ink/60 text-ink font-bold w-fit
+                           hover:bg-ink hover:text-carbon active:scale-[0.98] transition-all duration-200"
+              >
+                Conocer nuestro proceso
+              </Link>
+            </div>
           </div>
         </Reveal>
       </section>

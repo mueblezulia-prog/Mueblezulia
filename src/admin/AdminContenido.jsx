@@ -434,7 +434,18 @@ function SeccionSede({ sede, onGuardado }) {
     }
   }
 
+  // Segunda barrera de seguridad: mientras hay una foto en la fila de
+  // espera (el recorte está abierto, aunque quede tapado por la ventana
+  // de recorte), estos botones no deben poder tocar la lista de fotos ya
+  // guardadas. La ventana de recorte YA los bloquea visualmente (ver
+  // "pointer-events-none" más abajo), pero este chequeo extra evita
+  // cualquier quite/movimiento accidental de una foto que ya estaba
+  // puesta mientras se está subiendo/recortando otra.
   function quitarFoto(i) {
+    if (colaFotos.length > 0) {
+      console.warn("[Nuestra Sede] Se bloqueó un intento de quitar una foto mientras había un recorte en curso.");
+      return;
+    }
     setForm((f) => {
       const imagenes = (f.imagenes ?? []).filter((_, idx) => idx !== i);
       return { ...f, imagenes, imagen: imagenes[0] ?? f.imagen };
@@ -442,6 +453,7 @@ function SeccionSede({ sede, onGuardado }) {
   }
 
   function moverFoto(i, direccion) {
+    if (colaFotos.length > 0) return;
     setForm((f) => {
       const imagenes = [...(f.imagenes ?? [])];
       const j = i + direccion;
@@ -559,7 +571,14 @@ function SeccionSede({ sede, onGuardado }) {
             {mensaje && (
               <p className={`text-xs font-semibold ${mensaje.startsWith("Error") ? "text-red-400" : "text-ink-muted"}`}>{mensaje}</p>
             )}
-            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+            {/* Mientras hay una foto en pleno recorte (el modal "Encuadra tu
+                foto" tapa la pantalla), esta cuadrícula queda BLOQUEADA por
+                completo (ni un clic la puede tocar) — así ninguna foto ya
+                puesta se puede quitar o mover sin querer mientras el modal
+                está encima. */}
+            <div
+              className={`grid grid-cols-3 sm:grid-cols-4 gap-2 ${colaFotos.length > 0 ? "pointer-events-none opacity-50" : ""}`}
+            >
               {imagenes.map((url, i) => (
                 <div key={url + i} className="relative rounded-control overflow-hidden border border-carbon-border h-24 group">
                   <img src={url} alt={`Foto ${i + 1}`} className="w-full h-full object-cover" />
