@@ -339,16 +339,37 @@ function SeccionSede({ sede, onGuardado }) {
     const files = Array.from(e.target.files || []);
     e.target.value = "";
     if (files.length === 0) return;
-    setColaFotos((c) => [...c, ...files]);
+    setColaFotos((c) => [...c, ...files.map((file) => ({ file }))]);
+  }
+
+  /** Vuelve a abrir el recortador sobre una foto YA subida, para ajustar
+   * el encuadre sin tener que borrarla y subirla de nuevo desde cero. */
+  async function recortarDeNuevo(i) {
+    const url = (form.imagenes ?? [])[i];
+    if (!url) return;
+    setMensaje(null);
+    try {
+      const resp = await fetch(url);
+      const blob = await resp.blob();
+      setColaFotos((c) => [{ file: blob, reemplazarIndice: i }, ...c]);
+    } catch {
+      setMensaje("No se pudo cargar esa foto para recortarla de nuevo. Intenta bajarla y subirla otra vez.");
+    }
   }
 
   async function fotoRecortadaLista(blob, aspectoCss) {
     setSubiendo(true);
     setMensaje(null);
+    const enProceso = colaFotos[0];
     try {
       const url = await subirBlobContenido(blob);
       setForm((f) => {
-        const imagenes = [...(f.imagenes ?? []), url];
+        let imagenes = [...(f.imagenes ?? [])];
+        if (enProceso?.reemplazarIndice != null) {
+          imagenes[enProceso.reemplazarIndice] = url;
+        } else {
+          imagenes = [...imagenes, url];
+        }
         return { ...f, imagenes, imagen: imagenes[0] ?? f.imagen, aspecto: aspectoCss };
       });
     } catch (err) {
@@ -490,6 +511,14 @@ function SeccionSede({ sede, onGuardado }) {
                   >
                     ×
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => recortarDeNuevo(i)}
+                    className="absolute top-1 left-1 px-1.5 h-6 rounded bg-black/60 text-white text-[11px] font-semibold opacity-0 group-hover:opacity-100 transition-opacity"
+                    aria-label="Recortar esta foto de nuevo"
+                  >
+                    ✂ Recortar
+                  </button>
                   {imagenes.length > 1 && (
                     <div className="absolute bottom-1 left-1 right-1 flex justify-between opacity-0 group-hover:opacity-100 transition-opacity">
                       <button type="button" onClick={() => moverFoto(i, -1)} disabled={i === 0} className="w-6 h-6 rounded bg-black/60 text-white text-xs disabled:opacity-30">←</button>
@@ -505,7 +534,7 @@ function SeccionSede({ sede, onGuardado }) {
             </div>
             {colaFotos.length > 0 && (
               <RecortadorContenido
-                archivo={colaFotos[0]}
+                archivo={colaFotos[0].file}
                 aspectoInicial={16 / 9}
                 onCancelar={() => setColaFotos((c) => c.slice(1))}
                 onListo={fotoRecortadaLista}
@@ -554,10 +583,6 @@ function SeccionSede({ sede, onGuardado }) {
           onChange={(e) => cambiar("texto", e.target.value)}
           className="campo-input resize-none"
         />
-      </Campo>
-
-      <Campo label="Ajuste de la foto">
-        <SelectorAjuste valor={form.ajusteImagen} onCambiar={(v) => cambiar("ajusteImagen", v)} />
       </Campo>
 
       <Campo label="Enlace de Google Maps (botón 'Compartir' → 'Copiar enlace' en la app de Maps)">
@@ -1272,7 +1297,7 @@ function SeccionBloques({ contenidoKey, titulo, descripcion, bloques, onGuardado
 /** Formulario de UN bloque — los campos que muestra dependen de `bloque.tipo`. */
 function EditorBloque({ bloque, onCambiar }) {
   const [subiendo, setSubiendo] = useState(false);
-  const [pendiente, setPendiente] = useState(null); // { modo: "unica" | "multiple", file }
+  const [pendiente, setPendiente] = useState(null); // { modo: "unica" | "multiple" | "reemplazar", file, index? }
 
   function elegirUnica(e) {
     const file = e.target.files?.[0];
@@ -1288,12 +1313,30 @@ function EditorBloque({ bloque, onCambiar }) {
     setPendiente({ modo: "multiple", file });
   }
 
+  /** Reabre el recortador sobre una foto YA subida (banner: index = 0),
+   * para corregir el encuadre sin borrarla y volver a subirla. */
+  async function recortarDeNuevo(index) {
+    const url = bloque.imagenes?.[index];
+    if (!url) return;
+    try {
+      const resp = await fetch(url);
+      const blob = await resp.blob();
+      setPendiente({ modo: "reemplazar", index, file: blob });
+    } catch {
+      alert("No se pudo cargar esa foto para recortarla de nuevo. Intenta bajarla y subirla otra vez.");
+    }
+  }
+
   async function fotoRecortadaLista(blob, aspectoCss) {
     setSubiendo(true);
     try {
       const url = await subirBlobContenido(blob);
       if (pendiente?.modo === "unica") {
         onCambiar({ imagenes: [url], aspecto: aspectoCss });
+      } else if (pendiente?.modo === "reemplazar") {
+        const copia = [...(bloque.imagenes ?? [])];
+        copia[pendiente.index] = url;
+        onCambiar({ imagenes: copia, aspecto: aspectoCss });
       } else {
         onCambiar({ imagenes: [...(bloque.imagenes ?? []), url], aspecto: aspectoCss });
       }
@@ -1384,15 +1427,22 @@ function EditorBloque({ bloque, onCambiar }) {
       {/* Foto única: solo el banner (franja de borde a borde) */}
       {bloque.tipo === "banner" && (
         <Campo label="Foto">
-          <label className="relative w-full h-32 rounded-control overflow-hidden bg-carbon-light border border-carbon-border cursor-pointer group block">
+          <div className="flex flex-col gap-2">
+            <label className="relative w-full h-32 rounded-control overflow-hidden bg-carbon-light border border-carbon-border cursor-pointer group block">
+              {bloque.imagenes?.[0] && (
+                <img src={bloque.imagenes[0]} alt="" className="w-full h-full object-cover" />
+              )}
+              <span className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/55 text-white text-sm font-semibold opacity-0 group-hover:opacity-100 transition-all duration-200">
+                {subiendo ? "Subiendo…" : bloque.imagenes?.[0] ? "Cambiar foto" : "+ Subir foto"}
+              </span>
+              <input type="file" accept="image/*,.heic,.heif" className="hidden" onChange={elegirUnica} />
+            </label>
             {bloque.imagenes?.[0] && (
-              <img src={bloque.imagenes[0]} alt="" className="w-full h-full object-cover" />
+              <button type="button" onClick={() => recortarDeNuevo(0)} className="btn-admin-secondary text-xs w-fit">
+                ✂ Recortar de nuevo (misma foto)
+              </button>
             )}
-            <span className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/55 text-white text-sm font-semibold opacity-0 group-hover:opacity-100 transition-all duration-200">
-              {subiendo ? "Subiendo…" : bloque.imagenes?.[0] ? "Cambiar foto" : "+ Subir foto"}
-            </span>
-            <input type="file" accept="image/*,.heic,.heif" className="hidden" onChange={elegirUnica} />
-          </label>
+          </div>
         </Campo>
       )}
 
@@ -1404,6 +1454,15 @@ function EditorBloque({ bloque, onCambiar }) {
             {(bloque.imagenes ?? []).map((url, i) => (
               <div key={url + i} className="relative w-20">
                 <img src={url} alt={`Foto ${i + 1}`} className="w-20 h-20 object-cover rounded-control border border-carbon-border" />
+                <button
+                  type="button"
+                  onClick={() => recortarDeNuevo(i)}
+                  className="absolute top-0.5 left-0.5 w-5 h-5 rounded bg-black/60 text-white text-[10px] flex items-center justify-center"
+                  aria-label="Recortar esta foto de nuevo"
+                  title="Recortar de nuevo"
+                >
+                  ✂
+                </button>
                 <div className="flex justify-center gap-1 mt-1">
                   <button type="button" onClick={() => moverFoto(i, -1)} disabled={i === 0}
                     className="min-h-tap min-w-tap text-ink-muted disabled:opacity-30 hover:text-ink transition-colors text-sm" aria-label="Mover antes">←</button>
