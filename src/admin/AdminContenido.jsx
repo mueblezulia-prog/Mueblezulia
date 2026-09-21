@@ -372,7 +372,7 @@ function SeccionSede({ sede, onGuardado }) {
     const files = Array.from(e.target.files || []);
     e.target.value = "";
     if (files.length === 0) return;
-    setColaFotos((c) => [...c, ...files.map((file) => ({ file }))]);
+    setColaFotos((c) => [...c, ...files.map((file) => ({ id: crypto.randomUUID(), file }))]);
   }
 
   /** Modo "Foto fija": solo existe UN espacio de foto — elegir una nueva
@@ -383,7 +383,7 @@ function SeccionSede({ sede, onGuardado }) {
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
-    setColaFotos([{ file, reemplazarIndice: 0 }]);
+    setColaFotos([{ id: crypto.randomUUID(), file, reemplazarIndice: 0 }]);
   }
 
   /** Vuelve a abrir el recortador sobre una foto YA subida, para ajustar
@@ -395,7 +395,7 @@ function SeccionSede({ sede, onGuardado }) {
     try {
       const resp = await fetch(url);
       const blob = await resp.blob();
-      setColaFotos((c) => [{ file: blob, reemplazarIndice: i }, ...c]);
+      setColaFotos((c) => [{ id: crypto.randomUUID(), file: blob, reemplazarIndice: i }, ...c]);
     } catch {
       setMensaje("No se pudo cargar esa foto para recortarla de nuevo. Intenta bajarla y subirla otra vez.");
     }
@@ -403,26 +403,34 @@ function SeccionSede({ sede, onGuardado }) {
 
   // Recibe el ítem de la cola que se acaba de recortar como parámetro
   // explícito (en vez de volver a leer colaFotos[0] adentro) — así no hay
-  // forma de que quede desincronizado con cuál foto se subió.
+  // forma de que quede desincronizado con cuál foto se subió. Y en vez de
+  // quitarlo de la fila con .slice(1) (que asume que siempre es el
+  // primero), lo quitamos buscando su "id" único — así nunca se puede
+  // borrar por error el ítem equivocado de la fila de espera.
   async function fotoRecortadaLista(blob, aspectoCss, item) {
     setSubiendo(true);
     setMensaje(null);
     try {
       const url = await subirBlobContenido(blob);
       setForm((f) => {
-        let imagenes = [...(f.imagenes ?? [])];
+        const anteriores = f.imagenes ?? [];
+        let imagenes;
         if (item?.reemplazarIndice != null) {
+          imagenes = [...anteriores];
           imagenes[item.reemplazarIndice] = url;
         } else {
-          imagenes = [...imagenes, url];
+          imagenes = [...anteriores, url];
         }
+        console.log(
+          `[Nuestra Sede] Foto subida. Antes: ${anteriores.length} foto(s). Después: ${imagenes.length} foto(s).`
+        );
         return { ...f, imagenes, imagen: imagenes[0] ?? f.imagen, aspecto: aspectoCss };
       });
     } catch (err) {
       setMensaje(`Error al subir la foto: ${err.message}`);
     } finally {
       setSubiendo(false);
-      setColaFotos((c) => c.slice(1));
+      setColaFotos((c) => c.filter((it) => it.id !== item?.id));
     }
   }
 
@@ -545,6 +553,12 @@ function SeccionSede({ sede, onGuardado }) {
       ) : form.tipoMedia === "diapositiva" ? (
         <Campo label="Fotos (pasan solas en ese orden)">
           <div className="flex flex-col gap-2">
+            <p className="text-xs font-semibold text-gold">
+              {imagenes.length} foto{imagenes.length === 1 ? "" : "s"} guardada{imagenes.length === 1 ? "" : "s"} ahora mismo
+            </p>
+            {mensaje && (
+              <p className={`text-xs font-semibold ${mensaje.startsWith("Error") ? "text-red-400" : "text-ink-muted"}`}>{mensaje}</p>
+            )}
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
               {imagenes.map((url, i) => (
                 <div key={url + i} className="relative rounded-control overflow-hidden border border-carbon-border h-24 group">
@@ -594,11 +608,17 @@ function SeccionSede({ sede, onGuardado }) {
             </div>
             {colaFotos.length > 0 && (
               <RecortadorContenido
+                key={colaFotos[0].id}
                 archivo={colaFotos[0].file}
                 aspectoInicial={16 / 9}
-                onCancelar={() => setColaFotos((c) => c.slice(1))}
+                onCancelar={() => setColaFotos((c) => c.filter((it) => it.id !== colaFotos[0].id))}
                 onListo={(blob, aspectoCss) => fotoRecortadaLista(blob, aspectoCss, colaFotos[0])}
               />
+            )}
+            {colaFotos.length > 1 && (
+              <p className="text-xs text-ink-muted">
+                Hay {colaFotos.length} fotos esperando a ser recortadas, una por una.
+              </p>
             )}
           </div>
         </Campo>
@@ -632,9 +652,10 @@ function SeccionSede({ sede, onGuardado }) {
             )}
             {colaFotos.length > 0 && (
               <RecortadorContenido
+                key={colaFotos[0].id}
                 archivo={colaFotos[0].file}
                 aspectoInicial={16 / 9}
-                onCancelar={() => setColaFotos((c) => c.slice(1))}
+                onCancelar={() => setColaFotos((c) => c.filter((it) => it.id !== colaFotos[0].id))}
                 onListo={(blob, aspectoCss) => fotoRecortadaLista(blob, aspectoCss, colaFotos[0])}
               />
             )}
