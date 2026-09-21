@@ -16,7 +16,13 @@ export const CONTENIDO_DEFAULT = {
     subtitulo: "Llevando confort a los hogares del Zulia",
   },
   nuestra_sede: {
-    imagen: "/assets/ubicacion.jpg",
+    imagen: "/assets/ubicacion.jpg", // se mantiene por compatibilidad (fondo de los banners); la foto/video real que se ve ahora sale de "imagenes"/"video" de abajo
+    // Fondo de la sección: una o varias fotos (pasan solas si hay más de
+    // una) o un video en bucle — lo que el admin elija con "tipoMedia".
+    imagenes: ["/assets/ubicacion.jpg"],
+    video: "",
+    tipoMedia: "foto", // "foto" (una sola) | "diapositiva" (varias fotos que pasan solas) | "video"
+    alto: "grande", // pequeno | mediano | grande | completo (ver ALTOS_BLOQUE)
     direccion: "Av. 15 Delicias, frente a Alkosto, Maracaibo, Zulia",
     titulo: "¡Te esperamos en Muebles Zulia! 📍",
     texto: "Ven a conocer la calidad y el diseño que cambiarán tu hogar.",

@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import SectionBanner from "../components/SectionBanner";
 import Reveal from "../components/Reveal";
 import BloqueContenido from "../components/BloqueContenido";
-import { obtenerContenido, CONTENIDO_DEFAULT } from "../lib/contenido";
+import FondoMultimedia from "../components/FondoMultimedia";
+import { obtenerContenido, CONTENIDO_DEFAULT, ALTOS_BLOQUE } from "../lib/contenido";
 import { sonidoConfirmar, sonidoNavegar } from "../lib/sonido";
 
 const WHATSAPP_LINK = "https://wa.me/584127519141?text=" + encodeURIComponent("Hola, tengo una consulta sobre sus muebles.");
@@ -33,6 +34,9 @@ export default function Contacto() {
   // armado con la dirección de texto.
   const mapsLink =
     sede.enlaceMaps || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(sede.direccion)}`;
+  const sedeAlto = ALTOS_BLOQUE[sede.alto] ?? ALTOS_BLOQUE.grande;
+  const sedeAjuste = sede.ajusteImagen === "contain" ? "object-contain bg-carbon" : "object-cover";
+  const sedeImagenes = sede.tipoMedia === "diapositiva" ? sede.imagenes ?? [] : [sede.imagenes?.[0] ?? sede.imagen];
 
   return (
     <div>
@@ -48,10 +52,13 @@ export default function Contacto() {
               bordes redondeados quedan unificados en vez de dos cajas
               separadas que no encajaban bien entre sí. */}
           <div className="relative rounded-card overflow-hidden border border-carbon-border bg-carbon-light">
-            <img
-              src={sede.imagen}
+            <FondoMultimedia
+              imagenes={sedeImagenes}
+              video={sede.video}
+              tipoMedia={sede.tipoMedia}
+              alto={sedeAlto}
+              ajuste={sedeAjuste}
               alt="Fachada de Muebles Zulia"
-              className={`w-full max-h-[420px] ${sede.ajusteImagen === "cover" ? "h-[420px] object-cover" : "object-contain"} bg-carbon`}
             />
 
             <div className="relative -mt-10 sm:-mt-14 glass p-5 flex flex-col items-start animar-entrada">

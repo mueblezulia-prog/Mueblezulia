@@ -4,6 +4,7 @@ import Hero from "../components/Hero";
 import CategoriasGrid from "../components/CategoriasGrid";
 import SectionBanner from "../components/SectionBanner";
 import BloqueContenido from "../components/BloqueContenido";
+import FondoMultimedia from "../components/FondoMultimedia";
 import Reveal from "../components/Reveal";
 import { obtenerContenido, CONTENIDO_DEFAULT } from "../lib/contenido";
 import { sonidoNavegar } from "../lib/sonido";
@@ -51,10 +52,13 @@ export default function Home() {
           <SectionBanner titulo="Nuestra Sede" icono="/assets/icons/ubicacion.png" imagenFondo={sede.imagen} tinte="dorado" />
         </div>
         <Reveal className="px-4 glass rounded-card overflow-hidden grid sm:grid-cols-2" delay={80}>
-          <img
-            src={sede.imagen}
+          <FondoMultimedia
+            imagenes={sede.tipoMedia === "diapositiva" ? sede.imagenes ?? [] : [sede.imagenes?.[0] ?? sede.imagen]}
+            video={sede.video}
+            tipoMedia={sede.tipoMedia}
+            alto="h-56 sm:h-full"
+            ajuste={sede.ajusteImagen === "contain" ? "object-contain bg-carbon" : "object-cover"}
             alt="Fachada de Muebles Zulia"
-            className="w-full h-56 sm:h-full object-cover"
           />
           <div className="p-5 flex flex-col justify-center">
             <h3 className="text-xl font-bold text-ink mb-2">{sede.titulo}</h3>

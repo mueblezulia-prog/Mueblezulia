@@ -212,8 +212,15 @@ function SeccionHero({ hero, onGuardado }) {
 /* NUESTRA SEDE — dirección, foto de fachada, textos             */
 /* ------------------------------------------------------------ */
 function SeccionSede({ sede, onGuardado }) {
-  const [form, setForm] = useState(sede);
+  const [form, setForm] = useState({
+    tipoMedia: "foto",
+    alto: "grande",
+    imagenes: sede.imagen ? [sede.imagen] : [],
+    video: "",
+    ...sede,
+  });
   const [subiendo, setSubiendo] = useState(false);
+  const [subiendoVideo, setSubiendoVideo] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [mensaje, setMensaje] = useState(null);
 
@@ -221,18 +228,53 @@ function SeccionSede({ sede, onGuardado }) {
     setForm((f) => ({ ...f, [campo]: valor }));
   }
 
-  async function handleSubirFoto(e) {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  async function handleAgregarFotos(e) {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
     setSubiendo(true);
     setMensaje(null);
     try {
-      const url = await subirImagenContenido(file);
-      cambiar("imagen", url);
+      const urls = await Promise.all(files.map((file) => subirImagenContenido(file)));
+      setForm((f) => {
+        const imagenes = [...(f.imagenes ?? []), ...urls];
+        return { ...f, imagenes, imagen: imagenes[0] ?? f.imagen };
+      });
     } catch (err) {
       setMensaje(`Error al subir la foto: ${err.message}`);
     } finally {
       setSubiendo(false);
+    }
+  }
+
+  function quitarFoto(i) {
+    setForm((f) => {
+      const imagenes = (f.imagenes ?? []).filter((_, idx) => idx !== i);
+      return { ...f, imagenes, imagen: imagenes[0] ?? f.imagen };
+    });
+  }
+
+  function moverFoto(i, direccion) {
+    setForm((f) => {
+      const imagenes = [...(f.imagenes ?? [])];
+      const j = i + direccion;
+      if (j < 0 || j >= imagenes.length) return f;
+      [imagenes[i], imagenes[j]] = [imagenes[j], imagenes[i]];
+      return { ...f, imagenes, imagen: imagenes[0] ?? f.imagen };
+    });
+  }
+
+  async function handleSubirVideo(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setSubiendoVideo(true);
+    setMensaje(null);
+    try {
+      const url = await subirVideoContenido(file);
+      cambiar("video", url);
+    } catch (err) {
+      setMensaje(`Error al subir el video: ${err.message}`);
+    } finally {
+      setSubiendoVideo(false);
     }
   }
 
@@ -251,22 +293,95 @@ function SeccionSede({ sede, onGuardado }) {
     }
   }
 
+  const imagenes = form.imagenes ?? [];
+
   return (
     <section className="admin-card p-5 flex flex-col gap-4">
       <h2 className="text-xl font-bold text-ink flex items-center gap-2">
         <img src="/assets/icons/ubicacion.png" alt="" className="w-5 h-5" /> Nuestra Sede
       </h2>
       <p className="text-sm text-ink-muted -mt-2">
-        Se usa en la página de Catálogo (fondo de categorías) y en Contacto (foto, dirección y mapa).
+        Se usa en la página de Catálogo (fondo de categorías) y en Contacto (foto/video, dirección y mapa).
       </p>
 
-      <label className="relative w-full h-40 rounded-control overflow-hidden bg-carbon border border-carbon-border cursor-pointer group">
-        <img src={form.imagen} alt="Foto de la sede" className="w-full h-full object-cover" />
-        <span className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/55 text-white text-sm font-semibold opacity-0 group-hover:opacity-100 transition-all duration-200">
-          {subiendo ? "Subiendo…" : "Cambiar foto"}
-        </span>
-        <input type="file" accept="image/*,.heic,.heif" className="hidden" onChange={handleSubirFoto} />
-      </label>
+      <Campo label="Tipo de fondo">
+        <div className="flex flex-wrap gap-2">
+          {[
+            { valor: "foto", label: "Foto fija" },
+            { valor: "diapositiva", label: "Varias fotos (pasan solas)" },
+            { valor: "video", label: "Video" },
+          ].map((o) => (
+            <button
+              key={o.valor}
+              type="button"
+              onClick={() => cambiar("tipoMedia", o.valor)}
+              className={[
+                "flex-1 min-w-[130px] min-h-tap rounded-control border-2 text-sm font-semibold transition-all duration-150",
+                (form.tipoMedia ?? "foto") === o.valor
+                  ? "border-gold bg-gold/10 text-ink"
+                  : "border-carbon-border text-ink-muted hover:border-carbon-border/60",
+              ].join(" ")}
+            >
+              {o.label}
+            </button>
+          ))}
+        </div>
+      </Campo>
+
+      {form.tipoMedia === "video" ? (
+        <Campo label={`Video (máximo ${LIMITE_VIDEO_MB}MB, se repite solo sin sonido)`}>
+          <div className="flex flex-col gap-2">
+            {form.video && (
+              <video src={form.video} className="w-full h-40 rounded-control object-cover border border-carbon-border" muted loop autoPlay playsInline />
+            )}
+            <label className="btn-admin-secondary text-sm w-fit cursor-pointer">
+              {subiendoVideo ? "Subiendo…" : form.video ? "Cambiar video" : "Subir video"}
+              <input type="file" accept="video/*" className="hidden" onChange={handleSubirVideo} />
+            </label>
+          </div>
+        </Campo>
+      ) : (
+        <Campo label={form.tipoMedia === "diapositiva" ? "Fotos (pasan solas en ese orden)" : "Foto"}>
+          <div className="flex flex-col gap-2">
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+              {imagenes.map((url, i) => (
+                <div key={url + i} className="relative rounded-control overflow-hidden border border-carbon-border h-24 group">
+                  <img src={url} alt={`Foto ${i + 1}`} className="w-full h-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => quitarFoto(i)}
+                    className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 text-white text-sm font-bold flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    aria-label="Quitar foto"
+                  >
+                    ×
+                  </button>
+                  {imagenes.length > 1 && (
+                    <div className="absolute bottom-1 left-1 right-1 flex justify-between opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button type="button" onClick={() => moverFoto(i, -1)} disabled={i === 0} className="w-6 h-6 rounded bg-black/60 text-white text-xs disabled:opacity-30">←</button>
+                      <button type="button" onClick={() => moverFoto(i, 1)} disabled={i === imagenes.length - 1} className="w-6 h-6 rounded bg-black/60 text-white text-xs disabled:opacity-30">→</button>
+                    </div>
+                  )}
+                </div>
+              ))}
+              <label className="h-24 rounded-control border-2 border-dashed border-carbon-border flex items-center justify-center text-ink-muted text-sm cursor-pointer hover:border-gold hover:text-ink transition-colors">
+                {subiendo ? "Subiendo…" : "+ Añadir"}
+                <input type="file" accept="image/*,.heic,.heif" multiple className="hidden" onChange={handleAgregarFotos} />
+              </label>
+            </div>
+            {form.tipoMedia !== "diapositiva" && imagenes.length > 1 && (
+              <p className="text-xs text-ink-muted">Solo se usa la primera foto en modo "Foto fija" — cambia a "Varias fotos" para que pasen todas.</p>
+            )}
+          </div>
+        </Campo>
+      )}
+
+      <Campo label="Tamaño del fondo">
+        <SelectorAlto valor={form.alto} onCambiar={(v) => cambiar("alto", v)} />
+      </Campo>
+
+      <Campo label="Ajuste de la foto/video">
+        <SelectorAjuste valor={form.ajusteImagen} onCambiar={(v) => cambiar("ajusteImagen", v)} />
+      </Campo>
 
       <Campo label="Dirección (usada también en el mapa de Google)">
         <input
