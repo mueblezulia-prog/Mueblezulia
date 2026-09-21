@@ -1,3 +1,5 @@
+import heic2any from "heic2any";
+
 /**
  * Los iPhone guardan las fotos en formato HEIC/HEIF por defecto. Ningún
  * navegador (salvo Safari en Mac/iOS) sabe mostrar ni procesar ese formato
@@ -6,8 +8,14 @@
  * archivo a JPEG en el propio navegador (sin pasar por ningún servidor)
  * antes de usarlo en cualquier parte del panel admin.
  *
- * La librería "heic2any" es pesada, así que se carga sólo cuando hace
- * falta (import dinámico) en vez de venir en el bundle principal del sitio.
+ * IMPORTANTE: "heic2any" se importa de forma NORMAL (no con import
+ * dinámico) a propósito. Antes se cargaba solo cuando hacía falta, pero
+ * eso dependía de que el navegador pudiera pedir ese pedazo extra del
+ * sitio en el momento exacto de subir una foto — si esa descarga fallaba
+ * (por ejemplo, justo después de subir una actualización del sitio, o con
+ * una conexión inestable), la foto HEIC quedaba sin poder subirse. Al
+ * venir incluida desde el principio, subir una foto HEIC ya no depende de
+ * esa segunda descarga.
  */
 export function esArchivoHeic(file) {
   if (!file) return false;
@@ -24,19 +32,17 @@ export function esArchivoHeic(file) {
 export async function convertirSiEsHeic(file) {
   if (!esArchivoHeic(file)) return file;
 
-  let heic2any;
+  let resultado;
   try {
-    heic2any = (await import("heic2any")).default;
+    resultado = await heic2any({ blob: file, toType: "image/jpeg", quality: 0.9 });
   } catch (err) {
-    // Mismo caso que el listener de vite:preloadError en main.jsx: el
-    // sitio se actualizó y este navegador todavía tiene la versión
-    // vieja cargada. Recargamos para traer la nueva versión — cuando
-    // la persona vuelva a intentar subir la foto, ya va a funcionar.
-    window.location.reload();
-    throw new Error("El sitio se actualizó, recargando la página. Por favor intenta subir la foto de nuevo en un momento.");
+    // Un HEIC de "ráfaga en vivo" (Live Photo) o uno dañado puede hacer
+    // que la conversión falle — con un mensaje claro, en vez de quedarse
+    // "colgado" sin explicación.
+    throw new Error(
+      "No se pudo convertir esta foto HEIC. Prueba exportarla como JPG desde el iPhone (compartir → guardar como) y subirla de nuevo."
+    );
   }
-
-  const resultado = await heic2any({ blob: file, toType: "image/jpeg", quality: 0.9 });
   // heic2any puede devolver un array de blobs si el HEIC trae varias fotos
   // (ráfaga en vivo); esta app solo usa la primera.
   const blob = Array.isArray(resultado) ? resultado[0] : resultado;
