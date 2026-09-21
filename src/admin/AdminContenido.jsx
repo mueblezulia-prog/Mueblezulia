@@ -375,6 +375,17 @@ function SeccionSede({ sede, onGuardado }) {
     setColaFotos((c) => [...c, ...files.map((file) => ({ file }))]);
   }
 
+  /** Modo "Foto fija": solo existe UN espacio de foto — elegir una nueva
+   * siempre REEMPLAZA la única que hay (nunca agrega un segundo espacio
+   * invisible, que es lo que pasaba antes y hacía parecer que la foto
+   * "se perdía"). */
+  function elegirFotoUnica(e) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setColaFotos([{ file, reemplazarIndice: 0 }]);
+  }
+
   /** Vuelve a abrir el recortador sobre una foto YA subida, para ajustar
    * el encuadre sin tener que borrarla y subirla de nuevo desde cero. */
   async function recortarDeNuevo(i) {
@@ -531,8 +542,8 @@ function SeccionSede({ sede, onGuardado }) {
             </label>
           </div>
         </Campo>
-      ) : (
-        <Campo label={form.tipoMedia === "diapositiva" ? "Fotos (pasan solas en ese orden)" : "Foto"}>
+      ) : form.tipoMedia === "diapositiva" ? (
+        <Campo label="Fotos (pasan solas en ese orden)">
           <div className="flex flex-col gap-2">
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
               {imagenes.map((url, i) => (
@@ -589,8 +600,43 @@ function SeccionSede({ sede, onGuardado }) {
                 onListo={(blob, aspectoCss) => fotoRecortadaLista(blob, aspectoCss, colaFotos[0])}
               />
             )}
-            {form.tipoMedia !== "diapositiva" && imagenes.length > 1 && (
-              <p className="text-xs text-ink-muted">Solo se usa la primera foto en modo "Foto fija" — cambia a "Varias fotos" para que pasen todas.</p>
+          </div>
+        </Campo>
+      ) : (
+        // Modo "Foto fija": UN solo espacio de foto (igual que el banner) —
+        // elegir una nueva SIEMPRE reemplaza la que había, nunca queda un
+        // segundo espacio que no se ve en ningún lado.
+        <Campo label="Foto">
+          <div className="flex flex-col gap-2">
+            <label
+              className={`relative w-full h-32 rounded-control overflow-hidden bg-carbon-light border border-carbon-border block ${
+                colaFotos.length > 0 ? "pointer-events-none opacity-60" : "cursor-pointer group"
+              }`}
+            >
+              {imagenes[0] && <img src={imagenes[0]} alt="Foto de Nuestra Sede" className="w-full h-full object-cover" />}
+              <span className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/55 text-white text-sm font-semibold opacity-0 group-hover:opacity-100 transition-all duration-200">
+                {subiendo ? "Subiendo…" : colaFotos.length > 0 ? "Recortando…" : imagenes[0] ? "Cambiar foto" : "+ Subir foto"}
+              </span>
+              <input
+                type="file"
+                accept="image/*,.heic,.heif"
+                className="hidden"
+                onChange={elegirFotoUnica}
+                disabled={colaFotos.length > 0}
+              />
+            </label>
+            {imagenes[0] && (
+              <button type="button" onClick={() => recortarDeNuevo(0)} className="btn-admin-secondary text-xs w-fit">
+                ✂ Recortar de nuevo (misma foto)
+              </button>
+            )}
+            {colaFotos.length > 0 && (
+              <RecortadorContenido
+                archivo={colaFotos[0].file}
+                aspectoInicial={16 / 9}
+                onCancelar={() => setColaFotos((c) => c.slice(1))}
+                onListo={(blob, aspectoCss) => fotoRecortadaLista(blob, aspectoCss, colaFotos[0])}
+              />
             )}
           </div>
         </Campo>
