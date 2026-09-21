@@ -1,6 +1,6 @@
 import SectionBanner from "./SectionBanner";
 import CarruselBloque, { CLASE_TINTE } from "./CarruselBloque";
-import { ALTOS_BLOQUE } from "../lib/contenido";
+import { ALTOS_BLOQUE, ALTOS_MAX, TAMANOS_TITULO, COLORES_TEXTO } from "../lib/contenido";
 
 /**
  * Dibuja UN bloque de contenido armado desde el admin (ver
@@ -11,10 +11,17 @@ import { ALTOS_BLOQUE } from "../lib/contenido";
  * el maquetado.
  */
 export default function BloqueContenido({ bloque }) {
-  const alto = ALTOS_BLOQUE[bloque.alto] ?? ALTOS_BLOQUE.mediano;
+  const claveAlto = bloque.alto ?? "mediano";
+  // Si la foto ya viene recortada a una proporción exacta (ver
+  // RecortadorContenido en el admin), el marco usa esa proporción en vez
+  // de una altura fija — así "Llena el marco" nunca vuelve a recortar de
+  // más; el alto acá solo actúa como TOPE máximo en pantallas anchas.
+  const alto = bloque.aspecto ? (ALTOS_MAX[claveAlto] ?? ALTOS_MAX.mediano) : (ALTOS_BLOQUE[claveAlto] ?? ALTOS_BLOQUE.mediano);
+  const estiloAspecto = bloque.aspecto ? { aspectRatio: bloque.aspecto } : undefined;
   const ajuste = bloque.ajusteImagen === "contain" ? "object-contain bg-carbon" : "object-cover";
   const imagenes = bloque.imagenes ?? [];
-  const estiloEnfoque = bloque.enfoque ? { objectPosition: bloque.enfoque } : undefined;
+  const claseTamano = TAMANOS_TITULO[bloque.tamanoTitulo] ?? TAMANOS_TITULO.mediano;
+  const claseColor = COLORES_TEXTO[bloque.colorTexto] ?? COLORES_TEXTO.blanco;
 
   if (bloque.tipo === "banner") {
     return (
@@ -48,7 +55,9 @@ export default function BloqueContenido({ bloque }) {
             tinte={bloque.tinte}
             alto={alto}
             ajuste={ajuste}
-            enfoque={bloque.enfoque}
+            aspecto={bloque.aspecto}
+            tamanoTitulo={bloque.tamanoTitulo}
+            colorTexto={bloque.colorTexto}
           />
         </section>
       );
@@ -62,16 +71,28 @@ export default function BloqueContenido({ bloque }) {
               key={url + i}
               src={url}
               alt={bloque.titulo || "Foto"}
+              style={estiloAspecto}
               className={`w-full ${alto} ${ajuste} rounded-card border border-carbon-border`}
             />
           ))}
         </div>
         {/* El texto va en su propia tarjeta de vidrio, DEBAJO de las
-            fotos (nunca encima) — así nunca tapa la cuadrícula, pero
-            se ve igual de premium que el resto de los bloques. */}
+            fotos (nunca encima) — así nunca tapa la cuadrícula, ni crece
+            más que ella. Detrás del tinte va la primera foto duplicada y
+            difuminada (efecto espejo) para que nunca se vea como un
+            cuadro gris plano. */}
         {bloque.texto && (
-          <div className={`mt-4 rounded-card p-4 sm:p-5 ${CLASE_TINTE[bloque.tinte] ?? CLASE_TINTE.dorado}`}>
-            <p className="text-ink/90 text-sm sm:text-base leading-snug whitespace-pre-line">{bloque.texto}</p>
+          <div className={`mt-4 rounded-card overflow-hidden relative ${CLASE_TINTE[bloque.tinte] ?? CLASE_TINTE.dorado}`}>
+            {imagenes[0] && (
+              <div
+                className="absolute inset-0 bg-cover bg-center scale-125 blur-xl opacity-60"
+                style={{ backgroundImage: `url(${imagenes[0]})` }}
+                aria-hidden="true"
+              />
+            )}
+            <div className="relative p-4 sm:p-5">
+              <p className={`${claseColor}/90 text-sm sm:text-base leading-snug whitespace-pre-line`}>{bloque.texto}</p>
+            </div>
           </div>
         )}
       </section>
@@ -81,11 +102,10 @@ export default function BloqueContenido({ bloque }) {
   if (bloque.tipo === "video" && bloque.video) {
     return (
       <section className="px-4 py-8 max-w-5xl mx-auto">
-        <div className={`relative w-full ${alto} rounded-card overflow-hidden border border-carbon-border`}>
+        <div className={`relative w-full ${alto} rounded-card overflow-hidden border border-carbon-border`} style={estiloAspecto}>
           <video
             src={bloque.video}
             className={`absolute inset-0 w-full h-full ${ajuste}`}
-            style={estiloEnfoque}
             autoPlay
             muted
             loop
@@ -93,8 +113,8 @@ export default function BloqueContenido({ bloque }) {
           />
           {(bloque.vidrioSiempre ?? true) && (bloque.titulo || bloque.texto) && (
             <div className={`absolute inset-x-0 bottom-0 p-4 sm:p-6 ${CLASE_TINTE[bloque.tinte] ?? CLASE_TINTE.dorado}`}>
-              {bloque.titulo && <h3 className="text-lg sm:text-xl font-extrabold text-ink drop-shadow-sm">{bloque.titulo}</h3>}
-              {bloque.texto && <p className="text-ink/90 text-sm sm:text-base mt-1 leading-snug drop-shadow-sm whitespace-pre-line">{bloque.texto}</p>}
+              {bloque.titulo && <h3 className={`${claseTamano} font-extrabold ${claseColor} drop-shadow-sm`}>{bloque.titulo}</h3>}
+              {bloque.texto && <p className={`${claseColor}/90 text-sm sm:text-base mt-1 leading-snug drop-shadow-sm whitespace-pre-line`}>{bloque.texto}</p>}
             </div>
           )}
         </div>
@@ -107,7 +127,7 @@ export default function BloqueContenido({ bloque }) {
     // el doble de espacio para que no se vea parejo y aburrido.
     return (
       <section className="px-4 py-8 max-w-5xl mx-auto">
-        <div className={`relative w-full ${alto} rounded-card overflow-hidden border border-carbon-border grid grid-cols-2 grid-rows-2 gap-1.5`}>
+        <div className={`relative w-full ${alto} rounded-card overflow-hidden border border-carbon-border grid grid-cols-2 grid-rows-2 gap-1.5`} style={estiloAspecto}>
           {imagenes.slice(0, 3).map((url, i) => (
             <img
               key={url + i}
@@ -117,9 +137,18 @@ export default function BloqueContenido({ bloque }) {
             />
           ))}
           {(bloque.vidrioSiempre ?? true) && (bloque.titulo || bloque.texto) && (
-            <div className={`absolute inset-x-0 bottom-0 p-4 sm:p-6 ${CLASE_TINTE[bloque.tinte] ?? CLASE_TINTE.dorado}`}>
-              {bloque.titulo && <h3 className="text-lg sm:text-xl font-extrabold text-ink drop-shadow-sm">{bloque.titulo}</h3>}
-              {bloque.texto && <p className="text-ink/90 text-sm sm:text-base mt-1 leading-snug drop-shadow-sm whitespace-pre-line">{bloque.texto}</p>}
+            <div className={`absolute inset-x-0 bottom-0 overflow-hidden ${CLASE_TINTE[bloque.tinte] ?? CLASE_TINTE.dorado}`}>
+              {imagenes[0] && (
+                <div
+                  className="absolute inset-0 bg-cover bg-center scale-125 blur-xl opacity-60"
+                  style={{ backgroundImage: `url(${imagenes[0]})` }}
+                  aria-hidden="true"
+                />
+              )}
+              <div className="relative p-4 sm:p-6">
+                {bloque.titulo && <h3 className={`${claseTamano} font-extrabold ${claseColor} drop-shadow-sm`}>{bloque.titulo}</h3>}
+                {bloque.texto && <p className={`${claseColor}/90 text-sm sm:text-base mt-1 leading-snug drop-shadow-sm whitespace-pre-line`}>{bloque.texto}</p>}
+              </div>
             </div>
           )}
         </div>
@@ -141,7 +170,9 @@ export default function BloqueContenido({ bloque }) {
           tinte={bloque.tinte}
           alto={alto}
           ajuste={ajuste}
-          enfoque={bloque.enfoque}
+          aspecto={bloque.aspecto}
+          tamanoTitulo={bloque.tamanoTitulo}
+          colorTexto={bloque.colorTexto}
         />
       </section>
     );
@@ -156,11 +187,11 @@ export default function BloqueContenido({ bloque }) {
         <img
           src={imagenes[0]}
           alt={bloque.titulo || "Foto"}
-          style={estiloEnfoque}
+          style={estiloAspecto}
           className={`w-full ${alto} sm:h-full ${ajuste} ${imagenDerecha ? "sm:order-2" : ""}`}
         />
         <div className="p-5 flex flex-col justify-center">
-          {bloque.titulo && <h3 className="text-xl font-bold text-ink mb-2">{bloque.titulo}</h3>}
+          {bloque.titulo && <h3 className={`${claseTamano} font-bold ${claseColor} mb-2`}>{bloque.titulo}</h3>}
           {bloque.texto && <p className="text-ink-muted whitespace-pre-line">{bloque.texto}</p>}
         </div>
       </div>

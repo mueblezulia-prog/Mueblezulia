@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { TAMANOS_TITULO, COLORES_TEXTO } from "../lib/contenido";
 
 export const CLASE_TINTE = {
   dorado: "glass-caption-gold",
@@ -13,13 +14,26 @@ export const CLASE_TINTE = {
  * no aparecen y desaparecen con cada foto, para que nunca se sienta que
  * "falta" el texto mientras pasan las fotos.
  *
- * `alto`: clase de altura (ver ALTOS_BLOQUE en lib/contenido.js).
+ * `alto`: clase de altura (ver ALTOS_BLOQUE/ALTOS_MAX en lib/contenido.js).
  * `ajuste`: "object-cover" u "object-contain bg-carbon".
+ * `aspecto`: si la foto se recortó a una proporción exacta (ver
+ * RecortadorContenido), aquí llega como texto CSS ("16 / 9", "4 / 5",
+ * "1 / 1") — el marco usa esa proporción en vez de depender solo de
+ * `alto`, así "Llena el marco" nunca vuelve a recortar de más.
  */
-export default function CarruselBloque({ imagenes, titulo, texto, tinte = "dorado", alto, ajuste, enfoque }) {
+export default function CarruselBloque({
+  imagenes,
+  titulo,
+  texto,
+  tinte = "dorado",
+  alto,
+  ajuste,
+  aspecto,
+  tamanoTitulo = "mediano",
+  colorTexto = "blanco",
+}) {
   const [indice, setIndice] = useState(0);
   const total = imagenes.length;
-  const estiloEnfoque = enfoque ? { objectPosition: enfoque } : undefined;
 
   useEffect(() => {
     if (total <= 1) return;
@@ -30,15 +44,21 @@ export default function CarruselBloque({ imagenes, titulo, texto, tinte = "dorad
   }, [indice, total]);
 
   const claseVidrio = CLASE_TINTE[tinte] ?? CLASE_TINTE.dorado;
+  const claseTamano = TAMANOS_TITULO[tamanoTitulo] ?? TAMANOS_TITULO.mediano;
+  const claseColor = COLORES_TEXTO[colorTexto] ?? COLORES_TEXTO.blanco;
+  const estiloMarco = aspecto ? { aspectRatio: aspecto } : undefined;
+  const imagenEspejo = imagenes[indice] ?? imagenes[0];
 
   return (
-    <div className={`relative w-full ${alto} rounded-card overflow-hidden border border-carbon-border`}>
+    <div
+      className={`relative w-full ${alto} rounded-card overflow-hidden border border-carbon-border`}
+      style={estiloMarco}
+    >
       {imagenes.map((url, i) => (
         <img
           key={url + i}
           src={url}
           alt={titulo || `Foto ${i + 1}`}
-          style={estiloEnfoque}
           className={`carrusel-slide absolute inset-0 w-full h-full ${ajuste}
             ${i === indice ? "opacity-100" : "opacity-0"}`}
         />
@@ -60,13 +80,29 @@ export default function CarruselBloque({ imagenes, titulo, texto, tinte = "dorad
       )}
 
       {/* Franja de vidrio con título y texto — SIEMPRE visible (no
-          aparece/desaparece con las fotos), de borde a borde, quieta. */}
+          aparece/desaparece con las fotos), de borde a borde, quieta.
+          Detrás del tinte de vidrio va la MISMA foto, duplicada y
+          difuminada (efecto espejo) — así nunca se ve como un vidrio
+          "vacío"/gris plano, siempre hay algo detrás para difuminar. */}
       {(titulo || texto) && (
-        <div className={`absolute inset-x-0 bottom-0 p-4 sm:p-6 ${claseVidrio}`}>
-          {titulo && <h3 className="text-lg sm:text-xl font-extrabold text-ink drop-shadow-sm">{titulo}</h3>}
-          {texto && (
-            <p className="text-ink/90 text-sm sm:text-base mt-1 leading-snug drop-shadow-sm whitespace-pre-line">{texto}</p>
+        <div className={`absolute inset-x-0 bottom-0 overflow-hidden ${claseVidrio}`}>
+          {imagenEspejo && (
+            <div
+              className="absolute inset-0 bg-cover bg-center scale-125 blur-xl opacity-60"
+              style={{ backgroundImage: `url(${imagenEspejo})` }}
+              aria-hidden="true"
+            />
           )}
+          <div className="relative p-4 sm:p-6">
+            {titulo && (
+              <h3 className={`${claseTamano} font-extrabold ${claseColor} drop-shadow-sm`}>{titulo}</h3>
+            )}
+            {texto && (
+              <p className={`${claseColor}/90 text-sm sm:text-base mt-1 leading-snug drop-shadow-sm whitespace-pre-line`}>
+                {texto}
+              </p>
+            )}
+          </div>
         </div>
       )}
     </div>

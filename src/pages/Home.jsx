@@ -86,10 +86,11 @@ export default function Home() {
           <img
             src={fotoFabricacion}
             alt="Taller de carpintería de Muebles Zulia"
-            className="w-full h-56 sm:h-full object-cover"
+            style={fabricacion.aspecto ? { aspectRatio: fabricacion.aspecto } : undefined}
+            className={`w-full object-cover ${fabricacion.aspecto ? "h-auto max-h-72 sm:max-h-full" : "h-56 sm:h-full"}`}
           />
           <div className="p-5 flex flex-col justify-center">
-            <h3 className="text-xl font-bold text-gold mb-2">{fabricacion.titulo}</h3>
+            <h3 className="text-xl font-bold text-ink mb-2">{fabricacion.titulo}</h3>
             <p className="text-ink-muted mb-4 line-clamp-3">{fabricacion.texto}</p>
             <Link
               to="/fabricacion"

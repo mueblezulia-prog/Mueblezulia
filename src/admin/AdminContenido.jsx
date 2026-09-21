@@ -4,7 +4,7 @@ import { supabase } from "../lib/supabaseClient";
 import { convertirSiEsHeic } from "../lib/heic";
 import { prepararImagen, optimizarBlob } from "../lib/imagenOptimizada";
 import { getCroppedImageBlob } from "../lib/cropImage";
-import { obtenerContenido, guardarContenido, CONTENIDO_DEFAULT, ALTOS_BLOQUE } from "../lib/contenido";
+import { obtenerContenido, guardarContenido, CONTENIDO_DEFAULT, ALTOS_BLOQUE, ALTOS_MAX, TAMANOS_TITULO, COLORES_TEXTO } from "../lib/contenido";
 import { sonidoConfirmar } from "../lib/sonido";
 import FondoMultimedia from "../components/FondoMultimedia";
 import BloqueContenido from "../components/BloqueContenido";
@@ -173,10 +173,10 @@ function SeccionHero({ hero, onGuardado }) {
     setPendiente(file);
   }
 
-  async function fotoRecortadaLista(blob) {
+  async function fotoRecortadaLista(blob, aspectoCss) {
     try {
       const url = await subirBlobContenido(blob);
-      cambiar("imagen", url);
+      setForm((f) => ({ ...f, imagen: url, aspecto: aspectoCss }));
     } catch (err) {
       setMensaje(`Error al subir la foto: ${err.message}`);
     } finally {
@@ -342,14 +342,14 @@ function SeccionSede({ sede, onGuardado }) {
     setColaFotos((c) => [...c, ...files]);
   }
 
-  async function fotoRecortadaLista(blob) {
+  async function fotoRecortadaLista(blob, aspectoCss) {
     setSubiendo(true);
     setMensaje(null);
     try {
       const url = await subirBlobContenido(blob);
       setForm((f) => {
         const imagenes = [...(f.imagenes ?? []), url];
-        return { ...f, imagenes, imagen: imagenes[0] ?? f.imagen };
+        return { ...f, imagenes, imagen: imagenes[0] ?? f.imagen, aspecto: aspectoCss };
       });
     } catch (err) {
       setMensaje(`Error al subir la foto: ${err.message}`);
@@ -427,8 +427,9 @@ function SeccionSede({ sede, onGuardado }) {
             imagenes={previewImagenes}
             video={form.video}
             tipoMedia={form.tipoMedia}
-            alto={ALTOS_BLOQUE[form.alto] ?? ALTOS_BLOQUE.grande}
+            alto={form.aspecto ? (ALTOS_MAX[form.alto] ?? ALTOS_MAX.grande) : (ALTOS_BLOQUE[form.alto] ?? ALTOS_BLOQUE.grande)}
             ajuste={form.ajusteImagen === "contain" ? "object-contain bg-carbon" : "object-cover"}
+            aspecto={form.aspecto}
             alt="Fachada de Muebles Zulia"
           />
           <div className="relative -mt-10 sm:-mt-14 glass p-5">
@@ -614,6 +615,14 @@ function SeccionSede({ sede, onGuardado }) {
  * qué es la foto. Al confirmar, devuelve el recorte YA optimizado
  * (liviano, en WebP) listo para subir.
  */
+/** Convierte la proporción numérica (16/9, 4/5, 1) al texto CSS que espera "aspect-ratio". */
+function aspectoACss(valor) {
+  if (Math.abs(valor - 16 / 9) < 0.001) return "16 / 9";
+  if (Math.abs(valor - 4 / 5) < 0.001) return "4 / 5";
+  if (Math.abs(valor - 1) < 0.001) return "1 / 1";
+  return String(valor);
+}
+
 function RecortadorContenido({ archivo, aspectoInicial = 16 / 9, onCancelar, onListo }) {
   const [archivoListo, setArchivoListo] = useState(null);
   const [urlOriginal, setUrlOriginal] = useState(null);
@@ -649,7 +658,12 @@ function RecortadorContenido({ archivo, aspectoInicial = 16 / 9, onCancelar, onL
     try {
       const recorte = areaPixeles ? await getCroppedImageBlob(urlOriginal, areaPixeles) : archivoListo;
       const listo = await optimizarBlob(recorte);
-      onListo(listo);
+      // Le pasamos también la proporción elegida (como texto CSS, ej.
+      // "16 / 9") para que el marco donde se muestre la foto use ESA
+      // misma proporción en vez de una altura fija — así lo que se
+      // recortó acá es exactamente lo que se ve después, completo, sin
+      // que un contenedor angosto la recorte una segunda vez.
+      onListo(listo, aspectoACss(aspecto));
     } catch (err) {
       setError(`No se pudo recortar la foto: ${err.message}`);
     } finally {
@@ -927,6 +941,61 @@ function SelectorTinte({ valor, onCambiar }) {
   );
 }
 
+/** Elegir el tamaño del título de un bloque. */
+function SelectorTamanoTitulo({ valor, onCambiar }) {
+  const opciones = [
+    { valor: "pequeno", label: "Pequeño" },
+    { valor: "mediano", label: "Mediano" },
+    { valor: "grande", label: "Grande" },
+  ];
+  return (
+    <div className="flex gap-2">
+      {opciones.map((o) => (
+        <button
+          key={o.valor}
+          type="button"
+          onClick={() => onCambiar(o.valor)}
+          className={[
+            "flex-1 min-h-tap rounded-control border-2 text-sm font-semibold transition-all duration-150",
+            (valor ?? "mediano") === o.valor
+              ? "border-gold bg-gold/10 text-ink"
+              : "border-carbon-border text-ink-muted hover:border-carbon-border/60",
+          ].join(" ")}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/** Elegir el color del título/texto de un bloque (independiente del color del cuadro de vidrio). */
+function SelectorColorTexto({ valor, onCambiar }) {
+  const opciones = [
+    { valor: "blanco", label: "Blanco" },
+    { valor: "dorado", label: "Dorado" },
+  ];
+  return (
+    <div className="flex gap-2">
+      {opciones.map((o) => (
+        <button
+          key={o.valor}
+          type="button"
+          onClick={() => onCambiar(o.valor)}
+          className={[
+            "flex-1 min-h-tap rounded-control border-2 text-sm font-semibold transition-all duration-150",
+            (valor ?? "blanco") === o.valor
+              ? "border-gold bg-gold/10 text-ink"
+              : "border-carbon-border text-ink-muted hover:border-carbon-border/60",
+          ].join(" ")}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 /** Elegir cómo aparece el ícono del banner (animación). */
 function SelectorAnimacionIcono({ valor, onCambiar }) {
   const opciones = [
@@ -1012,7 +1081,9 @@ function bloqueVacio(tipo) {
     tinte: "dorado",
     alto: "mediano",
     ajusteImagen: "cover",
-    enfoque: "50% 50%",
+    aspecto: null,
+    tamanoTitulo: "mediano",
+    colorTexto: "blanco",
     posicionImagen: "izquierda",
     modoPresentacion: false,
     // El efecto vidrio (difuminado + transparencia) ahora está disponible
@@ -1094,6 +1165,9 @@ function SeccionBloques({ contenidoKey, titulo, descripcion, bloques, onGuardado
           texto: lista[0].texto ?? "",
           imagenes: lista[0].imagenes ?? [],
           ajusteImagen: lista[0].ajusteImagen ?? "cover",
+          aspecto: lista[0].aspecto ?? null,
+          tamanoTitulo: lista[0].tamanoTitulo ?? "mediano",
+          colorTexto: lista[0].colorTexto ?? "blanco",
         });
       }
       onGuardado(lista);
@@ -1214,14 +1288,14 @@ function EditorBloque({ bloque, onCambiar }) {
     setPendiente({ modo: "multiple", file });
   }
 
-  async function fotoRecortadaLista(blob) {
+  async function fotoRecortadaLista(blob, aspectoCss) {
     setSubiendo(true);
     try {
       const url = await subirBlobContenido(blob);
       if (pendiente?.modo === "unica") {
-        onCambiar({ imagenes: [url] });
+        onCambiar({ imagenes: [url], aspecto: aspectoCss });
       } else {
-        onCambiar({ imagenes: [...(bloque.imagenes ?? []), url] });
+        onCambiar({ imagenes: [...(bloque.imagenes ?? []), url], aspecto: aspectoCss });
       }
     } catch (err) {
       alert(`No se pudo subir la foto: ${err.message}`);
@@ -1385,6 +1459,12 @@ function EditorBloque({ bloque, onCambiar }) {
             etiqueta="Efecto vidrio (difuminado + transparencia)"
             ayuda="El título y el texto quedan sobre una tarjeta de vidrio que se adapta a lo que escribas, en vez de una caja fija."
           />
+          <Campo label="Tamaño del título">
+            <SelectorTamanoTitulo valor={bloque.tamanoTitulo} onCambiar={(v) => onCambiar({ tamanoTitulo: v })} />
+          </Campo>
+          <Campo label="Color del título/texto">
+            <SelectorColorTexto valor={bloque.colorTexto} onCambiar={(v) => onCambiar({ colorTexto: v })} />
+          </Campo>
         </>
       )}
 

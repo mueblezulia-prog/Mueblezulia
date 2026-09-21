@@ -111,6 +111,31 @@ export const ALTOS_BLOQUE = {
   completo: "h-[70vh] sm:h-[85vh]",
 };
 
+// Cuando la foto ya viene recortada a una proporción exacta (ver
+// RecortadorContenido), el marco usa esa proporción (aspect-ratio) en vez
+// de una altura fija, así "Llena el marco" nunca vuelve a recortar de
+// más — estos son solo el LÍMITE de alto, para que en pantallas anchas
+// no crezca sin control.
+export const ALTOS_MAX = {
+  pequeno: "max-h-64",
+  mediano: "max-h-80",
+  grande: "max-h-[28rem]",
+  completo: "max-h-[85vh]",
+};
+
+/** Tamaño del título de un bloque (elegido por el admin, ver EditorBloque). */
+export const TAMANOS_TITULO = {
+  pequeno: "text-base sm:text-lg",
+  mediano: "text-lg sm:text-xl",
+  grande: "text-2xl sm:text-3xl",
+};
+
+/** Color del texto (título) de un bloque. */
+export const COLORES_TEXTO = {
+  blanco: "text-ink",
+  dorado: "text-gold",
+};
+
 /**
  * Trae el bloque `clave` ya combinado con sus valores por defecto
  * (así si el admin solo llenó "direccion" pero no "titulo", el resto
