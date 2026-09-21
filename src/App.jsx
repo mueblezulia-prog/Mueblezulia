@@ -17,6 +17,42 @@ import AdminTelas from "./admin/AdminTelas";
 import AdminEtiquetas from "./admin/AdminEtiquetas";
 import AdminContenido from "./admin/AdminContenido";
 
+// Íconos de pestaña (favicon): el logo de la mueblería en el sitio público,
+// y un engranaje dorado en el panel de administración — así, con varias
+// pestañas abiertas, se distingue de un vistazo cuál es el panel interno y
+// cuál es la página que ven los clientes.
+const FAVICON_SITIO = {
+  icon: "/favicon.ico",
+  "16": "/favicon-16x16.png",
+  "32": "/favicon-32x32.png",
+  "48": "/favicon-48x48.png",
+  apple: "/apple-touch-icon.png",
+};
+const FAVICON_ADMIN = {
+  icon: "/favicon-admin.ico",
+  "16": "/favicon-admin-16x16.png",
+  "32": "/favicon-admin-32x32.png",
+  "48": "/favicon-admin-48x48.png",
+  apple: "/apple-touch-icon-admin.png",
+};
+
+function usarFaviconSegunRuta(esAdmin) {
+  useEffect(() => {
+    const set = esAdmin ? FAVICON_ADMIN : FAVICON_SITIO;
+    const enlaces = [
+      { selector: 'link[rel="icon"][sizes="16x16"]', href: set["16"] },
+      { selector: 'link[rel="icon"][sizes="32x32"]', href: set["32"] },
+      { selector: 'link[rel="icon"][sizes="48x48"]', href: set["48"] },
+      { selector: 'link[rel="icon"][type="image/x-icon"]', href: set.icon },
+      { selector: 'link[rel="apple-touch-icon"]', href: set.apple },
+    ];
+    for (const { selector, href } of enlaces) {
+      const el = document.querySelector(selector);
+      if (el) el.href = href;
+    }
+  }, [esAdmin]);
+}
+
 export default function App() {
   const { pathname } = useLocation();
   const esAdmin = pathname.startsWith("/admin");
@@ -25,6 +61,8 @@ export default function App() {
   // ya tiene su propio botón fijo de WhatsApp abajo, y dos barras fijas
   // superpuestas se verían mal en móvil.
   const ocultarBottomNav = esAdmin || esDetalleProducto;
+
+  usarFaviconSegunRuta(esAdmin);
 
   return (
     <div className="min-h-screen bg-carbon">

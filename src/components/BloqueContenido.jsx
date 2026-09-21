@@ -100,19 +100,23 @@ export default function BloqueContenido({ bloque }) {
   }
 
   if (bloque.tipo === "video" && bloque.video) {
+    // Video arriba, completo — el texto va en su propio bloque de vidrio
+    // DEBAJO (nunca encima tapando el video).
     return (
       <section className="px-4 py-8 max-w-5xl mx-auto">
-        <div className={`relative w-full ${alto} rounded-card overflow-hidden border border-carbon-border`} style={estiloAspecto}>
-          <video
-            src={bloque.video}
-            className={`absolute inset-0 w-full h-full ${ajuste}`}
-            autoPlay
-            muted
-            loop
-            playsInline
-          />
+        <div className="w-full rounded-card overflow-hidden border border-carbon-border flex flex-col">
+          <div className={`relative w-full ${alto}`} style={estiloAspecto}>
+            <video
+              src={bloque.video}
+              className={`absolute inset-0 w-full h-full ${ajuste}`}
+              autoPlay
+              muted
+              loop
+              playsInline
+            />
+          </div>
           {(bloque.vidrioSiempre ?? true) && (bloque.titulo || bloque.texto) && (
-            <div className={`absolute inset-x-0 bottom-0 p-4 sm:p-6 ${CLASE_TINTE[bloque.tinte] ?? CLASE_TINTE.dorado}`}>
+            <div className={`p-4 sm:p-6 ${CLASE_TINTE[bloque.tinte] ?? CLASE_TINTE.dorado}`}>
               {bloque.titulo && <h3 className={`${claseTamano} font-extrabold ${claseColor} drop-shadow-sm`}>{bloque.titulo}</h3>}
               {bloque.texto && <p className={`${claseColor}/90 text-sm sm:text-base mt-1 leading-snug drop-shadow-sm whitespace-pre-line`}>{bloque.texto}</p>}
             </div>
@@ -124,20 +128,24 @@ export default function BloqueContenido({ bloque }) {
 
   if (bloque.tipo === "collage") {
     // Cuadrícula que llena todo el marco (2 a 4 fotos): la primera ocupa
-    // el doble de espacio para que no se vea parejo y aburrido.
+    // el doble de espacio para que no se vea parejo y aburrido. El texto
+    // va DEBAJO de la cuadrícula, en su propio bloque de vidrio — nunca
+    // encima tapando las fotos.
     return (
       <section className="px-4 py-8 max-w-5xl mx-auto">
-        <div className={`relative w-full ${alto} rounded-card overflow-hidden border border-carbon-border grid grid-cols-2 grid-rows-2 gap-1.5`} style={estiloAspecto}>
-          {imagenes.slice(0, 3).map((url, i) => (
-            <img
-              key={url + i}
-              src={url}
-              alt={bloque.titulo || `Foto ${i + 1}`}
-              className={`w-full h-full ${ajuste} ${i === 0 && imagenes.length > 1 ? "row-span-2" : ""}`}
-            />
-          ))}
+        <div className="w-full rounded-card overflow-hidden border border-carbon-border flex flex-col">
+          <div className={`relative w-full ${alto} grid grid-cols-2 grid-rows-2 gap-1.5`} style={estiloAspecto}>
+            {imagenes.slice(0, 3).map((url, i) => (
+              <img
+                key={url + i}
+                src={url}
+                alt={bloque.titulo || `Foto ${i + 1}`}
+                className={`w-full h-full ${ajuste} ${i === 0 && imagenes.length > 1 ? "row-span-2" : ""}`}
+              />
+            ))}
+          </div>
           {(bloque.vidrioSiempre ?? true) && (bloque.titulo || bloque.texto) && (
-            <div className={`absolute inset-x-0 bottom-0 overflow-hidden ${CLASE_TINTE[bloque.tinte] ?? CLASE_TINTE.dorado}`}>
+            <div className={`relative overflow-hidden ${CLASE_TINTE[bloque.tinte] ?? CLASE_TINTE.dorado}`}>
               {imagenes[0] && (
                 <div
                   className="absolute inset-0 bg-cover bg-center scale-125 blur-xl opacity-60"
