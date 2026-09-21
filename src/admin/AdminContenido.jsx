@@ -1,15 +1,18 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
-import { convertirSiEsHeic } from "../lib/heic";
-import { obtenerContenido, guardarContenido, CONTENIDO_DEFAULT } from "../lib/contenido";
+import { prepararImagen } from "../lib/imagenOptimizada";
+import { obtenerContenido, guardarContenido, CONTENIDO_DEFAULT, ALTOS_BLOQUE } from "../lib/contenido";
 import { sonidoConfirmar } from "../lib/sonido";
+import FondoMultimedia from "../components/FondoMultimedia";
+import BloqueContenido from "../components/BloqueContenido";
 
 const BUCKET = "productos"; // mismo bucket que ya usan fotos de mueble y categorías
 
 async function subirImagenContenido(file) {
-  const fileListo = await convertirSiEsHeic(file);
-  const nombreArchivo = `contenido/${crypto.randomUUID()}.jpg`;
-  const { error } = await supabase.storage.from(BUCKET).upload(nombreArchivo, fileListo);
+  const fileListo = await prepararImagen(file);
+  const extension = fileListo.type === "image/webp" ? "webp" : "jpg";
+  const nombreArchivo = `contenido/${crypto.randomUUID()}.${extension}`;
+  const { error } = await supabase.storage.from(BUCKET).upload(nombreArchivo, fileListo, { contentType: fileListo.type });
   if (error) throw error;
   return supabase.storage.from(BUCKET).getPublicUrl(nombreArchivo).data.publicUrl;
 }
@@ -294,6 +297,7 @@ function SeccionSede({ sede, onGuardado }) {
   }
 
   const imagenes = form.imagenes ?? [];
+  const previewImagenes = form.tipoMedia === "diapositiva" ? imagenes : [imagenes[0] ?? form.imagen];
 
   return (
     <section className="admin-card p-5 flex flex-col gap-4">
@@ -303,6 +307,27 @@ function SeccionSede({ sede, onGuardado }) {
       <p className="text-sm text-ink-muted -mt-2">
         Se usa en la página de Catálogo (fondo de categorías) y en Contacto (foto/video, dirección y mapa).
       </p>
+
+      <div className="rounded-card overflow-hidden border border-carbon-border">
+        <p className="text-xs font-semibold text-ink-muted bg-carbon-light px-3 py-1.5 border-b border-carbon-border">
+          Vista previa — así se ve ahora mismo en el sitio
+        </p>
+        <div className="relative bg-carbon-light">
+          <FondoMultimedia
+            imagenes={previewImagenes}
+            video={form.video}
+            tipoMedia={form.tipoMedia}
+            alto={ALTOS_BLOQUE[form.alto] ?? ALTOS_BLOQUE.grande}
+            ajuste={form.ajusteImagen === "contain" ? "object-contain bg-carbon" : "object-cover"}
+            enfoque={form.enfoque}
+            alt="Fachada de Muebles Zulia"
+          />
+          <div className="relative -mt-10 sm:-mt-14 glass p-5">
+            <h3 className="text-lg font-bold text-ink mb-1">{form.titulo}</h3>
+            <p className="text-ink-muted text-sm">{form.texto}</p>
+          </div>
+        </div>
+      </div>
 
       <Campo label="Tipo de fondo">
         <div className="flex flex-wrap gap-2">
@@ -383,6 +408,15 @@ function SeccionSede({ sede, onGuardado }) {
         <SelectorAjuste valor={form.ajusteImagen} onCambiar={(v) => cambiar("ajusteImagen", v)} />
       </Campo>
 
+      <Campo label="Encuadre (qué parte se prioriza)">
+        <SelectorEnfoque
+          valor={form.enfoque}
+          onCambiar={(v) => cambiar("enfoque", v)}
+          mediaUrl={form.tipoMedia === "video" ? form.video : imagenes[0] ?? form.imagen}
+          esVideo={form.tipoMedia === "video"}
+        />
+      </Campo>
+
       <Campo label="Dirección (usada también en el mapa de Google)">
         <input
           type="text"
@@ -460,6 +494,50 @@ function SeccionSede({ sede, onGuardado }) {
   );
 }
 
+
+/**
+ * Cuadrícula de 9 puntos sobre una vista chica de la foto/video: el
+ * admin toca el punto que SIEMPRE quiere que se vea, y ese punto se
+ * usa como centro del recorte automático (object-position) sin
+ * importar el tamaño de pantalla — así nunca se corta lo importante
+ * ni queda "a medias".
+ */
+function SelectorEnfoque({ valor, onCambiar, mediaUrl, esVideo }) {
+  const actual = valor || "50% 50%";
+  const puntos = ["0% 0%", "50% 0%", "100% 0%", "0% 50%", "50% 50%", "100% 50%", "0% 100%", "50% 100%", "100% 100%"];
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div className="relative w-full h-28 rounded-control overflow-hidden border border-carbon-border bg-carbon">
+        {mediaUrl ? (
+          esVideo ? (
+            <video src={mediaUrl} className="w-full h-full object-cover" style={{ objectPosition: actual }} muted loop autoPlay playsInline />
+          ) : (
+            <img src={mediaUrl} alt="" className="w-full h-full object-cover" style={{ objectPosition: actual }} />
+          )
+        ) : (
+          <span className="absolute inset-0 flex items-center justify-center text-ink-muted text-xs">Sube una foto/video primero</span>
+        )}
+        <div className="absolute inset-0 grid grid-cols-3 grid-rows-3">
+          {puntos.map((p) => (
+            <button
+              key={p}
+              type="button"
+              onClick={() => onCambiar(p)}
+              className="flex items-center justify-center hover:bg-white/10 transition-colors"
+              aria-label={`Enfocar ${p}`}
+            >
+              <span className={`w-3 h-3 rounded-full border-2 ${actual === p ? "bg-gold border-gold" : "bg-black/20 border-white/70"}`} />
+            </button>
+          ))}
+        </div>
+      </div>
+      <p className="text-xs text-ink-muted">
+        Toca el punto de la foto que siempre quieres que se vea — así se ajusta solo en cualquier pantalla, sin cortar lo importante.
+      </p>
+    </div>
+  );
+}
 
 /* ------------------------------------------------------------ */
 /* MÉTODOS DE PAGO — lista dinámica (nombre + detalle + ícono)    */
@@ -747,6 +825,7 @@ function bloqueVacio(tipo) {
     tinte: "dorado",
     alto: "mediano",
     ajusteImagen: "cover",
+    enfoque: "50% 50%",
     posicionImagen: "izquierda",
     modoPresentacion: false,
     // El efecto vidrio (difuminado + transparencia) ahora está disponible
@@ -991,6 +1070,13 @@ function EditorBloque({ bloque, onCambiar }) {
 
   return (
     <>
+      <div className="rounded-control overflow-hidden border border-carbon-border">
+        <p className="text-xs font-semibold text-ink-muted bg-carbon-light px-3 py-1.5 border-b border-carbon-border">
+          Vista previa — así se ve ahora mismo en el sitio
+        </p>
+        <BloqueContenido bloque={bloque} />
+      </div>
+
       {bloque.tipo === "banner" && (
         <Campo label="Ícono (emoji)">
           <input
@@ -1094,6 +1180,16 @@ function EditorBloque({ bloque, onCambiar }) {
           <Campo label="Ajuste de la foto/video">
             <SelectorAjuste valor={bloque.ajusteImagen} onCambiar={(v) => onCambiar({ ajusteImagen: v })} />
           </Campo>
+          {bloque.tipo !== "collage" && (
+            <Campo label="Encuadre (qué parte se prioriza)">
+              <SelectorEnfoque
+                valor={bloque.enfoque}
+                onCambiar={(v) => onCambiar({ enfoque: v })}
+                mediaUrl={bloque.tipo === "video" ? bloque.video : bloque.imagenes?.[0]}
+                esVideo={bloque.tipo === "video"}
+              />
+            </Campo>
+          )}
           <Interruptor
             valor={bloque.vidrioSiempre ?? true}
             onCambiar={(v) => onCambiar({ vidrioSiempre: v })}

@@ -14,6 +14,7 @@ export default function BloqueContenido({ bloque }) {
   const alto = ALTOS_BLOQUE[bloque.alto] ?? ALTOS_BLOQUE.mediano;
   const ajuste = bloque.ajusteImagen === "contain" ? "object-contain bg-carbon" : "object-cover";
   const imagenes = bloque.imagenes ?? [];
+  const estiloEnfoque = bloque.enfoque ? { objectPosition: bloque.enfoque } : undefined;
 
   if (bloque.tipo === "banner") {
     return (
@@ -47,6 +48,7 @@ export default function BloqueContenido({ bloque }) {
             tinte={bloque.tinte}
             alto={alto}
             ajuste={ajuste}
+            enfoque={bloque.enfoque}
           />
         </section>
       );
@@ -76,6 +78,7 @@ export default function BloqueContenido({ bloque }) {
           <video
             src={bloque.video}
             className={`absolute inset-0 w-full h-full ${ajuste}`}
+            style={estiloEnfoque}
             autoPlay
             muted
             loop
@@ -131,6 +134,7 @@ export default function BloqueContenido({ bloque }) {
           tinte={bloque.tinte}
           alto={alto}
           ajuste={ajuste}
+          enfoque={bloque.enfoque}
         />
       </section>
     );
@@ -145,6 +149,7 @@ export default function BloqueContenido({ bloque }) {
         <img
           src={imagenes[0]}
           alt={bloque.titulo || "Foto"}
+          style={estiloEnfoque}
           className={`w-full ${alto} sm:h-full ${ajuste} ${imagenDerecha ? "sm:order-2" : ""}`}
         />
         <div className="p-5 flex flex-col justify-center">

@@ -12,12 +12,12 @@ import { sonidoNavegar } from "../lib/sonido";
 // "categorias" (Panel Admin), el nombre real la reemplaza automáticamente.
 // "tinte" alterna dorado/blanco entre categorías, como se pidió.
 const BANNERS = {
-  modulares: { banner: "Confort Total", icono: "🛋️", tinte: "dorado" },
-  comedores: { banner: "El Arte de Compartir", icono: "🍽️", tinte: "blanco" },
-  dormitorios: { banner: "Descansa Como Mereces", icono: "🛏️", tinte: "dorado" },
-  "mesa-centro": { banner: "El Centro de tu Sala", icono: "🪑", tinte: "blanco" },
-  reflejos: { banner: "Detalles que Iluminan", icono: "🪞", tinte: "dorado" },
-  "mueble-tv": { banner: "Entretenimiento en Casa", icono: "📺", tinte: "blanco" },
+  modulares: { banner: "Confort Total", icono: "/assets/icons/sofa.png", tinte: "dorado" },
+  comedores: { banner: "El Arte de Compartir", icono: "/assets/icons/comedor.png", tinte: "blanco" },
+  dormitorios: { banner: "Descansa Como Mereces", icono: "/assets/icons/cama.png", tinte: "dorado" },
+  "mesa-centro": { banner: "El Centro de tu Sala", icono: "/assets/icons/mesa-centro.png", tinte: "blanco" },
+  reflejos: { banner: "Detalles que Iluminan", icono: "/assets/icons/espejo.png", tinte: "dorado" },
+  "mueble-tv": { banner: "Entretenimiento en Casa", icono: "/assets/icons/tv.png", tinte: "blanco" },
 };
 
 export default function CategoriaPagina() {
@@ -83,7 +83,7 @@ export default function CategoriaPagina() {
     };
   }, [slug]);
 
-  const bannerInfo = BANNERS[slug] ?? { banner: categoria?.nombre ?? "Catálogo", icono: "🪑", tinte: "dorado" };
+  const bannerInfo = BANNERS[slug] ?? { banner: categoria?.nombre ?? "Catálogo", icono: "/assets/icons/puff.png", tinte: "dorado" };
   const nombreCategoria = categoria?.nombre ?? bannerInfo.banner;
   const subcategorias = categoria?.subcategorias ?? [];
   const productosFiltrados =

@@ -1,13 +1,15 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { convertirSiEsHeic } from "../lib/heic";
+import { prepararImagen } from "../lib/imagenOptimizada";
 
 const BUCKET = "productos"; // mismo bucket que ya usan las fotos de mueble
 
 async function subirImagenCategoria(file) {
-  const fileListo = await convertirSiEsHeic(file);
-  const nombreArchivo = `categorias/${crypto.randomUUID()}.jpg`;
-  const { error } = await supabase.storage.from(BUCKET).upload(nombreArchivo, fileListo);
+  const fileListo = await prepararImagen(file);
+  const extension = fileListo.type === "image/webp" ? "webp" : "jpg";
+  const nombreArchivo = `categorias/${crypto.randomUUID()}.${extension}`;
+  const { error } = await supabase.storage.from(BUCKET).upload(nombreArchivo, fileListo, { contentType: fileListo.type });
   if (error) throw error;
   return supabase.storage.from(BUCKET).getPublicUrl(nombreArchivo).data.publicUrl;
 }

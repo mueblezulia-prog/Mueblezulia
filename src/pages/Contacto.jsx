@@ -58,6 +58,7 @@ export default function Contacto() {
               tipoMedia={sede.tipoMedia}
               alto={sedeAlto}
               ajuste={sedeAjuste}
+              enfoque={sede.enfoque}
               alt="Fachada de Muebles Zulia"
             />
 

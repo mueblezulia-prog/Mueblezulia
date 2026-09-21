@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
-import { convertirSiEsHeic } from "../lib/heic";
+import { prepararImagen } from "../lib/imagenOptimizada";
 
 const BUCKET = "productos";
 
 async function subirIconoEtiqueta(file) {
-  const fileListo = await convertirSiEsHeic(file);
-  const nombreArchivo = `etiquetas/${crypto.randomUUID()}.jpg`;
-  const { error } = await supabase.storage.from(BUCKET).upload(nombreArchivo, fileListo);
+  const fileListo = await prepararImagen(file);
+  const extension = fileListo.type === "image/webp" ? "webp" : "jpg";
+  const nombreArchivo = `etiquetas/${crypto.randomUUID()}.${extension}`;
+  const { error } = await supabase.storage.from(BUCKET).upload(nombreArchivo, fileListo, { contentType: fileListo.type });
   if (error) throw error;
   return supabase.storage.from(BUCKET).getPublicUrl(nombreArchivo).data.publicUrl;
 }

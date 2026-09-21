@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
-import { convertirSiEsHeic } from "../lib/heic";
+import { prepararImagen } from "../lib/imagenOptimizada";
 
 const BUCKET = "productos";
 
@@ -67,9 +67,10 @@ export default function AdminTelas() {
   async function subirFoto(tela, file) {
     setSubiendoId(tela.id);
     try {
-      const fileListo = await convertirSiEsHeic(file);
-      const nombreArchivo = `telas/${crypto.randomUUID()}.jpg`;
-      const { error: errorSubida } = await supabase.storage.from(BUCKET).upload(nombreArchivo, fileListo);
+      const fileListo = await prepararImagen(file);
+      const extension = fileListo.type === "image/webp" ? "webp" : "jpg";
+      const nombreArchivo = `telas/${crypto.randomUUID()}.${extension}`;
+      const { error: errorSubida } = await supabase.storage.from(BUCKET).upload(nombreArchivo, fileListo, { contentType: fileListo.type });
       if (errorSubida) throw errorSubida;
       const url = supabase.storage.from(BUCKET).getPublicUrl(nombreArchivo).data.publicUrl;
       const { error } = await supabase.from("telas").update({ imagen: url }).eq("id", tela.id);

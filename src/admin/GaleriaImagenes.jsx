@@ -2,6 +2,7 @@ import { useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { getCroppedImageBlob } from "../lib/cropImage";
 import { convertirSiEsHeic } from "../lib/heic";
+import { optimizarBlob } from "../lib/imagenOptimizada";
 import ImageCropModule from "./ImageCropModule";
 
 const BUCKET = "productos";
@@ -104,9 +105,11 @@ export default function GaleriaImagenes({ fotos, onChange }) {
       } else {
         blob = editando.file; // el admin no tocó el cropper: sube la foto tal cual
       }
-      const nombreArchivo = `galeria/${editando.id}.jpg`;
+      blob = await optimizarBlob(blob);
+      const extension = blob.type === "image/webp" ? "webp" : "jpg";
+      const nombreArchivo = `galeria/${editando.id}.${extension}`;
       const { error: errorSubida } = await supabase.storage.from(BUCKET).upload(nombreArchivo, blob, {
-        contentType: "image/jpeg",
+        contentType: blob.type || "image/jpeg",
         upsert: true,
       });
       if (errorSubida) throw errorSubida;

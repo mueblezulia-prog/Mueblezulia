@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 import { getCroppedImageBlob } from "../lib/cropImage";
 import { convertirSiEsHeic } from "../lib/heic";
+import { optimizarBlob } from "../lib/imagenOptimizada";
 import ImageCropModule from "./ImageCropModule";
 import GaleriaImagenes from "./GaleriaImagenes";
 import SelectorTelas from "./SelectorTelas";
@@ -146,8 +147,10 @@ export default function ProductForm({ productoExistente, onGuardado }) {
 
   async function subirOriginalSiHaceFalta() {
     if (!imagenOriginalFile) return imagenOriginalUrl; // ya existía, no cambió
-    const nombreArchivo = `originales/${crypto.randomUUID()}.jpg`;
-    const { error } = await supabase.storage.from(BUCKET).upload(nombreArchivo, imagenOriginalFile);
+    const listo = await optimizarBlob(imagenOriginalFile);
+    const extension = listo.type === "image/webp" ? "webp" : "jpg";
+    const nombreArchivo = `originales/${crypto.randomUUID()}.${extension}`;
+    const { error } = await supabase.storage.from(BUCKET).upload(nombreArchivo, listo, { contentType: listo.type || "image/jpeg" });
     if (error) throw error;
     return supabase.storage.from(BUCKET).getPublicUrl(nombreArchivo).data.publicUrl;
   }
@@ -157,10 +160,12 @@ export default function ProductForm({ productoExistente, onGuardado }) {
       // No se tocó el cropper (ej. edición sin cambiar encuadre): reutiliza la existente
       return productoExistente?.imagen_recortada_url ?? urlOriginalFinal;
     }
-    const blob = await getCroppedImageBlob(imagenOriginalUrl, cropState.croppedAreaPixels);
-    const nombreArchivo = `recortes/${crypto.randomUUID()}.jpg`;
+    const recorte = await getCroppedImageBlob(imagenOriginalUrl, cropState.croppedAreaPixels);
+    const blob = await optimizarBlob(recorte);
+    const extension = blob.type === "image/webp" ? "webp" : "jpg";
+    const nombreArchivo = `recortes/${crypto.randomUUID()}.${extension}`;
     const { error } = await supabase.storage.from(BUCKET).upload(nombreArchivo, blob, {
-      contentType: "image/jpeg",
+      contentType: blob.type || "image/jpeg",
     });
     if (error) throw error;
     return supabase.storage.from(BUCKET).getPublicUrl(nombreArchivo).data.publicUrl;

@@ -58,6 +58,7 @@ export default function Home() {
             tipoMedia={sede.tipoMedia}
             alto="h-56 sm:h-full"
             ajuste={sede.ajusteImagen === "contain" ? "object-contain bg-carbon" : "object-cover"}
+            enfoque={sede.enfoque}
             alt="Fachada de Muebles Zulia"
           />
           <div className="p-5 flex flex-col justify-center">

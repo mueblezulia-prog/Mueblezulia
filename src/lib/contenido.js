@@ -23,6 +23,7 @@ export const CONTENIDO_DEFAULT = {
     video: "",
     tipoMedia: "foto", // "foto" (una sola) | "diapositiva" (varias fotos que pasan solas) | "video"
     alto: "grande", // pequeno | mediano | grande | completo (ver ALTOS_BLOQUE)
+    enfoque: "50% 50%", // qué parte de la foto/video se prioriza al recortar (ver SelectorEnfoque)
     direccion: "Av. 15 Delicias, frente a Alkosto, Maracaibo, Zulia",
     titulo: "¡Te esperamos en Muebles Zulia! 📍",
     texto: "Ven a conocer la calidad y el diseño que cambiarán tu hogar.",
