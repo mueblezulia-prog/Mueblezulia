@@ -105,7 +105,7 @@ let contadorPines = 0;
  * No reemplaza "+ Agregar color" (para agregar un color suelto), convive
  * con él.
  */
-export default function EditorTiraTela({ archivo, familia, ordenInicial, onCerrar, onColoresCreados }) {
+export default function EditorTiraTela({ archivo, familia, ordenInicial, onCerrar, onColoresCreados, onFotoCompletaGuardada }) {
   const [paso, setPaso] = useState("cargando"); // cargando | recortar | marcar
   const [error, setError] = useState(null);
 
@@ -124,6 +124,7 @@ export default function EditorTiraTela({ archivo, familia, ordenInicial, onCerra
 
   // --- Paso 2: marcar colores ---
   const [tiraUrl, setTiraUrl] = useState(null);
+  const [tiraBlob, setTiraBlob] = useState(null);
   const [dimsNaturales, setDimsNaturales] = useState(null);
   const [pines, setPines] = useState([]);
   const [guardando, setGuardando] = useState(false);
@@ -180,6 +181,7 @@ export default function EditorTiraTela({ archivo, familia, ordenInicial, onCerra
       const blobRecortado = await getCroppedImageBlobRotado(urlParaCropper, areaPixeles, rotacionTotal);
       const url = URL.createObjectURL(blobRecortado);
       setTiraUrl(url);
+      setTiraBlob(blobRecortado);
       setPines([]);
       setPaso("marcar");
     } catch (err) {
@@ -288,6 +290,33 @@ export default function EditorTiraTela({ archivo, familia, ordenInicial, onCerra
       const { data, error: errorInsertar } = await supabase.from("telas").insert(filasNuevas).select();
       if (errorInsertar) throw errorInsertar;
       onColoresCreados(data ?? []);
+
+      // Además de los circulitos por color, se guarda la foto de la tira
+      // COMPLETA (ya derecha) en la familia, para el botón "Ver tela
+      // completa" que ve el cliente. Si esto falla (por ejemplo, porque
+      // todavía no corriste el .sql que agrega esa columna) no se pierde
+      // nada de lo ya guardado arriba — solo no va a aparecer ese botón.
+      try {
+        if (tiraBlob) {
+          const optimizadaCompleta = await optimizarBlob(tiraBlob);
+          const extCompleta = optimizadaCompleta.type === "image/webp" ? "webp" : "jpg";
+          const nombreCompleta = `telas/${crypto.randomUUID()}.${extCompleta}`;
+          const { error: errorFotoCompleta } = await supabase.storage
+            .from(BUCKET)
+            .upload(nombreCompleta, optimizadaCompleta, { contentType: optimizadaCompleta.type });
+          if (!errorFotoCompleta) {
+            const urlCompleta = supabase.storage.from(BUCKET).getPublicUrl(nombreCompleta).data.publicUrl;
+            const { error: errorFamilia } = await supabase
+              .from("telas_familias")
+              .update({ foto_completa: urlCompleta })
+              .eq("id", familia.id);
+            if (!errorFamilia) onFotoCompletaGuardada?.(urlCompleta);
+          }
+        }
+      } catch {
+        // No bloquea el guardado principal de los colores.
+      }
+
       onCerrar();
     } catch (err) {
       setError(`No se pudo guardar: ${err.message}`);

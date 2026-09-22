@@ -23,6 +23,9 @@ export default function TelaRealDetalle({ producto }) {
   const [modoFamilia, setModoFamilia] = useState(false);
   const [relacionados, setRelacionados] = useState([]);
   const [verTodos, setVerTodos] = useState(false);
+  const [fotoCompletaAbierta, setFotoCompletaAbierta] = useState(false);
+
+  const disponible = familia ? (familia.disponible ?? true) : true;
 
   useEffect(() => {
     if (!producto?.tela_color_id) {
@@ -100,6 +103,11 @@ export default function TelaRealDetalle({ producto }) {
         <span className="flex-1 text-sm font-semibold text-ink">
           {familia ? `${familia.nombre} — ${tela.nombre}` : tela.nombre}
         </span>
+        {!disponible && (
+          <span className="text-[10px] font-bold uppercase tracking-wide bg-terracota/15 text-terracota border border-terracota/40 rounded-full px-2 py-0.5 shrink-0">
+            No disponible
+          </span>
+        )}
         <span className="text-xs text-gold font-bold shrink-0">Ver más ›</span>
       </button>
 
@@ -120,6 +128,26 @@ export default function TelaRealDetalle({ producto }) {
                 ✕
               </button>
             </div>
+
+            {!disponible && (
+              <p className="text-sm font-semibold text-terracota bg-terracota/10 border border-terracota/30 rounded-control px-3 py-2">
+                Esta tela no está disponible por el momento.
+              </p>
+            )}
+
+            {familia?.foto_completa && (
+              <button
+                type="button"
+                onClick={() => setFotoCompletaAbierta(true)}
+                className="flex items-center gap-2.5 bg-carbon-light border border-carbon-border rounded-control px-3.5 py-2.5 min-h-tap text-left self-start"
+              >
+                <span
+                  className="w-8 h-10 rounded border border-white/15 shrink-0 bg-cover bg-center"
+                  style={{ backgroundImage: `url(${familia.foto_completa})` }}
+                />
+                <span className="text-sm font-semibold text-gold">📷 Ver tela completa</span>
+              </button>
+            )}
 
             {familia?.descripcion && (
               <p className="text-sm text-ink-muted leading-relaxed">{familia.descripcion}</p>
@@ -209,6 +237,28 @@ export default function TelaRealDetalle({ producto }) {
               )}
             </div>
           </div>
+        </div>
+      )}
+
+      {fotoCompletaAbierta && familia?.foto_completa && (
+        <div
+          className="fixed inset-0 z-[60] bg-black/85 flex items-center justify-center p-4"
+          onClick={() => setFotoCompletaAbierta(false)}
+        >
+          <button
+            type="button"
+            onClick={() => setFotoCompletaAbierta(false)}
+            aria-label="Cerrar"
+            className="absolute top-4 right-4 text-3xl text-white/90 min-h-tap min-w-tap"
+          >
+            ✕
+          </button>
+          <img
+            src={familia.foto_completa}
+            alt={`Tela completa — ${familia.nombre}`}
+            className="max-w-full max-h-full rounded-card object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
         </div>
       )}
     </>

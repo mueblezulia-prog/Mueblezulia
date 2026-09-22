@@ -17,6 +17,13 @@ const IconCatalogo = ({ activo }) => (
   </svg>
 );
 
+const IconTelas = ({ activo }) => (
+  <svg viewBox="0 0 24 24" fill="none" className="w-6 h-6" stroke={activo ? "#F2B90C" : "#B3B3B3"} strokeWidth="2">
+    <circle cx="8" cy="9" r="4.5" />
+    <circle cx="15.5" cy="14.5" r="4.5" />
+  </svg>
+);
+
 const IconFabricacion = ({ activo }) => (
   <svg viewBox="0 0 24 24" fill="none" className="w-6 h-6" stroke={activo ? "#F2B90C" : "#B3B3B3"} strokeWidth="2">
     <path d="m14 6-7.5 7.5a2.1 2.1 0 1 0 3 3L17 9" strokeLinecap="round" strokeLinejoin="round" />
@@ -35,6 +42,7 @@ const IconUbicacion = ({ activo }) => (
 const TABS = [
   { to: "/", label: "Inicio", end: true, Icon: IconInicio },
   { to: "/catalogo", label: "Catálogo", Icon: IconCatalogo },
+  { to: "/telas", label: "Telas", Icon: IconTelas },
   { to: "/fabricacion", label: "Fabricación", Icon: IconFabricacion },
   { to: "/contacto", label: "Ubicación", Icon: IconUbicacion },
 ];
@@ -51,7 +59,7 @@ export default function BottomNav() {
 
   return (
     <nav className="sm:hidden fixed bottom-0 inset-x-0 z-30 bg-carbon/80 backdrop-blur-md border-t border-white/10 pb-[env(safe-area-inset-bottom)] shadow-lg shadow-black/30">
-      <div className="grid grid-cols-4">
+      <div className="grid grid-cols-5">
         {TABS.map(({ to, label, end, Icon }) => (
           <NavLink
             key={to}

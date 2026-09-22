@@ -9,6 +9,7 @@ import CatalogoProductos from "./pages/CatalogoProductos";
 import CategoriaPagina from "./pages/CategoriaPagina";
 import ProductoDetalle from "./pages/ProductoDetalle";
 import Fabricacion from "./pages/Fabricacion";
+import Telas from "./pages/Telas";
 import Contacto from "./pages/Contacto";
 import ProductForm from "./admin/ProductForm";
 import AdminProductosLista from "./admin/AdminProductosLista";
@@ -77,6 +78,7 @@ export default function App() {
           <Route path="/categoria/:slug" element={<CategoriaPagina />} />
           <Route path="/producto/:id" element={<ProductoDetalle />} />
           <Route path="/fabricacion" element={<Fabricacion />} />
+          <Route path="/telas" element={<Telas />} />
           <Route path="/contacto" element={<Contacto />} />
           {/* Rutas viejas: redirigen para no romper enlaces guardados */}
           <Route path="/ubicacion" element={<Navigate to="/contacto" replace />} />

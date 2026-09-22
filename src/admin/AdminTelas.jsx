@@ -166,6 +166,21 @@ export default function AdminTelas() {
     if (error) alert(`No se pudo guardar: ${error.message}`);
   }
 
+  // Disponible/No disponible se guarda al toque (no hace falta esperar a
+  // "Guardar y cerrar"), porque afecta lo que ve el cliente en todo el
+  // sitio de inmediato.
+  async function alternarDisponibilidad(familia) {
+    const nuevoValor = !(familia.disponible ?? true);
+    actualizarFamiliaLocal(familia.id, { disponible: nuevoValor });
+    const { error } = await supabase.from("telas_familias").update({ disponible: nuevoValor }).eq("id", familia.id);
+    if (error) {
+      alert(
+        `No se pudo cambiar la disponibilidad: ${error.message}\n\n¿Ya corriste supabase/fase_1_13_disponibilidad_tela.sql en tu proyecto de Supabase?`
+      );
+      actualizarFamiliaLocal(familia.id, { disponible: !nuevoValor });
+    }
+  }
+
   function actualizarFamiliaLocal(id, cambios) {
     setFamilias((actual) => actual.map((f) => (f.id === id ? { ...f, ...cambios } : f)));
   }
@@ -258,6 +273,7 @@ export default function AdminTelas() {
               onSubirTira={(file) => abrirEditorTira(familia, file)}
               onGuardarTodosColores={() => guardarTodosLosColores(familia.id)}
               guardandoTodos={guardandoFamiliaId === familia.id}
+              onAlternarDisponibilidad={() => alternarDisponibilidad(familia)}
             />
           ))}
 
@@ -327,6 +343,7 @@ export default function AdminTelas() {
           ordenInicial={telas.filter((t) => t.familia_id === tiraFamilia.id).length}
           onCerrar={cerrarEditorTira}
           onColoresCreados={coloresCreadosDesdeTira}
+          onFotoCompletaGuardada={(url) => actualizarFamiliaLocal(tiraFamilia.id, { foto_completa: url })}
         />
       )}
     </div>
@@ -348,7 +365,9 @@ function FamiliaCard({
   onSubirTira,
   onGuardarTodosColores,
   guardandoTodos,
+  onAlternarDisponibilidad,
 }) {
+  const disponible = familia.disponible ?? true;
   // Una familia recién creada (todavía sin colores) arranca abierta para
   // poder cargarla de una — las que ya tienen colores arrancan cerradas,
   // como un catálogo.
@@ -389,7 +408,14 @@ function FamiliaCard({
         </div>
 
         <div className="flex-1 min-w-0">
-          <div className="font-bold text-lg text-ink truncate">{familia.nombre || "(Sin nombre)"}</div>
+          <div className="font-bold text-lg text-ink truncate flex items-center gap-2">
+            <span className="truncate">{familia.nombre || "(Sin nombre)"}</span>
+            {!disponible && (
+              <span className="text-[10px] font-bold uppercase tracking-wide bg-terracota/15 text-terracota border border-terracota/40 rounded-full px-2 py-0.5 shrink-0">
+                No disponible
+              </span>
+            )}
+          </div>
           <div className="text-xs text-ink-muted">
             {colores.length} color{colores.length === 1 ? "" : "es"}
           </div>
@@ -419,14 +445,31 @@ function FamiliaCard({
                 className="campo-input resize-none text-sm"
               />
             </div>
-            <button
-              type="button"
-              onClick={onBorrarFamilia}
-              className="min-h-tap px-3 rounded-control border-2 border-terracota text-terracota font-bold text-sm shrink-0"
-            >
-              Borrar familia
-            </button>
+            <div className="flex flex-col gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={onAlternarDisponibilidad}
+                className={[
+                  "min-h-tap px-3 rounded-control border-2 font-bold text-sm",
+                  disponible ? "border-green-500/50 text-green-400 bg-green-500/10" : "border-terracota text-terracota bg-terracota/10",
+                ].join(" ")}
+              >
+                {disponible ? "✓ Disponible" : "✕ No disponible"}
+              </button>
+              <button
+                type="button"
+                onClick={onBorrarFamilia}
+                className="min-h-tap px-3 rounded-control border-2 border-terracota text-terracota font-bold text-sm"
+              >
+                Borrar familia
+              </button>
+            </div>
           </div>
+          <p className="text-xs text-ink-muted -mt-1">
+            {disponible
+              ? "Los clientes pueden ver y elegir esta tela normalmente en todo el sitio."
+              : "Los clientes van a ver esta tela marcada como \"No disponible\" en todo el sitio (no se borra nada, solo se avisa)."}
+          </p>
 
           <div className="flex flex-col gap-2">
             {colores.map((tela) => (
