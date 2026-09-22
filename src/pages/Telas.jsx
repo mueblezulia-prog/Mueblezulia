@@ -73,19 +73,15 @@ export default function Telas() {
                 className="glass hover:border-gold/50 hover:shadow-xl hover:shadow-black/40 hover:-translate-y-0.5
                            transition-all duration-300 ease-out rounded-card overflow-hidden text-left flex flex-col"
               >
-                <div className="w-full aspect-[4/5] bg-carbon relative overflow-hidden">
+                <div className="relative w-full overflow-hidden bg-carbon">
                   {fotoPortada ? (
-                    // object-contain (no "cover"): así se ve la tira de
-                    // tela COMPLETA y real, sin recortarla ni deformarla,
-                    // sea cual sea su forma.
-                    <img
-                      src={fotoPortada}
-                      alt={familia.nombre}
-                      className="w-full h-full object-contain"
-                      loading="lazy"
-                    />
+                    // Sin recortar ni forzar un cuadro fijo: la imagen se
+                    // muestra completa, con SU propia forma (alta, ancha,
+                    // cuadrada — la que tenga la foto real) — cada tarjeta
+                    // puede quedar con una altura distinta, y eso está bien.
+                    <img src={fotoPortada} alt={familia.nombre} className="w-full h-auto block" loading="lazy" />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-ink-muted text-xs text-center px-2">
+                    <div className="w-full aspect-[4/5] flex items-center justify-center text-ink-muted text-xs text-center px-2">
                       Sin foto todavía
                     </div>
                   )}
