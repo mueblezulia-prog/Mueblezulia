@@ -304,7 +304,7 @@ app.post("/api/mejorar-descripcion", async (req, res) => {
     return res.status(400).json({ ok: false, error: "Escribe primero una descripción para mejorar." });
   }
 
-  const modelo = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+  const modelo = process.env.GEMINI_MODEL || "gemini-3.6-flash";
   const instrucciones =
     tipo === "corta"
       ? 'Mejora esta descripción CORTA de un mueble para que suene más atractiva y vendedora, en español de Venezuela. Debe quedar en UNA sola frase breve (máximo 15 palabras), sin comillas ni emojis. Devuelve SOLO el texto mejorado, nada más.'
