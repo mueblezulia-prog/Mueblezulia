@@ -10,6 +10,7 @@ import SelectorTelas from "./SelectorTelas";
 import SelectorTelaReal from "./SelectorTelaReal";
 import EtiquetasSelector from "./EtiquetasSelector";
 import PreviewModal from "./PreviewModal";
+import MejorarConIA from "./MejorarConIA";
 
 const BUCKET = "productos";
 
@@ -454,6 +455,7 @@ export default function ProductForm({ productoExistente, onGuardado }) {
               onChange={(e) => setDescripcionCorta(e.target.value)}
               className="campo-input resize-none"
             />
+            <MejorarConIA texto={descripcionCorta} tipo="corta" onUsar={setDescripcionCorta} />
           </Campo>
 
           <Campo label="Descripción Larga">
@@ -463,6 +465,7 @@ export default function ProductForm({ productoExistente, onGuardado }) {
               onChange={(e) => setDescripcionLarga(e.target.value)}
               className="campo-input resize-none"
             />
+            <MejorarConIA texto={descripcionLarga} tipo="larga" onUsar={setDescripcionLarga} />
           </Campo>
 
           <SelectorTelaReal

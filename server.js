@@ -284,6 +284,56 @@ app.get("/api/admin/estadisticas", requireAdmin, async (req, res) => {
   });
 });
 
+// ================= GEMINI: mejorar descripción de producto =================
+// El admin escribe una descripción corta o larga y pide "Mejorar con IA";
+// esto la manda a Gemini (Google) desde el SERVIDOR (nunca desde el
+// navegador) para no exponer la llave de la API al público. Requiere la
+// variable de entorno GEMINI_API_KEY configurada en Railway — mientras no
+// esté puesta, este endpoint responde con un error claro en vez de fallar
+// en silencio.
+app.post("/api/mejorar-descripcion", async (req, res) => {
+  if (!process.env.GEMINI_API_KEY) {
+    return res.status(500).json({
+      ok: false,
+      error: "Falta configurar GEMINI_API_KEY en el servidor (Railway → Variables).",
+    });
+  }
+
+  const { texto, tipo } = req.body; // tipo: "corta" | "larga"
+  if (!texto || !texto.trim()) {
+    return res.status(400).json({ ok: false, error: "Escribe primero una descripción para mejorar." });
+  }
+
+  const modelo = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+  const instrucciones =
+    tipo === "corta"
+      ? 'Mejora esta descripción CORTA de un mueble para que suene más atractiva y vendedora, en español de Venezuela. Debe quedar en UNA sola frase breve (máximo 15 palabras), sin comillas ni emojis. Devuelve SOLO el texto mejorado, nada más.'
+      : 'Mejora esta descripción LARGA de un mueble para que suene más atractiva y vendedora, en español de Venezuela, resaltando materiales, comodidad y estilo. Entre 2 y 4 frases. Devuelve SOLO el texto mejorado, sin comillas, títulos ni emojis.';
+
+  try {
+    const respuestaGemini = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${process.env.GEMINI_API_KEY}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: `${instrucciones}\n\nDescripción original:\n"${texto.trim()}"` }] }],
+        }),
+      }
+    );
+    const datos = await respuestaGemini.json();
+    if (!respuestaGemini.ok) {
+      throw new Error(datos?.error?.message || "Gemini respondió con un error.");
+    }
+    const mejorado = datos?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+    if (!mejorado) throw new Error("Gemini no devolvió ningún texto.");
+    res.json({ ok: true, mejorado });
+  } catch (err) {
+    console.error("Error mejorando descripción con Gemini:", err.message);
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
 app.get("/health", (req, res) => res.send("ok"));
 
 // Catch-all: cualquier ruta que no sea /api/* o /health devuelve el

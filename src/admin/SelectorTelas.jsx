@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 
 /**
@@ -24,6 +24,8 @@ export default function SelectorTelas({
   const [telas, setTelas] = useState([]);
   const [familias, setFamilias] = useState([]);
   const [cargando, setCargando] = useState(true);
+  const [familiasAbiertas, setFamiliasAbiertas] = useState({});
+  const yaInicializado = useRef(false);
 
   useEffect(() => {
     Promise.all([
@@ -42,6 +44,25 @@ export default function SelectorTelas({
     .map((f) => ({ familia: f, telasDeLaFamilia: telas.filter((t) => t.familia_id === f.id) }))
     .filter((g) => g.telasDeLaFamilia.length > 0);
   const telasSinFamilia = telas.filter((t) => !t.familia_id);
+
+  // Al cargar, abre automáticamente solo las familias que ya tengan algún
+  // color marcado para este mueble — así se ve de una vez lo que está
+  // elegido, sin tener que adivinar cuál desplegar. El resto arranca
+  // cerrada (evita el "pocotón de círculos" cuando hay muchas telas).
+  useEffect(() => {
+    if (cargando || yaInicializado.current) return;
+    yaInicializado.current = true;
+    const abiertas = {};
+    for (const { familia, telasDeLaFamilia } of gruposPorFamilia) {
+      if (telasDeLaFamilia.some((t) => seleccionadas.includes(t.id))) abiertas[familia.id] = true;
+    }
+    setFamiliasAbiertas(abiertas);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cargando]);
+
+  function alternarFamiliaAbierta(familiaId) {
+    setFamiliasAbiertas((actual) => ({ ...actual, [familiaId]: !actual[familiaId] }));
+  }
 
   function alternar(id) {
     if (seleccionadas.includes(id)) {
@@ -72,17 +93,48 @@ export default function SelectorTelas({
       )}
 
       {!cargando && telas.length > 0 && (
-        <div className="flex flex-col gap-3">
-          {gruposPorFamilia.map(({ familia, telasDeLaFamilia }) => (
-            <div key={familia.id} className="flex flex-col gap-1.5">
-              <span className="text-xs font-semibold text-ink-muted uppercase tracking-wide">{familia.nombre}</span>
-              <div className="flex flex-wrap gap-3">
-                {telasDeLaFamilia.map((tela) => (
-                  <BotonTela key={tela.id} tela={tela} activa={seleccionadas.includes(tela.id)} onClick={() => alternar(tela.id)} />
-                ))}
+        <div className="flex flex-col gap-2">
+          {gruposPorFamilia.map(({ familia, telasDeLaFamilia }) => {
+            const abierta = !!familiasAbiertas[familia.id];
+            const cantidadElegida = telasDeLaFamilia.filter((t) => seleccionadas.includes(t.id)).length;
+            return (
+              <div key={familia.id} className="rounded-control border border-carbon-border overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => alternarFamiliaAbierta(familia.id)}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 min-h-tap text-left"
+                >
+                  <div className="flex -space-x-2 shrink-0">
+                    {telasDeLaFamilia.slice(0, 4).map((t) => (
+                      <span
+                        key={t.id}
+                        className="w-6 h-6 rounded-full border-2 border-carbon shrink-0 bg-cover bg-center"
+                        style={t.imagen ? { backgroundImage: `url(${t.imagen})` } : { backgroundColor: t.hex }}
+                      />
+                    ))}
+                  </div>
+                  <span className="flex-1 min-w-0 flex items-center gap-2 flex-wrap">
+                    <span className="font-semibold text-ink truncate">{familia.nombre}</span>
+                    <span className="text-xs text-ink-muted shrink-0">
+                      {telasDeLaFamilia.length} color{telasDeLaFamilia.length === 1 ? "" : "es"}
+                    </span>
+                    {cantidadElegida > 0 && (
+                      <span className="text-xs font-bold text-gold shrink-0">✓ {cantidadElegida} elegido{cantidadElegida === 1 ? "" : "s"}</span>
+                    )}
+                  </span>
+                  <span className="text-ink-muted text-lg shrink-0">{abierta ? "▲" : "▼"}</span>
+                </button>
+
+                {abierta && (
+                  <div className="flex flex-wrap gap-3 px-3 pb-3 pt-1 border-t border-carbon-border">
+                    {telasDeLaFamilia.map((tela) => (
+                      <BotonTela key={tela.id} tela={tela} activa={seleccionadas.includes(tela.id)} onClick={() => alternar(tela.id)} />
+                    ))}
+                  </div>
+                )}
               </div>
-            </div>
-          ))}
+            );
+          })}
           {telasSinFamilia.length > 0 && (
             <div className="flex flex-wrap gap-3">
               {telasSinFamilia.map((tela) => (
