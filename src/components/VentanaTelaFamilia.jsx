@@ -52,12 +52,20 @@ export default function VentanaTelaFamilia({ familia, colores, onCerrar }) {
 
   return (
     <>
-      <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/55" onClick={onCerrar}>
+      {/* En móvil se ve como una hoja que sube desde abajo, de borde a
+          borde (como siempre). En pantallas más anchas (sm: en adelante,
+          computador) se centra como una ventana normal, con un ancho
+          máximo — así no se estira de pared a pared ni se ve raro. */}
+      <div
+        className="fixed inset-0 z-50 flex flex-col justify-end sm:items-center sm:justify-center bg-black/55 sm:p-4"
+        onClick={onCerrar}
+      >
         <div
-          className="bg-carbon rounded-t-3xl px-5 pt-2.5 pb-7 max-h-[88vh] overflow-y-auto flex flex-col gap-4 shadow-2xl shadow-black/50"
+          className="bg-carbon rounded-t-3xl sm:rounded-3xl px-5 pt-2.5 pb-7 max-h-[88vh] sm:max-h-[85vh] w-full sm:max-w-lg
+                     overflow-y-auto flex flex-col gap-4 shadow-2xl shadow-black/50"
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="w-9 h-1 rounded-full bg-carbon-border mx-auto" />
+          <div className="w-9 h-1 rounded-full bg-carbon-border mx-auto sm:hidden" />
 
           <div className="flex items-start justify-between">
             <div>
@@ -171,7 +179,7 @@ export default function VentanaTelaFamilia({ familia, colores, onCerrar }) {
                     className="bg-carbon-light border border-carbon-border rounded-control overflow-hidden"
                   >
                     <div
-                      className="w-full h-24 bg-cover bg-center bg-carbon-border"
+                      className="w-full aspect-[4/5] bg-cover bg-center bg-carbon-border"
                       style={p.imagen_recortada_url ? { backgroundImage: `url(${p.imagen_recortada_url})` } : undefined}
                     />
                     <div className="px-2.5 py-2">
