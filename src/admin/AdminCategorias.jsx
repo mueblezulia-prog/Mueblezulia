@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { convertirSiEsHeic } from "../lib/heic";
 import { prepararImagen } from "../lib/imagenOptimizada";
@@ -54,6 +54,8 @@ export default function AdminCategorias() {
         nombre: categoria.nombre,
         slug: categoria.slug,
         imagen: categoria.imagen,
+        imagen_pos_x: categoria.imagen_pos_x ?? 50,
+        imagen_pos_y: categoria.imagen_pos_y ?? 50,
         orden: categoria.orden,
         subcategorias: subcategoriasFinal ?? categoria.subcategorias ?? [],
       })
@@ -147,6 +149,51 @@ function TarjetaCategoria({ categoria, guardando, subiendo, onCambiar, onGuardar
   // directo a "Guardar", esa subcategoría se perdía silenciosamente.
   const [nuevaSubcategoria, setNuevaSubcategoria] = useState("");
 
+  // Arrastrar la foto para reencuadrarla: guarda en qué % (0 a 100) de la
+  // foto está el centro visible (imagen_pos_x/y). 50/50 = centrada, que es
+  // como se veían todas antes de este cambio.
+  const contenedorRef = useRef(null);
+  const arrastreRef = useRef(null);
+  const [arrastrando, setArrastrando] = useState(false);
+  const posX = categoria.imagen_pos_x ?? 50;
+  const posY = categoria.imagen_pos_y ?? 50;
+
+  function iniciarArrastre(e) {
+    if (!categoria.imagen) return;
+    e.preventDefault();
+    const punto = e.touches ? e.touches[0] : e;
+    arrastreRef.current = { startX: punto.clientX, startY: punto.clientY, startPosX: posX, startPosY: posY };
+    setArrastrando(true);
+    window.addEventListener("mousemove", moverArrastre);
+    window.addEventListener("mouseup", terminarArrastre);
+    window.addEventListener("touchmove", moverArrastre, { passive: false });
+    window.addEventListener("touchend", terminarArrastre);
+  }
+
+  function moverArrastre(e) {
+    if (!arrastreRef.current || !contenedorRef.current) return;
+    e.preventDefault();
+    const punto = e.touches ? e.touches[0] : e;
+    const rect = contenedorRef.current.getBoundingClientRect();
+    const { startX, startY, startPosX, startPosY } = arrastreRef.current;
+    const dx = ((punto.clientX - startX) / rect.width) * 100;
+    const dy = ((punto.clientY - startY) / rect.height) * 100;
+    // Arrastrar hacia la derecha/abajo mueve la foto hacia allá (por eso
+    // se RESTA el desplazamiento al % de posición).
+    const nuevoX = Math.min(100, Math.max(0, startPosX - dx));
+    const nuevoY = Math.min(100, Math.max(0, startPosY - dy));
+    onCambiar({ imagen_pos_x: nuevoX, imagen_pos_y: nuevoY });
+  }
+
+  function terminarArrastre() {
+    arrastreRef.current = null;
+    setArrastrando(false);
+    window.removeEventListener("mousemove", moverArrastre);
+    window.removeEventListener("mouseup", terminarArrastre);
+    window.removeEventListener("touchmove", moverArrastre);
+    window.removeEventListener("touchend", terminarArrastre);
+  }
+
   function subcategoriasConPendiente() {
     const actuales = categoria.subcategorias ?? [];
     const pendiente = nuevaSubcategoria.trim();
@@ -165,31 +212,80 @@ function TarjetaCategoria({ categoria, guardando, subiendo, onCambiar, onGuardar
 
   return (
     <div className="group rounded-card overflow-hidden border border-carbon-border bg-carbon-light flex flex-col">
-      <label
-        className="relative aspect-[4/3] flex items-center justify-center cursor-pointer bg-carbon"
+      <div
+        ref={contenedorRef}
+        className={[
+          "relative aspect-[4/3] bg-carbon overflow-hidden select-none",
+          categoria.imagen ? (arrastrando ? "cursor-grabbing" : "cursor-grab") : "",
+        ].join(" ")}
         style={
           categoria.imagen
-            ? { backgroundImage: `url(${categoria.imagen})`, backgroundSize: "cover", backgroundPosition: "center" }
+            ? {
+                backgroundImage: `url(${categoria.imagen})`,
+                backgroundSize: "cover",
+                backgroundPosition: `${posX}% ${posY}%`,
+                touchAction: "none",
+              }
             : undefined
         }
+        onMouseDown={iniciarArrastre}
+        onTouchStart={iniciarArrastre}
       >
-        <input
-          type="file"
-          accept="image/*,.heic,.heif"
-          className="hidden"
-          onChange={(e) => onSubirImagen(e.target.files?.[0])}
-        />
-        <span
-          className={[
-            "absolute inset-0 flex items-center justify-center text-xs font-semibold text-white transition-opacity",
-            categoria.imagen
-              ? "bg-black/0 group-hover:bg-black/50 opacity-0 group-hover:opacity-100"
-              : "bg-carbon text-ink-muted opacity-100",
-          ].join(" ")}
-        >
-          {subiendo ? "Subiendo…" : categoria.imagen ? "Cambiar imagen" : "+ Subir imagen"}
-        </span>
-      </label>
+        {!categoria.imagen && (
+          <label className="absolute inset-0 flex items-center justify-center cursor-pointer text-xs font-semibold text-ink-muted">
+            <input
+              type="file"
+              accept="image/*,.heic,.heif"
+              className="hidden"
+              onChange={(e) => onSubirImagen(e.target.files?.[0])}
+            />
+            {subiendo ? "Subiendo…" : "+ Subir imagen"}
+          </label>
+        )}
+
+        {categoria.imagen && (
+          <>
+            {/* Botón para cambiar la foto — separado del arrastre, para que
+                arrastrar y "tocar para cambiar" no se estorben entre sí. */}
+            <label
+              onMouseDown={(e) => e.stopPropagation()}
+              onTouchStart={(e) => e.stopPropagation()}
+              className="absolute top-1.5 right-1.5 z-10 min-h-tap px-2 rounded-control bg-black/55 backdrop-blur-sm border border-white/20 text-white text-[11px] font-semibold cursor-pointer flex items-center"
+              title="Cambiar imagen"
+            >
+              <input
+                type="file"
+                accept="image/*,.heic,.heif"
+                className="hidden"
+                onChange={(e) => onSubirImagen(e.target.files?.[0])}
+              />
+              📷 Cambiar
+            </label>
+
+            {(posX !== 50 || posY !== 50) && (
+              <button
+                type="button"
+                onMouseDown={(e) => e.stopPropagation()}
+                onTouchStart={(e) => e.stopPropagation()}
+                onClick={() => onCambiar({ imagen_pos_x: 50, imagen_pos_y: 50 })}
+                className="absolute bottom-1.5 right-1.5 z-10 min-h-tap px-2 rounded-control bg-black/55 backdrop-blur-sm border border-white/20 text-white text-[11px] font-semibold"
+              >
+                ↺ Centrar
+              </button>
+            )}
+
+            <span className="absolute bottom-1.5 left-1.5 z-10 px-1.5 py-0.5 rounded bg-black/55 backdrop-blur-sm text-white text-[10px] font-semibold pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">
+              ✥ Arrastra para mover
+            </span>
+
+            {subiendo && (
+              <span className="absolute inset-0 z-20 flex items-center justify-center bg-black/50 text-white text-xs font-semibold pointer-events-none">
+                Subiendo…
+              </span>
+            )}
+          </>
+        )}
+      </div>
 
       <div className="p-3 flex flex-col gap-2">
         <input

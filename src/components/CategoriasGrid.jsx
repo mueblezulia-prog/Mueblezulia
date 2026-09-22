@@ -32,7 +32,7 @@ export default function CategoriasGrid({ titulo = "¿Cuál te llevas a Casa?" })
     async function cargar() {
       const { data, error } = await supabase
         .from("categorias")
-        .select("id, nombre, imagen, slug")
+        .select("id, nombre, imagen, slug, imagen_pos_x, imagen_pos_y")
         .order("orden", { ascending: true });
       if (!activo) return;
       // Si aún no has cargado categorías reales en Supabase, se mantienen
@@ -67,8 +67,11 @@ export default function CategoriasGrid({ titulo = "¿Cuál te llevas a Casa?" })
             >
               {cat.imagen && (
                 <span
-                  className="absolute inset-0 bg-cover bg-center transition-transform duration-500 ease-out group-hover:scale-110"
-                  style={{ backgroundImage: `url(${cat.imagen})` }}
+                  className="absolute inset-0 bg-cover transition-transform duration-500 ease-out group-hover:scale-110"
+                  style={{
+                    backgroundImage: `url(${cat.imagen})`,
+                    backgroundPosition: `${cat.imagen_pos_x ?? 50}% ${cat.imagen_pos_y ?? 50}%`,
+                  }}
                 />
               )}
               <span className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
