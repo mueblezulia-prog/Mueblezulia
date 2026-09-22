@@ -161,7 +161,13 @@ export default function AdminTelas() {
   async function guardarFamilia(familia) {
     const { error } = await supabase
       .from("telas_familias")
-      .update({ nombre: familia.nombre, descripcion: familia.descripcion })
+      .update({
+        nombre: familia.nombre,
+        descripcion: familia.descripcion,
+        composicion: familia.composicion,
+        ancho: familia.ancho,
+        cuidados: familia.cuidados,
+      })
       .eq("id", familia.id);
     if (error) alert(`No se pudo guardar: ${error.message}`);
   }
@@ -389,10 +395,14 @@ function FamiliaCard({
 
   return (
     <div className="bg-carbon-light border border-carbon-border rounded-card overflow-hidden">
-      <button
-        type="button"
+      <div
+        role="button"
+        tabIndex={0}
         onClick={() => setExpandida((v) => !v)}
-        className="w-full flex items-center gap-3 p-4 text-left"
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") setExpandida((v) => !v);
+        }}
+        className="w-full flex items-center gap-3 p-4 text-left cursor-pointer"
       >
         <div className="flex -space-x-2.5 shrink-0">
           {colores.slice(0, 5).map((c) => (
@@ -410,19 +420,43 @@ function FamiliaCard({
         <div className="flex-1 min-w-0">
           <div className="font-bold text-lg text-ink truncate flex items-center gap-2">
             <span className="truncate">{familia.nombre || "(Sin nombre)"}</span>
-            {!disponible && (
-              <span className="text-[10px] font-bold uppercase tracking-wide bg-terracota/15 text-terracota border border-terracota/40 rounded-full px-2 py-0.5 shrink-0">
-                No disponible
-              </span>
-            )}
           </div>
           <div className="text-xs text-ink-muted">
             {colores.length} color{colores.length === 1 ? "" : "es"}
           </div>
         </div>
 
+        {/* Switch de disponibilidad, visible siempre en la fila cerrada —
+            no hace falta abrir la familia para prender/apagarlo. */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onAlternarDisponibilidad();
+          }}
+          title={disponible ? "Disponible — toca para marcar como no disponible" : "No disponible — toca para marcar como disponible"}
+          className="flex items-center gap-1.5 shrink-0"
+        >
+          <span className={["text-[10px] font-bold uppercase tracking-wide hidden sm:inline", disponible ? "text-green-400" : "text-terracota"].join(" ")}>
+            {disponible ? "Disponible" : "No disponible"}
+          </span>
+          <span
+            className={[
+              "w-11 h-6 rounded-full relative transition-colors duration-200 border",
+              disponible ? "bg-green-500/80 border-green-400" : "bg-carbon border-terracota/60",
+            ].join(" ")}
+          >
+            <span
+              className={[
+                "absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all duration-200",
+                disponible ? "left-[22px]" : "left-0.5",
+              ].join(" ")}
+            />
+          </span>
+        </button>
+
         <span className="text-ink-muted text-xl shrink-0">{expandida ? "▲" : "▼"}</span>
-      </button>
+      </div>
 
       {expandida && (
         <div className="px-4 pb-4 flex flex-col gap-3 border-t border-carbon-border pt-4">
@@ -440,22 +474,45 @@ function FamiliaCard({
                 value={familia.descripcion ?? ""}
                 onChange={(e) => onCambiarFamilia({ descripcion: e.target.value })}
                 onBlur={onGuardarFamilia}
-                placeholder="Características (opcional): composición, cuidados, sensación al tacto…"
+                placeholder="Descripción (opcional): sensación al tacto, estilo, etc."
                 rows={2}
                 className="campo-input resize-none text-sm"
               />
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  type="text"
+                  value={familia.composicion ?? ""}
+                  onChange={(e) => onCambiarFamilia({ composicion: e.target.value })}
+                  onBlur={onGuardarFamilia}
+                  placeholder="Composición (ej: 100% poliéster)"
+                  className="campo-input text-sm"
+                  aria-label="Composición"
+                />
+                <input
+                  type="text"
+                  value={familia.ancho ?? ""}
+                  onChange={(e) => onCambiarFamilia({ ancho: e.target.value })}
+                  onBlur={onGuardarFamilia}
+                  placeholder="Ancho (ej: 1.40 m)"
+                  className="campo-input text-sm"
+                  aria-label="Ancho"
+                />
+                <input
+                  type="text"
+                  value={familia.cuidados ?? ""}
+                  onChange={(e) => onCambiarFamilia({ cuidados: e.target.value })}
+                  onBlur={onGuardarFamilia}
+                  placeholder="Cuidados (ej: limpiar en seco)"
+                  className="campo-input text-sm col-span-2"
+                  aria-label="Cuidados"
+                />
+              </div>
+              <p className="text-xs text-ink-muted -mt-1">
+                Estos tres campos son opcionales y aparecen como insignias (como las de "Todas las telas" en los muebles) en la
+                tarjeta pública de esta tela. Déjalos vacíos si no aplican.
+              </p>
             </div>
             <div className="flex flex-col gap-2 shrink-0">
-              <button
-                type="button"
-                onClick={onAlternarDisponibilidad}
-                className={[
-                  "min-h-tap px-3 rounded-control border-2 font-bold text-sm",
-                  disponible ? "border-green-500/50 text-green-400 bg-green-500/10" : "border-terracota text-terracota bg-terracota/10",
-                ].join(" ")}
-              >
-                {disponible ? "✓ Disponible" : "✕ No disponible"}
-              </button>
               <button
                 type="button"
                 onClick={onBorrarFamilia}

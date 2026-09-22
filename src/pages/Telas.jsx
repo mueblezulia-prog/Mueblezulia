@@ -54,29 +54,65 @@ export default function Telas() {
           {familias.map((familia) => {
             const colores = telas.filter((t) => t.familia_id === familia.id);
             const disponible = familia.disponible ?? true;
+            // Preferimos siempre la foto completa de la tira (la foto real
+            // de la tela, con todos sus colores) — solo si una familia
+            // vieja no la tiene, se usa el swatch redondo del primer color
+            // como respaldo.
             const fotoPortada = familia.foto_completa ?? colores.find((c) => c.imagen)?.imagen ?? null;
+            const propiedades = [
+              familia.composicion && { icono: "🧵", texto: familia.composicion },
+              familia.ancho && { icono: "📏", texto: familia.ancho },
+              familia.cuidados && { icono: "🧺", texto: familia.cuidados },
+            ].filter(Boolean);
+
             return (
               <button
                 key={familia.id}
                 type="button"
                 onClick={() => setFamiliaAbierta(familia)}
-                className="bg-carbon-light border border-carbon-border rounded-card overflow-hidden text-left flex flex-col"
+                className="glass hover:border-gold/50 hover:shadow-xl hover:shadow-black/40 hover:-translate-y-0.5
+                           transition-all duration-300 ease-out rounded-card overflow-hidden text-left flex flex-col"
               >
-                <div
-                  className="w-full aspect-[4/5] bg-cover bg-center bg-carbon-border relative"
-                  style={fotoPortada ? { backgroundImage: `url(${fotoPortada})` } : undefined}
-                >
+                <div className="w-full aspect-[4/5] bg-carbon relative overflow-hidden">
+                  {fotoPortada ? (
+                    // object-contain (no "cover"): así se ve la tira de
+                    // tela COMPLETA y real, sin recortarla ni deformarla,
+                    // sea cual sea su forma.
+                    <img
+                      src={fotoPortada}
+                      alt={familia.nombre}
+                      className="w-full h-full object-contain"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-ink-muted text-xs text-center px-2">
+                      Sin foto todavía
+                    </div>
+                  )}
                   {!disponible && (
                     <span className="absolute top-2 left-2 text-[10px] font-bold uppercase tracking-wide bg-terracota text-white rounded-full px-2 py-0.5 shadow">
                       No disponible
                     </span>
                   )}
                 </div>
-                <div className="p-3">
+                <div className="p-3 bg-white/[0.03] backdrop-blur-sm border-t border-white/10 flex flex-col gap-1">
                   <div className="font-bold text-ink text-base truncate">{familia.nombre}</div>
                   <div className="text-xs text-ink-muted">
                     {colores.length} color{colores.length === 1 ? "" : "es"}
                   </div>
+                  {propiedades.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-0.5">
+                      {propiedades.map((p, i) => (
+                        <span
+                          key={i}
+                          className="inline-flex items-center gap-1 text-[10px] font-semibold text-gold bg-gold/15 border border-gold/40 rounded-control px-1.5 py-0.5"
+                        >
+                          <span>{p.icono}</span>
+                          <span className="truncate max-w-[80px]">{p.texto}</span>
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </button>
             );

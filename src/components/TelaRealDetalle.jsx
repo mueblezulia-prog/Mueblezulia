@@ -26,6 +26,13 @@ export default function TelaRealDetalle({ producto }) {
   const [fotoCompletaAbierta, setFotoCompletaAbierta] = useState(false);
 
   const disponible = familia ? (familia.disponible ?? true) : true;
+  const propiedades = familia
+    ? [
+        familia.composicion && { icono: "🧵", texto: familia.composicion },
+        familia.ancho && { icono: "📏", texto: `Ancho: ${familia.ancho}` },
+        familia.cuidados && { icono: "🧺", texto: familia.cuidados },
+      ].filter(Boolean)
+    : [];
 
   useEffect(() => {
     if (!producto?.tela_color_id) {
@@ -151,6 +158,20 @@ export default function TelaRealDetalle({ producto }) {
 
             {familia?.descripcion && (
               <p className="text-sm text-ink-muted leading-relaxed">{familia.descripcion}</p>
+            )}
+
+            {propiedades.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {propiedades.map((p, i) => (
+                  <span
+                    key={i}
+                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-gold bg-gold/15 border border-gold/40 rounded-control px-2.5 py-1"
+                  >
+                    <span>{p.icono}</span>
+                    <span>{p.texto}</span>
+                  </span>
+                ))}
+              </div>
             )}
 
             {coloresFamilia.length > 1 && (
