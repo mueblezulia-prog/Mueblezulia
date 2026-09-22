@@ -349,86 +349,131 @@ function FamiliaCard({
   onGuardarTodosColores,
   guardandoTodos,
 }) {
+  // Una familia recién creada (todavía sin colores) arranca abierta para
+  // poder cargarla de una — las que ya tienen colores arrancan cerradas,
+  // como un catálogo.
+  const [expandida, setExpandida] = useState(colores.length === 0);
+
   function handleArchivoTira(e) {
     const file = e.target.files?.[0];
     e.target.value = "";
     if (file) onSubirTira(file);
   }
 
+  // Al guardar todos los colores, se contrae de nuevo la tarjeta — así
+  // queda como un catálogo (una fila por familia) en vez de tener todo
+  // abierto todo el tiempo.
+  async function manejarGuardarTodos() {
+    await onGuardarTodosColores();
+    setExpandida(false);
+  }
+
   return (
-    <div className="bg-carbon-light border border-carbon-border rounded-card p-4 flex flex-col gap-3">
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <div className="flex-1 min-w-[200px] flex flex-col gap-2">
-          <input
-            type="text"
-            value={familia.nombre}
-            onChange={(e) => onCambiarFamilia({ nombre: e.target.value })}
-            onBlur={onGuardarFamilia}
-            className="campo-input font-bold text-lg"
-            aria-label="Nombre de la familia"
-          />
-          <textarea
-            value={familia.descripcion ?? ""}
-            onChange={(e) => onCambiarFamilia({ descripcion: e.target.value })}
-            onBlur={onGuardarFamilia}
-            placeholder="Características (opcional): composición, cuidados, sensación al tacto…"
-            rows={2}
-            className="campo-input resize-none text-sm"
-          />
+    <div className="bg-carbon-light border border-carbon-border rounded-card overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setExpandida((v) => !v)}
+        className="w-full flex items-center gap-3 p-4 text-left"
+      >
+        <div className="flex -space-x-2.5 shrink-0">
+          {colores.slice(0, 5).map((c) => (
+            <span
+              key={c.id}
+              className="w-9 h-9 rounded-full border-2 border-carbon-light bg-cover bg-center shrink-0"
+              style={c.imagen ? { backgroundImage: `url(${c.imagen})` } : { backgroundColor: c.hex }}
+            />
+          ))}
+          {colores.length === 0 && (
+            <span className="w-9 h-9 rounded-full border-2 border-dashed border-carbon-border shrink-0" />
+          )}
         </div>
-        <button
-          type="button"
-          onClick={onBorrarFamilia}
-          className="min-h-tap px-3 rounded-control border-2 border-terracota text-terracota font-bold text-sm shrink-0"
-        >
-          Borrar familia
-        </button>
-      </div>
 
-      <div className="flex flex-col gap-2">
-        {colores.map((tela) => (
-          <FilaColor
-            key={tela.id}
-            tela={tela}
-            subiendo={subiendoId === tela.id}
-            onCambiar={(cambios) => onCambiarColor(tela.id, cambios)}
-            onBorrar={() => onBorrarColor(tela)}
-            onSubirFoto={(file) => onSubirFoto(tela, file)}
-            onQuitarFoto={() => onQuitarFoto(tela)}
-          />
-        ))}
-
-        {colores.length > 0 && (
-          <button
-            type="button"
-            onClick={onGuardarTodosColores}
-            disabled={guardandoTodos}
-            className="min-h-tap px-4 rounded-control bg-gold text-carbon font-bold text-sm self-start disabled:opacity-60"
-          >
-            {guardandoTodos ? "Guardando…" : "💾 Guardar todos los colores de esta familia"}
-          </button>
-        )}
-
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={onAgregarColor}
-            className="min-h-tap px-4 rounded-control border-2 border-dashed border-carbon-border text-gold font-bold text-sm self-start"
-          >
-            + Agregar color
-          </button>
-
-          <label className="min-h-tap px-4 rounded-control border-2 border-dashed border-gold/50 text-gold font-bold text-sm self-start cursor-pointer flex items-center">
-            📷 Subir foto de tira de colores
-            <input type="file" accept="image/*,.heic,.heif" onChange={handleArchivoTira} className="hidden" />
-          </label>
+        <div className="flex-1 min-w-0">
+          <div className="font-bold text-lg text-ink truncate">{familia.nombre || "(Sin nombre)"}</div>
+          <div className="text-xs text-ink-muted">
+            {colores.length} color{colores.length === 1 ? "" : "es"}
+          </div>
         </div>
-        <p className="text-xs text-ink-muted -mt-1">
-          Cambia el nombre y el color de cualquier fila y toca "Guardar todos los colores de esta familia" una sola vez al final —
-          no hace falta guardar fila por fila. ¿Tienes una foto con varias franjas de color seguidas (como vienen las muestras de
-          tela)? Súbela con "📷 Subir foto de tira de colores" y marca cada color sobre la misma foto.
-        </p>
-      </div>
+
+        <span className="text-ink-muted text-xl shrink-0">{expandida ? "▲" : "▼"}</span>
+      </button>
+
+      {expandida && (
+        <div className="px-4 pb-4 flex flex-col gap-3 border-t border-carbon-border pt-4">
+          <div className="flex flex-wrap items-start justify-between gap-2">
+            <div className="flex-1 min-w-[200px] flex flex-col gap-2">
+              <input
+                type="text"
+                value={familia.nombre}
+                onChange={(e) => onCambiarFamilia({ nombre: e.target.value })}
+                onBlur={onGuardarFamilia}
+                className="campo-input font-bold text-lg"
+                aria-label="Nombre de la familia"
+              />
+              <textarea
+                value={familia.descripcion ?? ""}
+                onChange={(e) => onCambiarFamilia({ descripcion: e.target.value })}
+                onBlur={onGuardarFamilia}
+                placeholder="Características (opcional): composición, cuidados, sensación al tacto…"
+                rows={2}
+                className="campo-input resize-none text-sm"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={onBorrarFamilia}
+              className="min-h-tap px-3 rounded-control border-2 border-terracota text-terracota font-bold text-sm shrink-0"
+            >
+              Borrar familia
+            </button>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            {colores.map((tela) => (
+              <FilaColor
+                key={tela.id}
+                tela={tela}
+                subiendo={subiendoId === tela.id}
+                onCambiar={(cambios) => onCambiarColor(tela.id, cambios)}
+                onBorrar={() => onBorrarColor(tela)}
+                onSubirFoto={(file) => onSubirFoto(tela, file)}
+                onQuitarFoto={() => onQuitarFoto(tela)}
+              />
+            ))}
+
+            {colores.length > 0 && (
+              <button
+                type="button"
+                onClick={manejarGuardarTodos}
+                disabled={guardandoTodos}
+                className="min-h-tap px-4 rounded-control bg-gold text-carbon font-bold text-sm self-start disabled:opacity-60"
+              >
+                {guardandoTodos ? "Guardando…" : "💾 Guardar y cerrar esta familia"}
+              </button>
+            )}
+
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={onAgregarColor}
+                className="min-h-tap px-4 rounded-control border-2 border-dashed border-carbon-border text-gold font-bold text-sm self-start"
+              >
+                + Agregar color
+              </button>
+
+              <label className="min-h-tap px-4 rounded-control border-2 border-dashed border-gold/50 text-gold font-bold text-sm self-start cursor-pointer flex items-center">
+                📷 Subir foto de tira de colores
+                <input type="file" accept="image/*,.heic,.heif" onChange={handleArchivoTira} className="hidden" />
+              </label>
+            </div>
+            <p className="text-xs text-ink-muted -mt-1">
+              Cambia el nombre y el color de cualquier fila y toca "Guardar y cerrar esta familia" al final — no hace falta guardar
+              fila por fila. ¿Tienes una foto con varias franjas de color seguidas (como vienen las muestras de tela)? Súbela con
+              "📷 Subir foto de tira de colores" y marca cada color sobre la misma foto.
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
