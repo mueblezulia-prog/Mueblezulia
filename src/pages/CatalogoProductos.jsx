@@ -20,6 +20,7 @@ export default function CatalogoProductos() {
   const [soloEntrega, setSoloEntrega] = useState(false);
   const [intento, setIntento] = useState(0);
   const [busqueda, setBusqueda] = useState("");
+  const [buscadorAbierto, setBuscadorAbierto] = useState(false);
 
   useEffect(() => {
     let activo = true;
@@ -98,17 +99,37 @@ export default function CatalogoProductos() {
             <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
               <h2 className="text-xl sm:text-2xl font-extrabold text-ink">Todos los productos</h2>
               {!cargando && !error && productos.length > 0 && (
-                <FiltroEntregaInmediata activo={soloEntrega} onClick={() => setSoloEntrega((v) => !v)} />
+                <div className="flex items-center gap-2">
+                  {/* El buscador queda escondido detrás de la lupa: los
+                      muebles se ven de una vez al entrar. */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setBuscadorAbierto((v) => !v);
+                      if (buscadorAbierto) setBusqueda("");
+                    }}
+                    aria-label={buscadorAbierto ? "Cerrar buscador" : "Buscar mueble"}
+                    aria-expanded={buscadorAbierto}
+                    className={[
+                      "w-11 h-11 rounded-full border flex items-center justify-center text-lg transition",
+                      buscadorAbierto ? "bg-gold text-carbon border-gold" : "bg-black/35 border-white/15 text-ink hover:border-gold/50",
+                    ].join(" ")}
+                  >
+                    {buscadorAbierto ? "✕" : "🔍"}
+                  </button>
+                  <FiltroEntregaInmediata activo={soloEntrega} onClick={() => setSoloEntrega((v) => !v)} />
+                </div>
               )}
             </div>
 
             {/* Buscador: escribe "comedor", "cama", "Grecia"… */}
-            {!cargando && !error && productos.length > 0 && (
-              <div className="relative mb-4">
+            {!cargando && !error && productos.length > 0 && buscadorAbierto && (
+              <div className="relative mb-4 animar-subida">
                 <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-muted pointer-events-none" aria-hidden="true">
                   🔍
                 </span>
                 <input
+                  autoFocus
                   type="search"
                   inputMode="search"
                   enterKeyHint="search"

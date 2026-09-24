@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 import { formatearPrecio } from "../lib/formato";
 import useModal from "../hooks/useModal";
+import InsigniasBeneficios from "./InsigniasBeneficios";
 
 const MAX_VISIBLES = 4;
 
@@ -191,6 +192,8 @@ export default function TelaRealDetalle({ producto }) {
             {familia?.descripcion && (
               <p className="text-sm text-ink-muted leading-relaxed">{familia.descripcion}</p>
             )}
+
+            {familia && <InsigniasBeneficios familia={familia} />}
 
             {propiedades.length > 0 && (
               <div className="flex flex-wrap gap-1.5">

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import Cropper from "react-easy-crop";
 import { supabase } from "../lib/supabaseClient";
 import { convertirSiEsHeic } from "../lib/heic";
@@ -934,18 +935,23 @@ function RecortadorContenido({ archivo, aspectoInicial = 16 / 9, onCancelar, onL
     }
   }
 
-  return (
-    <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
-      <div className="bg-carbon-light rounded-card border border-carbon-border max-w-lg w-full p-4 flex flex-col gap-3">
-        <p className="text-ink font-bold">
-          Encuadra tu foto
-          {restantes > 0 && <span className="ml-2 text-sm font-semibold text-gold">(quedan {restantes} más)</span>}
-        </p>
-        <p className="text-xs text-ink-muted -mt-2">Arrastra para moverla y usa el control de abajo para acercar o alejar.</p>
+  return createPortal(
+    // Pantalla completa en el celular (antes era un cuadrito chico y
+    // costaba encuadrar); ventana grande en computador.
+    <div className="fixed inset-0 z-[70] bg-black/85 flex items-stretch sm:items-center justify-center sm:p-4">
+      <div className="bg-carbon-light sm:rounded-card border-carbon-border sm:border w-full sm:max-w-3xl h-full sm:h-auto sm:max-h-[95vh] p-3 sm:p-5 flex flex-col gap-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+        <div>
+          <p className="text-lg text-ink font-bold">
+            Encuadra tu foto
+            {restantes > 0 && <span className="ml-2 text-sm font-semibold text-gold">(quedan {restantes} más)</span>}
+          </p>
+          <p className="text-sm text-ink-muted">Arrastra la foto para moverla. Con dos dedos, o con los botones − / +, acercas o alejas.</p>
+        </div>
 
-        <div className="flex gap-2">
+        <div className="grid grid-cols-4 gap-1.5">
           {[
             { label: "Ancho", valor: 16 / 9 },
+            { label: "Horizontal", valor: 4 / 3 },
             { label: "Vertical", valor: 4 / 5 },
             { label: "Cuadrado", valor: 1 },
           ].map((o) => (
@@ -954,8 +960,8 @@ function RecortadorContenido({ archivo, aspectoInicial = 16 / 9, onCancelar, onL
               type="button"
               onClick={() => setAspecto(o.valor)}
               className={[
-                "flex-1 min-h-tap rounded-control border-2 text-sm font-semibold transition-all duration-150",
-                aspecto === o.valor ? "border-gold bg-gold/10 text-ink" : "border-carbon-border text-ink-muted hover:border-carbon-border/60",
+                "min-h-tap rounded-control border-2 text-sm font-semibold transition-all duration-150",
+                Math.abs(aspecto - o.valor) < 0.001 ? "border-gold bg-gold/10 text-ink" : "border-carbon-border text-ink-muted hover:border-carbon-border/60",
               ].join(" ")}
             >
               {o.label}
@@ -963,12 +969,14 @@ function RecortadorContenido({ archivo, aspectoInicial = 16 / 9, onCancelar, onL
           ))}
         </div>
 
-        <div className="relative w-full h-64 bg-black rounded-control overflow-hidden">
+        <div className="relative w-full flex-1 min-h-[45vh] sm:flex-none sm:h-[58vh] bg-black rounded-control overflow-hidden">
           {urlOriginal ? (
             <Cropper
               image={urlOriginal}
               crop={crop}
               zoom={zoom}
+              minZoom={1}
+              maxZoom={4}
               aspect={aspecto}
               onCropChange={setCrop}
               onZoomChange={setZoom}
@@ -980,29 +988,49 @@ function RecortadorContenido({ archivo, aspectoInicial = 16 / 9, onCancelar, onL
           )}
         </div>
 
-        <label className="text-sm font-semibold text-ink flex flex-col gap-1">
-          Zoom ({Math.round(zoom * 100)}%)
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setZoom((z) => Math.max(1, Math.round((z - 0.2) * 100) / 100))}
+            aria-label="Alejar"
+            className="w-11 h-11 shrink-0 rounded-control border border-carbon-border text-ink text-2xl font-bold hover:border-gold/50"
+          >
+            −
+          </button>
           <input
             type="range"
             min={1}
-            max={3}
+            max={4}
             step={0.01}
             value={zoom}
             onChange={(e) => setZoom(Number(e.target.value))}
-            className="w-full accent-gold h-6"
+            aria-label="Zoom"
+            className="flex-1 min-w-0 accent-gold h-8"
           />
-        </label>
+          <button
+            type="button"
+            onClick={() => setZoom((z) => Math.min(4, Math.round((z + 0.2) * 100) / 100))}
+            aria-label="Acercar"
+            className="w-11 h-11 shrink-0 rounded-control border border-carbon-border text-ink text-2xl font-bold hover:border-gold/50"
+          >
+            +
+          </button>
+          <span className="w-12 text-right text-sm text-ink-muted shrink-0">{Math.round(zoom * 100)}%</span>
+        </div>
 
         {error && <p className="text-terracota text-sm">{error}</p>}
 
-        <div className="flex gap-2 justify-end pt-1">
-          <button type="button" onClick={onCancelar} className="btn-admin-secondary text-sm">Cancelar</button>
-          <button type="button" onClick={confirmar} disabled={procesando || !urlOriginal} className="btn-admin-primary text-sm">
-            {procesando ? "Procesando…" : "Usar esta foto"}
+        <div className="grid grid-cols-2 sm:flex sm:justify-end gap-2 pt-1">
+          <button type="button" onClick={onCancelar} className="btn-admin-secondary">
+            {restantes > 0 ? "Omitir esta" : "Cancelar"}
+          </button>
+          <button type="button" onClick={confirmar} disabled={procesando || !urlOriginal} className="btn-admin-primary">
+            {procesando ? "Procesando…" : "✓ Usar esta foto"}
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -1812,39 +1840,44 @@ function EditorBloque({ bloque, onCambiar }) {
           "Imagen + Texto" y "Galería" pueden pasar solas como diapositiva. */}
       {(bloque.tipo === "imagen_texto" || bloque.tipo === "galeria" || bloque.tipo === "collage") && (
         <Campo label="Fotos">
-          <div className="flex flex-wrap gap-3">
+          {/* Miniaturas grandes: cada una con sus botones siempre visibles
+              (en el celular no existe "pasar el mouse"). */}
+          <div className="grid grid-cols-2 min-[420px]:grid-cols-3 sm:grid-cols-4 gap-3">
             {(bloque.imagenes ?? []).map((url, i) => (
-              <div key={url + i} className="relative w-20">
-                <img src={url} alt={`Foto ${i + 1}`} className="w-20 h-20 object-cover rounded-control border border-carbon-border" />
+              <div key={url + i} className="relative aspect-square rounded-control overflow-hidden border border-carbon-border bg-black">
+                <img src={url} alt={`Foto ${i + 1}`} className="w-full h-full object-cover" />
+                <span className="absolute top-1.5 left-1.5 min-w-[1.75rem] h-7 px-1.5 rounded-full bg-black/70 text-white text-xs font-bold flex items-center justify-center">
+                  {i + 1}
+                </span>
                 <button
                   type="button"
-                  onClick={() => recortarDeNuevo(i)}
-                  className="absolute top-0.5 left-0.5 w-7 h-7 rounded bg-black/70 text-white text-xs flex items-center justify-center"
-                  aria-label="Recortar esta foto de nuevo"
-                  title="Recortar de nuevo"
+                  onClick={() => quitarFoto(i)}
+                  className="absolute top-1.5 right-1.5 w-9 h-9 rounded-full bg-black/70 text-white text-lg font-bold flex items-center justify-center hover:bg-terracota"
+                  aria-label="Quitar foto"
                 >
-                  ✂
+                  ×
                 </button>
-                <div className="flex justify-center gap-1 mt-1">
-                  <button type="button" onClick={() => moverFoto(i, -1)} disabled={i === 0}
-                    className="min-h-tap min-w-tap text-ink-muted disabled:opacity-30 hover:text-ink transition-colors text-sm" aria-label="Mover antes">←</button>
-                  <button type="button" onClick={() => quitarFoto(i)}
-                    className="min-h-tap min-w-tap text-terracota font-bold hover:text-ink transition-colors text-sm" aria-label="Quitar">×</button>
-                  <button type="button" onClick={() => moverFoto(i, 1)} disabled={i === bloque.imagenes.length - 1}
-                    className="min-h-tap min-w-tap text-ink-muted disabled:opacity-30 hover:text-ink transition-colors text-sm" aria-label="Mover después">→</button>
+                <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-1 p-1.5 bg-gradient-to-t from-black/80 to-transparent">
+                  <button type="button" onClick={() => moverFoto(i, -1)} disabled={i === 0} aria-label="Mover antes"
+                    className="w-9 h-9 rounded-control bg-black/60 text-white text-base disabled:opacity-25">←</button>
+                  <button type="button" onClick={() => recortarDeNuevo(i)} aria-label="Recortar de nuevo"
+                    className="h-9 px-2.5 rounded-control bg-black/60 text-white text-xs font-semibold">✂ Recortar</button>
+                  <button type="button" onClick={() => moverFoto(i, 1)} disabled={i === (bloque.imagenes?.length ?? 0) - 1} aria-label="Mover después"
+                    className="w-9 h-9 rounded-control bg-black/60 text-white text-base disabled:opacity-25">→</button>
                 </div>
               </div>
             ))}
             <label
               className={[
-                "w-20 h-20 flex items-center justify-center rounded-control border-2 border-dashed text-xs text-center transition-colors duration-150",
+                "aspect-square flex flex-col items-center justify-center gap-1 rounded-control border-2 border-dashed text-sm text-center transition-colors duration-150",
                 pendiente
                   ? "border-carbon-border/50 text-ink-muted/50 pointer-events-none"
                   : "border-carbon-border text-ink-muted cursor-pointer hover:border-gold/50 hover:text-ink",
               ].join(" ")}
             >
               <input type="file" accept="image/*,.heic,.heif" multiple className="hidden" onChange={elegirMultiple} disabled={!!pendiente} />
-              {subiendo ? "…" : pendiente ? "Recortando…" : "+ Fotos"}
+              <span className="text-2xl" aria-hidden="true">📷</span>
+              {subiendo ? "Subiendo…" : pendiente ? "Recortando…" : "+ Agregar fotos"}
             </label>
           </div>
           {bloque.tipo === "imagen_texto" && (bloque.imagenes?.length ?? 0) === 0 && (
@@ -1857,7 +1890,7 @@ function EditorBloque({ bloque, onCambiar }) {
             <p className="text-xs text-ink-muted mt-1">Se ve mejor con 3 a 5 fotos, superpuestas con una leve inclinación.</p>
           )}
           {bloque.tipo === "collage" && (bloque.estiloCollage ?? "cuadricula") === "tarjetas" && (
-            <p className="text-xs text-ink-muted mt-1">Cada foto queda en su propia tarjeta, en fila — se ve bien con 2 a 4 fotos.</p>
+            <p className="text-xs text-ink-muted mt-1">Cada foto queda en su propia tarjeta — se ve bien con 2 a 6 fotos. Si queda un espacio libre (ej. 3 fotos), ahí se pone el texto.</p>
           )}
         </Campo>
       )}

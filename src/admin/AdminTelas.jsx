@@ -1,7 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { prepararImagen } from "../lib/imagenOptimizada";
 import EditorTiraTela from "./EditorTiraTela";
+import EncuadreFoto from "./EncuadreFoto";
+import { BENEFICIOS_TELA } from "../lib/telas";
 
 const BUCKET = "productos";
 
@@ -166,9 +168,18 @@ export default function AdminTelas() {
         composicion: familia.composicion,
         ancho: familia.ancho,
         cuidados: familia.cuidados,
+        beneficios: familia.beneficios ?? [],
+        portada_pos_x: familia.portada_pos_x ?? 50,
+        portada_pos_y: familia.portada_pos_y ?? 50,
+        portada_zoom: familia.portada_zoom ?? 1,
       })
       .eq("id", familia.id);
-    if (error) alert(`No se pudo guardar: ${error.message}`);
+    if (error) {
+      alert(
+        `No se pudo guardar: ${error.message}` +
+          (/column/i.test(error.message) ? "\n\n¿Ya corriste supabase/fase_1_19_beneficios_y_zoom.sql en tu Supabase?" : "")
+      );
+    }
   }
 
   // Disponible/No disponible se guarda al toque (no hace falta esperar a
@@ -391,6 +402,34 @@ function FamiliaCard({
   // Campo para escribir el nombre del color nuevo (en vez de la ventanita
   // del navegador "prompt", que en el celular se veía fea y confusa).
   const [nuevoColor, setNuevoColor] = useState(null);
+  const [beneficioPropio, setBeneficioPropio] = useState("");
+
+  // Beneficios y encuadre de la portada se guardan SOLOS (medio segundo
+  // después del último cambio), sin tener que tocar ningún botón.
+  const firmaAuto = JSON.stringify([familia.beneficios ?? [], familia.portada_pos_x, familia.portada_pos_y, familia.portada_zoom]);
+  const firmaInicial = useRef(firmaAuto);
+  const [guardadoAuto, setGuardadoAuto] = useState(false);
+  useEffect(() => {
+    if (firmaAuto === firmaInicial.current) return undefined;
+    const t = setTimeout(async () => {
+      await onGuardarFamilia();
+      firmaInicial.current = firmaAuto;
+      setGuardadoAuto(true);
+      setTimeout(() => setGuardadoAuto(false), 1800);
+    }, 600);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [firmaAuto]);
+
+  const beneficios = familia.beneficios ?? [];
+  function alternarBeneficio(id) {
+    onCambiarFamilia({ beneficios: beneficios.includes(id) ? beneficios.filter((b) => b !== id) : [...beneficios, id] });
+  }
+  function agregarBeneficioPropio() {
+    const texto = beneficioPropio.trim();
+    if (texto && !beneficios.includes(texto)) onCambiarFamilia({ beneficios: [...beneficios, texto] });
+    setBeneficioPropio("");
+  }
 
   async function confirmarNuevoColor() {
     if (!nuevoColor?.trim()) {
@@ -428,10 +467,10 @@ function FamiliaCard({
         className="w-full flex items-center gap-3 p-4 text-left cursor-pointer"
       >
         <div className="flex -space-x-2.5 shrink-0">
-          {colores.slice(0, 5).map((c) => (
+          {colores.slice(0, 5).map((c, i) => (
             <span
               key={c.id}
-              className="w-9 h-9 rounded-full border-2 border-carbon-light bg-cover bg-center shrink-0"
+              className={`w-9 h-9 rounded-full border-2 border-carbon-light bg-cover bg-center shrink-0 ${i >= 3 ? "hidden sm:block" : ""}`}
               style={c.imagen ? { backgroundImage: `url(${c.imagen})` } : { backgroundColor: c.hex }}
             />
           ))}
@@ -537,6 +576,86 @@ function FamiliaCard({
                 Estos tres campos son opcionales y aparecen como insignias (como las de "Todas las telas" en los muebles) en la
                 tarjeta pública de esta tela. Déjalos vacíos si no aplican.
               </p>
+
+              {/* BENEFICIOS (como los de la etiqueta de la muestra) */}
+              <div className="flex flex-col gap-2 pt-2 border-t border-carbon-border/60">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-base font-semibold text-ink">Beneficios de esta tela</span>
+                  {guardadoAuto && <span className="text-sm text-green-400 font-semibold">✓ Guardado</span>}
+                </div>
+                <p className="text-xs text-ink-muted -mt-1">Toca los que tenga (se guardan solos). Se ven como insignias verdes.</p>
+                <div className="flex flex-wrap gap-2">
+                  {BENEFICIOS_TELA.map((b) => {
+                    const activo = beneficios.includes(b.id);
+                    return (
+                      <button
+                        key={b.id}
+                        type="button"
+                        onClick={() => alternarBeneficio(b.id)}
+                        aria-pressed={activo}
+                        className={[
+                          "min-h-[40px] px-3 rounded-full border-2 text-sm font-semibold inline-flex items-center gap-1.5 transition",
+                          activo
+                            ? "border-emerald-400/70 bg-emerald-500/15 text-emerald-300"
+                            : "border-carbon-border text-ink-muted hover:border-emerald-400/40 hover:text-ink",
+                        ].join(" ")}
+                      >
+                        <span aria-hidden="true">{b.icono}</span>
+                        {b.texto}
+                        {activo && <span aria-hidden="true">✓</span>}
+                      </button>
+                    );
+                  })}
+                  {beneficios
+                    .filter((v) => !BENEFICIOS_TELA.some((b) => b.id === v))
+                    .map((v) => (
+                      <button
+                        key={v}
+                        type="button"
+                        onClick={() => alternarBeneficio(v)}
+                        className="min-h-[40px] px-3 rounded-full border-2 border-emerald-400/70 bg-emerald-500/15 text-emerald-300 text-sm font-semibold inline-flex items-center gap-1.5"
+                        title="Tocar para quitar"
+                      >
+                        ✨ {v} <span aria-hidden="true">✕</span>
+                      </button>
+                    ))}
+                </div>
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    agregarBeneficioPropio();
+                  }}
+                  className="flex gap-2"
+                >
+                  <input
+                    type="text"
+                    value={beneficioPropio}
+                    onChange={(e) => setBeneficioPropio(e.target.value)}
+                    placeholder="Otro beneficio (ej: Anti pelusa)"
+                    className="campo-input flex-1 min-w-0"
+                  />
+                  <button type="submit" className="btn-admin-secondary px-4">Agregar</button>
+                </form>
+              </div>
+
+              {/* ENCUADRE DE LA PORTADA (tarjeta cuadrada del catálogo) */}
+              {familia.foto_completa && (
+                <div className="flex flex-col gap-2 pt-2 border-t border-carbon-border/60">
+                  <span className="text-base font-semibold text-ink">Foto de la tarjeta (cuadrada)</span>
+                  <p className="text-xs text-ink-muted -mt-1">
+                    Así se ve en el catálogo de telas. Mueve la foto y usa el zoom para elegir qué parte se ve; al tocar la
+                    tarjeta, el cliente ve la foto completa.
+                  </p>
+                  <EncuadreFoto
+                    url={familia.foto_completa}
+                    x={familia.portada_pos_x ?? 50}
+                    y={familia.portada_pos_y ?? 50}
+                    zoom={familia.portada_zoom ?? 1}
+                    onCambiar={({ x, y, zoom }) => onCambiarFamilia({ portada_pos_x: x, portada_pos_y: y, portada_zoom: zoom })}
+                    className="w-full max-w-sm"
+                  />
+                </div>
+              )}
             </div>
             <div className="flex flex-col gap-2 shrink-0">
               <button type="button" onClick={onBorrarFamilia} className="btn-admin-danger text-sm">

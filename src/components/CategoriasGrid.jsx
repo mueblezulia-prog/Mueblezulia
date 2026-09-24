@@ -39,7 +39,9 @@ export default function CategoriasGrid({ titulo = "¿Cuál te llevas a Casa?", f
     async function cargar() {
       const { data, error } = await supabase
         .from("categorias")
-        .select("id, nombre, imagen, slug, imagen_pos_x, imagen_pos_y")
+        // "*" (y no una lista de columnas): si falta alguna columna nueva
+        // porque no se corrió un SQL, igual carga en vez de fallar.
+        .select("*")
         .order("orden", { ascending: true });
       if (!activo) return;
       // Si aún no has cargado categorías reales en Supabase, se mantienen
@@ -84,13 +86,20 @@ export default function CategoriasGrid({ titulo = "¿Cuál te llevas a Casa?", f
               style={!cat.imagen ? { backgroundColor: "#2A2A2A" } : undefined}
             >
               {cat.imagen && (
-                <span
-                  className="absolute inset-0 bg-cover transition-transform duration-500 ease-out group-hover:scale-110"
-                  style={{
-                    backgroundImage: `url(${cat.imagen})`,
-                    backgroundPosition: `${cat.imagen_pos_x ?? 50}% ${cat.imagen_pos_y ?? 50}%`,
-                  }}
-                />
+                // Encuadre (posición + zoom) elegido en el panel → Categorías.
+                <span className="absolute inset-0 overflow-hidden transition-transform duration-500 ease-out group-hover:scale-110">
+                  <img
+                    src={cat.imagen}
+                    alt=""
+                    loading="lazy"
+                    className="w-full h-full object-cover"
+                    style={{
+                      objectPosition: `${cat.imagen_pos_x ?? 50}% ${cat.imagen_pos_y ?? 50}%`,
+                      transform: `scale(${cat.imagen_zoom ?? 1})`,
+                      transformOrigin: `${cat.imagen_pos_x ?? 50}% ${cat.imagen_pos_y ?? 50}%`,
+                    }}
+                  />
+                </span>
               )}
               <span className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
               {/* Etiqueta en barra completa (de borde a borde), no en pastilla

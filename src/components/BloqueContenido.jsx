@@ -10,6 +10,45 @@ import { ALTOS_BLOQUE, ALTOS_MAX, TAMANOS_TITULO, COLORES_TEXTO, COLORES_TEXTO_S
  * que cualquier página pueda mostrar los mismos bloques sin repetir
  * el maquetado.
  */
+// Columnas en computador según cuántas celdas hay (clases escritas
+// completas para que Tailwind las genere).
+const COLS_SM = { 1: "sm:grid-cols-1", 2: "sm:grid-cols-2", 3: "sm:grid-cols-3", 4: "sm:grid-cols-4" };
+function columnasComputador(total) {
+  if (total <= 4) return COLS_SM[Math.max(total, 1)];
+  if (total % 3 === 0) return COLS_SM[3];
+  if (total % 4 === 0) return COLS_SM[4];
+  return COLS_SM[3];
+}
+
+/**
+ * El texto de la sección convertido en una "foto más" de la cuadrícula:
+ * se usa cuando las fotos dejan un espacio vacío (ej. 3 fotos en 2
+ * columnas) — así ese hueco lo llena el texto en vez de quedar negro.
+ */
+function CeldaTexto({ bloque, imagenes, claseTamano, claseColor, claseColorSuave, redondeo = "rounded-card" }) {
+  return (
+    <div className={`relative overflow-hidden ${redondeo} ${CLASE_TINTE[bloque.tinte] ?? CLASE_TINTE.dorado} flex`}>
+      {imagenes[0] && (
+        <div
+          className="absolute inset-0 bg-cover bg-center scale-125 blur-xl opacity-60"
+          style={{ backgroundImage: `url(${imagenes[imagenes.length - 1]})` }}
+          aria-hidden="true"
+        />
+      )}
+      <div className="relative p-3 sm:p-5 flex flex-col justify-center gap-1 w-full overflow-y-auto">
+        {bloque.titulo && <h3 className={`${claseTamano} font-extrabold ${claseColor} drop-shadow-sm leading-tight`}>{bloque.titulo}</h3>}
+        {bloque.texto && (
+          <p className={`${claseColorSuave} text-sm sm:text-base leading-snug drop-shadow-sm whitespace-pre-line`}>{bloque.texto}</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// El texto entra en la celda libre solo si no es muy largo (si no, va
+// debajo en su propia tarjeta ancha, como siempre).
+const MAX_TEXTO_EN_CELDA = 260;
+
 export default function BloqueContenido({ bloque }) {
   const claveAlto = bloque.alto ?? "mediano";
   // Si la foto ya viene recortada a una proporción exacta (ver
@@ -63,10 +102,15 @@ export default function BloqueContenido({ bloque }) {
         </section>
       );
     }
+    // Si las fotos dejan un hueco en la cuadrícula (cantidad impar), el
+    // texto ocupa ese espacio en vez de ir debajo.
+    const textoEnCelda =
+      !!bloque.texto && imagenes.length % 2 === 1 && imagenes.length > 1 && bloque.texto.length <= MAX_TEXTO_EN_CELDA;
+    const celdas = imagenes.length + (textoEnCelda ? 1 : 0);
     return (
       <section className="contenedor py-8">
         {bloque.titulo && <h2 className="text-2xl font-extrabold text-ink mb-5 text-center">{bloque.titulo}</h2>}
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        <div className={`grid grid-cols-2 ${columnasComputador(celdas)} gap-3`}>
           {imagenes.map((url, i) => (
             <img
               key={url + i}
@@ -76,13 +120,22 @@ export default function BloqueContenido({ bloque }) {
               className={`w-full ${alto} ${ajuste} rounded-card border border-carbon-border`}
             />
           ))}
+          {textoEnCelda && (
+            <CeldaTexto
+              bloque={{ ...bloque, titulo: "" }}
+              imagenes={imagenes}
+              claseTamano={claseTamano}
+              claseColor={claseColor}
+              claseColorSuave={claseColorSuave}
+            />
+          )}
         </div>
         {/* El texto va en su propia tarjeta de vidrio, DEBAJO de las
             fotos (nunca encima) — así nunca tapa la cuadrícula, ni crece
             más que ella. Detrás del tinte va la primera foto duplicada y
             difuminada (efecto espejo) para que nunca se vea como un
             cuadro gris plano. */}
-        {bloque.texto && (
+        {bloque.texto && !textoEnCelda && (
           <div className={`mt-4 rounded-card overflow-hidden relative ${CLASE_TINTE[bloque.tinte] ?? CLASE_TINTE.dorado}`}>
             {imagenes[0] && (
               <div
@@ -133,6 +186,7 @@ export default function BloqueContenido({ bloque }) {
     // vidrio, nunca encima tapando las fotos, sea cual sea la forma.
     const estiloCollage = bloque.estiloCollage ?? "cuadricula";
     let cuerpoFotos;
+    let textoYaMostrado = false;
 
     if (estiloCollage === "mosaico") {
       // Mosaico inclinado (estilo Pinterest): fotos superpuestas, cada
@@ -157,9 +211,14 @@ export default function BloqueContenido({ bloque }) {
     } else if (estiloCollage === "tarjetas") {
       // Tarjetas: cada foto en su propio recuadro separado (con borde y
       // sombra propios), en fila — se ve bien con 2 a 4 fotos.
-      const fotosMostradas = imagenes.slice(0, 4);
+      const fotosMostradas = imagenes.slice(0, 6);
+      const hayTexto = (bloque.vidrioSiempre ?? true) && (bloque.titulo || bloque.texto);
+      const textoEnCelda =
+        hayTexto && fotosMostradas.length % 2 === 1 && fotosMostradas.length > 1 && (bloque.texto?.length ?? 0) <= MAX_TEXTO_EN_CELDA;
+      textoYaMostrado = textoEnCelda;
+      const celdas = fotosMostradas.length + (textoEnCelda ? 1 : 0);
       cuerpoFotos = (
-        <div className={`grid gap-3 p-3 ${fotosMostradas.length > 2 ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-2"}`}>
+        <div className={`grid gap-3 p-3 grid-cols-2 ${columnasComputador(celdas)}`}>
           {fotosMostradas.map((url, i) => (
             <img
               key={url + i}
@@ -169,6 +228,15 @@ export default function BloqueContenido({ bloque }) {
               className={`w-full ${alto} ${ajuste} rounded-card border border-carbon-border shadow-md shadow-black/20`}
             />
           ))}
+          {textoEnCelda && (
+            <CeldaTexto
+              bloque={bloque}
+              imagenes={fotosMostradas}
+              claseTamano={claseTamano}
+              claseColor={claseColor}
+              claseColorSuave={claseColorSuave}
+            />
+          )}
         </div>
       );
     } else {
@@ -198,7 +266,7 @@ export default function BloqueContenido({ bloque }) {
       <section className="contenedor py-8">
         <div className={esMosaico ? "w-full flex flex-col" : "w-full rounded-card overflow-hidden border border-carbon-border flex flex-col"}>
           {cuerpoFotos}
-          {(bloque.vidrioSiempre ?? true) && (bloque.titulo || bloque.texto) && (
+          {!textoYaMostrado && (bloque.vidrioSiempre ?? true) && (bloque.titulo || bloque.texto) && (
             <div className={`relative overflow-hidden ${esMosaico ? "rounded-card" : ""} ${CLASE_TINTE[bloque.tinte] ?? CLASE_TINTE.dorado}`}>
               {imagenes[0] && (
                 <div

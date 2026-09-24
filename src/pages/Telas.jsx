@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import SectionBanner from "../components/SectionBanner";
 import VentanaTelaFamilia from "../components/VentanaTelaFamilia";
 import { supabase } from "../lib/supabaseClient";
+import InsigniasBeneficios from "../components/InsigniasBeneficios";
+import { estiloPortada } from "../lib/telas";
 import { EsqueletoTarjetas, MensajeError, MensajeVacio } from "../components/Estados";
 
 /**
@@ -64,7 +66,7 @@ export default function Telas() {
 
         {!cargando && !error && familias.length === 0 && <MensajeVacio>Todavía no hay telas cargadas.</MensajeVacio>}
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 items-start">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-4 items-start">
           {familias.map((familia) => {
             const colores = telas.filter((t) => t.familia_id === familia.id);
             const disponible = familia.disponible ?? true;
@@ -84,21 +86,28 @@ export default function Telas() {
                 key={familia.id}
                 type="button"
                 onClick={() => setFamiliaAbierta(familia)}
-                className="glass hover:border-gold/50 hover:shadow-xl hover:shadow-black/40 hover:-translate-y-0.5
-                           transition-all duration-300 ease-out rounded-card overflow-hidden text-left flex flex-col"
+                className="group glass hover:border-gold/50 hover:shadow-xl hover:shadow-black/40 hover:-translate-y-0.5 active:scale-[0.98]
+                           transition-all duration-300 ease-out rounded-card overflow-hidden text-left flex flex-col min-w-0"
               >
-                <div className="relative w-full overflow-hidden bg-carbon">
+                {/* Tarjeta CUADRADA con el encuadre que se eligió en el panel
+                    (posición + zoom). La foto completa se ve al tocarla. */}
+                <div className="relative w-full aspect-square overflow-hidden bg-carbon">
                   {fotoPortada ? (
-                    // Sin recortar ni forzar un cuadro fijo: la imagen se
-                    // muestra completa, con SU propia forma (alta, ancha,
-                    // cuadrada — la que tenga la foto real) — cada tarjeta
-                    // puede quedar con una altura distinta, y eso está bien.
-                    <img src={fotoPortada} alt={familia.nombre} className="w-full h-auto block" loading="lazy" />
+                    <img
+                      src={fotoPortada}
+                      alt={familia.nombre}
+                      className="w-full h-full object-cover"
+                      style={familia.foto_completa ? estiloPortada(familia) : undefined}
+                      loading="lazy"
+                    />
                   ) : (
-                    <div className="w-full aspect-[4/5] flex items-center justify-center text-ink-muted text-xs text-center px-2">
+                    <div className="w-full h-full flex items-center justify-center text-ink-muted text-xs text-center px-2">
                       Sin foto todavía
                     </div>
                   )}
+                  <span className="absolute bottom-2 right-2 glass-dark text-ink text-xs font-bold px-2 py-1 rounded-full opacity-90">
+                    Ver tela ›
+                  </span>
                   {!disponible && (
                     <span className="absolute top-2 left-2 text-xs font-bold uppercase tracking-wide bg-terracota text-white rounded-full px-2 py-0.5 shadow">
                       No disponible
@@ -121,8 +130,11 @@ export default function Telas() {
                       {colores.length} color{colores.length === 1 ? "" : "es"}
                     </span>
                   </div>
+                  <InsigniasBeneficios familia={familia} max={2} tamano="sm" />
+                  {/* En el celular solo van los beneficios (la tarjeta quedaba
+                      muy larga); composición/ancho/cuidados se ven al abrirla. */}
                   {propiedades.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mt-0.5">
+                    <div className="hidden sm:flex flex-wrap gap-1 mt-0.5">
                       {propiedades.map((p, i) => (
                         <span
                           key={i}
