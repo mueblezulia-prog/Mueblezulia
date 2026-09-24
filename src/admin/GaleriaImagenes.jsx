@@ -149,11 +149,11 @@ export default function GaleriaImagenes({ fotos, onChange }) {
 
   return (
     <div className="flex flex-col gap-3">
-      <span className="text-lg font-bold text-ink">Galería (varias fotos)</span>
+      <span className="text-lg font-bold text-ink">Fotos extra (galería)</span>
       <p className="text-sm text-ink-muted">
-        La primera foto es la que se usa en la tarjeta del catálogo. El resto se puede deslizar en el detalle del
-        producto. También puedes agregar un video corto (Boomerang, clip de unos segundos) — se reproduce en bucle
-        sin sonido, como una foto en movimiento.
+        La tarjeta del catálogo usa la <strong className="text-ink">foto principal</strong> de arriba. Estas fotos extra
+        aparecen después de ella en el detalle del mueble, para deslizar. También puedes agregar un video corto
+        (Boomerang, clip de unos segundos) — se reproduce en bucle sin sonido, como una foto en movimiento.
       </p>
 
       {fotos.length > 0 && (
@@ -173,15 +173,13 @@ export default function GaleriaImagenes({ fotos, onChange }) {
                 <img src={foto.url} alt={`Foto ${i + 1}`} className="w-24 h-24 object-cover rounded-control border border-carbon-border" />
               )}
               {esUrlVideo(foto.url) && (
-                <span className="absolute top-1 right-1 bg-black/60 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
+                <span className="absolute top-1 right-1 bg-black/60 text-white text-xs font-bold px-1.5 py-0.5 rounded">
                   🎥 Video
                 </span>
               )}
-              {i === 0 && (
-                <span className="absolute top-1 left-1 bg-gold text-carbon text-xs font-bold px-1.5 py-0.5 rounded">
-                  Portada
-                </span>
-              )}
+              <span className="absolute top-1 left-1 bg-black/60 text-white text-xs font-bold px-1.5 py-0.5 rounded">
+                {i + 2}
+              </span>
               <div className="flex justify-center gap-1 mt-1">
                 <button type="button" onClick={() => moverFoto(foto.id, -1)} disabled={i === 0}
                   className="min-h-tap min-w-tap text-ink-muted disabled:opacity-30" aria-label="Mover antes">←</button>
@@ -205,6 +203,7 @@ export default function GaleriaImagenes({ fotos, onChange }) {
             </p>
           )}
           <ImageCropModule
+            key={editando.id}
             imagenOriginalUrl={editando.originalUrl}
             onChange={(nuevo) => setCropState((s) => ({ ...s, ...nuevo }))}
           />

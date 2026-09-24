@@ -42,17 +42,40 @@ export default function AdminCategorias() {
     cargar();
   }, []);
 
+  // Tarjetas con cambios sin guardar (se resalta su botón "Guardar" y se
+  // avisa antes de cerrar la pestaña, para no perder cambios sin querer).
+  const [sucios, setSucios] = useState(() => new Set());
+  const [guardadoId, setGuardadoId] = useState(null);
+
+  useEffect(() => {
+    if (sucios.size === 0) return undefined;
+    function antesDeSalir(e) {
+      e.preventDefault();
+      e.returnValue = "";
+    }
+    window.addEventListener("beforeunload", antesDeSalir);
+    return () => window.removeEventListener("beforeunload", antesDeSalir);
+  }, [sucios]);
+
   function actualizarLocal(id, cambios) {
     setCategorias((actual) => actual.map((c) => (c.id === id ? { ...c, ...cambios } : c)));
+    setSucios((actual) => new Set(actual).add(id));
   }
 
   async function guardarFila(categoria, subcategoriasFinal) {
+    if (!categoria.nombre?.trim()) {
+      alert("La categoría necesita un nombre.");
+      return;
+    }
+    // La dirección web (slug) no puede tener espacios, acentos ni quedar
+    // vacía — si no, el enlace /categoria/... del sitio se rompía.
+    const slugLimpio = slugificar(categoria.slug || categoria.nombre);
     setGuardandoId(categoria.id);
     const { error } = await supabase
       .from("categorias")
       .update({
-        nombre: categoria.nombre,
-        slug: categoria.slug,
+        nombre: categoria.nombre.trim(),
+        slug: slugLimpio,
         imagen: categoria.imagen,
         imagen_pos_x: categoria.imagen_pos_x ?? 50,
         imagen_pos_y: categoria.imagen_pos_y ?? 50,
@@ -61,7 +84,37 @@ export default function AdminCategorias() {
       })
       .eq("id", categoria.id);
     setGuardandoId(null);
-    if (error) alert(`No se pudo guardar: ${error.message}`);
+    if (error) {
+      alert(`No se pudo guardar: ${error.message}`);
+      return;
+    }
+    setCategorias((actual) => actual.map((c) => (c.id === categoria.id ? { ...c, slug: slugLimpio } : c)));
+    setSucios((actual) => {
+      const nuevo = new Set(actual);
+      nuevo.delete(categoria.id);
+      return nuevo;
+    });
+    setGuardadoId(categoria.id);
+    setTimeout(() => setGuardadoId((id) => (id === categoria.id ? null : id)), 2200);
+  }
+
+  // Cambia el orden en que salen las categorías en el sitio (◀ ▶).
+  async function mover(indice, direccion) {
+    const destino = indice + direccion;
+    if (destino < 0 || destino >= categorias.length) return;
+    const nueva = [...categorias];
+    [nueva[indice], nueva[destino]] = [nueva[destino], nueva[indice]];
+    const renumerada = nueva.map((c, i) => ({ ...c, orden: i }));
+    const cambiadas = renumerada.filter((c) => categorias.find((x) => x.id === c.id)?.orden !== c.orden);
+    setCategorias(renumerada);
+    const resultados = await Promise.all(
+      cambiadas.map((c) => supabase.from("categorias").update({ orden: c.orden }).eq("id", c.id))
+    );
+    const fallo = resultados.find((r) => r.error);
+    if (fallo) {
+      alert(`No se pudo guardar el nuevo orden: ${fallo.error.message}`);
+      cargar();
+    }
   }
 
   async function subirImagenFila(categoria, file) {
@@ -93,16 +146,16 @@ export default function AdminCategorias() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto p-6 flex flex-col gap-6">
-      <div className="flex items-center justify-between">
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 flex flex-col gap-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-extrabold text-ink">Categorías</h1>
-          <p className="text-sm text-ink-muted mt-0.5">Se muestran en el catálogo en este orden.</p>
+          <p className="text-sm text-ink-muted mt-0.5">Se muestran en el sitio en este orden — usa ◀ ▶ para moverlas.</p>
         </div>
         <button
           type="button"
           onClick={() => setMostrarForm((v) => !v)}
-          className="min-h-tap px-4 rounded-control bg-gold text-carbon font-bold text-sm"
+          className={mostrarForm ? "btn-admin-secondary" : "btn-admin-primary"}
         >
           {mostrarForm ? "Cancelar" : "+ Nueva categoría"}
         </button>
@@ -118,15 +171,30 @@ export default function AdminCategorias() {
         />
       )}
 
-      {cargando && <p className="text-ink-muted text-lg">Cargando…</p>}
+      {cargando && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" aria-busy="true">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="esqueleto h-72" />
+          ))}
+        </div>
+      )}
       {error && <p className="text-terracota text-lg">Error: {error}</p>}
 
+      {!cargando && !error && categorias.length === 0 && !mostrarForm && (
+        <div className="admin-card p-8 text-center text-ink-muted">Todavía no hay categorías. Crea la primera con "+ Nueva categoría".</div>
+      )}
+
       {!cargando && !error && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-          {categorias.map((cat) => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {categorias.map((cat, i) => (
             <TarjetaCategoria
               key={cat.id}
               categoria={cat}
+              sucio={sucios.has(cat.id)}
+              recienGuardado={guardadoId === cat.id}
+              onMover={(dir) => mover(i, dir)}
+              esPrimera={i === 0}
+              esUltima={i === categorias.length - 1}
               guardando={guardandoId === cat.id}
               subiendo={subiendoId === cat.id}
               onCambiar={(cambios) => actualizarLocal(cat.id, cambios)}
@@ -141,7 +209,20 @@ export default function AdminCategorias() {
   );
 }
 
-function TarjetaCategoria({ categoria, guardando, subiendo, onCambiar, onGuardar, onSubirImagen, onBorrar }) {
+function TarjetaCategoria({
+  categoria,
+  guardando,
+  subiendo,
+  sucio,
+  recienGuardado,
+  onMover,
+  esPrimera,
+  esUltima,
+  onCambiar,
+  onGuardar,
+  onSubirImagen,
+  onBorrar,
+}) {
   // El texto que se está escribiendo para una subcategoría nueva vive
   // aquí (no dentro de EditorSubcategorias) para que el botón
   // "Guardar" de la tarjeta pueda incluirlo aunque el admin no haya
@@ -168,6 +249,7 @@ function TarjetaCategoria({ categoria, guardando, subiendo, onCambiar, onGuardar
     window.addEventListener("mouseup", terminarArrastre);
     window.addEventListener("touchmove", moverArrastre, { passive: false });
     window.addEventListener("touchend", terminarArrastre);
+    window.addEventListener("touchcancel", terminarArrastre);
   }
 
   function moverArrastre(e) {
@@ -192,6 +274,7 @@ function TarjetaCategoria({ categoria, guardando, subiendo, onCambiar, onGuardar
     window.removeEventListener("mouseup", terminarArrastre);
     window.removeEventListener("touchmove", moverArrastre);
     window.removeEventListener("touchend", terminarArrastre);
+    window.removeEventListener("touchcancel", terminarArrastre);
   }
 
   function subcategoriasConPendiente() {
@@ -274,7 +357,7 @@ function TarjetaCategoria({ categoria, guardando, subiendo, onCambiar, onGuardar
               </button>
             )}
 
-            <span className="absolute bottom-1.5 left-1.5 z-10 px-1.5 py-0.5 rounded bg-black/55 backdrop-blur-sm text-white text-[10px] font-semibold pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">
+            <span className="absolute bottom-1.5 left-1.5 z-10 px-1.5 py-0.5 rounded bg-black/55 backdrop-blur-sm text-white text-xs font-semibold pointer-events-none sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
               ✥ Arrastra para mover
             </span>
 
@@ -292,16 +375,20 @@ function TarjetaCategoria({ categoria, guardando, subiendo, onCambiar, onGuardar
           type="text"
           value={categoria.nombre}
           onChange={(e) => onCambiar({ nombre: e.target.value })}
-          className="bg-transparent text-ink font-bold text-base outline-none border-b border-transparent focus:border-carbon-border pb-0.5"
-          aria-label="Nombre"
+          className="bg-transparent text-ink font-bold text-lg outline-none border-b border-carbon-border/60 focus:border-gold/60 pb-1 transition-colors"
+          aria-label="Nombre de la categoría"
         />
-        <input
-          type="text"
-          value={categoria.slug}
-          onChange={(e) => onCambiar({ slug: e.target.value })}
-          className="bg-transparent text-ink-muted text-xs outline-none border-b border-transparent focus:border-carbon-border pb-0.5"
-          aria-label="Slug"
-        />
+        <label className="flex items-center gap-1 text-sm text-ink-muted">
+          <span className="shrink-0">/categoria/</span>
+          <input
+            type="text"
+            value={categoria.slug}
+            onChange={(e) => onCambiar({ slug: e.target.value })}
+            className="flex-1 min-w-0 bg-transparent text-ink-muted text-base outline-none border-b border-transparent focus:border-carbon-border pb-0.5"
+            aria-label="Dirección web de la categoría"
+            title="Dirección web de la categoría (sin espacios ni acentos — se corrige sola al guardar)"
+          />
+        </label>
 
         <EditorSubcategorias
           subcategorias={categoria.subcategorias ?? []}
@@ -310,22 +397,45 @@ function TarjetaCategoria({ categoria, guardando, subiendo, onCambiar, onGuardar
           onCambiarNuevaSubcategoria={setNuevaSubcategoria}
         />
 
-        <div className="flex items-center justify-between pt-1">
-          <button
-            type="button"
-            onClick={onBorrar}
-            className="min-h-tap text-terracota text-xs font-semibold"
-          >
-            Borrar
-          </button>
-          <button
-            type="button"
-            onClick={handleGuardarClick}
-            disabled={guardando}
-            className="min-h-tap px-3 rounded-control bg-gold text-carbon text-xs font-bold disabled:opacity-60"
-          >
-            {guardando ? "…" : "Guardar"}
-          </button>
+        <div className="flex items-center justify-between gap-2 pt-2 border-t border-carbon-border/60">
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => onMover(-1)}
+              disabled={esPrimera}
+              aria-label="Mover antes"
+              className="w-10 h-10 rounded-control text-ink-muted hover:text-ink hover:bg-white/5 disabled:opacity-20"
+            >
+              ◀
+            </button>
+            <button
+              type="button"
+              onClick={() => onMover(1)}
+              disabled={esUltima}
+              aria-label="Mover después"
+              className="w-10 h-10 rounded-control text-ink-muted hover:text-ink hover:bg-white/5 disabled:opacity-20"
+            >
+              ▶
+            </button>
+            <button type="button" onClick={onBorrar} className="min-h-tap px-2 text-terracota text-sm font-semibold hover:underline">
+              Borrar
+            </button>
+          </div>
+          <div className="flex items-center gap-2">
+            {recienGuardado && <span className="text-sm text-green-400 font-semibold">✓ Guardado</span>}
+            {sucio && !recienGuardado && <span className="text-xs text-gold font-semibold hidden sm:inline">● Sin guardar</span>}
+            <button
+              type="button"
+              onClick={handleGuardarClick}
+              disabled={guardando}
+              className={[
+                "min-h-tap px-4 rounded-control text-sm font-bold disabled:opacity-60 transition",
+                sucio ? "bg-gold text-carbon shadow-md shadow-gold/20" : "bg-carbon border border-carbon-border text-ink-muted",
+              ].join(" ")}
+            >
+              {guardando ? "Guardando…" : "Guardar"}
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -362,13 +472,13 @@ function EditorSubcategorias({ subcategorias, onCambiar, nuevaSubcategoria, onCa
           {subcategorias.map((s) => (
             <span
               key={s}
-              className="inline-flex items-center gap-1 bg-carbon border border-carbon-border rounded-control px-2 py-0.5 text-xs text-ink"
+              className="inline-flex items-center gap-1 bg-carbon border border-carbon-border rounded-full pl-3 pr-1 py-0.5 text-sm text-ink"
             >
               {s}
               <button
                 type="button"
                 onClick={() => quitar(s)}
-                className="text-terracota font-bold hover:text-ink transition-colors leading-none"
+                className="w-7 h-7 rounded-full text-terracota font-bold text-base hover:bg-terracota/15 transition-colors leading-none"
                 aria-label={`Quitar ${s}`}
               >
                 ×
@@ -389,12 +499,12 @@ function EditorSubcategorias({ subcategorias, onCambiar, nuevaSubcategoria, onCa
             }
           }}
           placeholder="Ej: Grecia (o escribe y da Guardar)"
-          className="flex-1 min-w-0 bg-carbon border border-carbon-border rounded-control px-2 py-1 text-xs text-ink outline-none focus:border-gold/60 transition-colors duration-150"
+          className="flex-1 min-w-0 min-h-[40px] bg-carbon border border-carbon-border rounded-control px-3 py-1 text-base text-ink outline-none focus:border-gold/60 transition-colors duration-150"
         />
         <button
           type="button"
           onClick={agregar}
-          className="shrink-0 px-2 rounded-control border border-carbon-border text-ink-muted text-xs font-bold hover:border-gold/50 hover:text-ink transition-colors duration-150"
+          className="shrink-0 min-h-[40px] px-3 rounded-control border border-carbon-border text-ink-muted text-sm font-bold hover:border-gold/50 hover:text-ink transition-colors duration-150"
         >
           + Añadir
         </button>
@@ -472,7 +582,7 @@ function NuevaCategoriaCard({ ordenSiguiente, onCreada }) {
         />
       </div>
       <div className="flex flex-col gap-1 w-32">
-        <label className="text-xs text-ink-muted">Slug (opcional)</label>
+        <label className="text-xs text-ink-muted">Dirección web (opcional)</label>
         <input
           type="text"
           value={slug}

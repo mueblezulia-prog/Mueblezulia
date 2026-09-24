@@ -1,14 +1,17 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 
+// `tambien`: otras rutas en las que esta pestaña debe verse activa (ej.
+// dentro de una categoría o de un mueble sigues "en el catálogo").
 const TABS = [
   { to: "/", label: "Inicio", end: true },
-  { to: "/catalogo", label: "Catálogo" },
+  { to: "/catalogo", label: "Catálogo", tambien: ["/categoria/", "/producto/"] },
   { to: "/telas", label: "Telas" },
   { to: "/fabricacion", label: "Fabricación" },
   { to: "/contacto", label: "Contacto" },
 ];
 
 export default function NavBar() {
+  const { pathname } = useLocation();
   return (
     <header className="bg-carbon/95 backdrop-blur border-b border-carbon-border sticky top-0 z-20 shadow-sm shadow-black/20">
       <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
@@ -25,14 +28,15 @@ export default function NavBar() {
               key={tab.to}
               to={tab.to}
               end={tab.end}
-              className={({ isActive }) =>
-                [
+              className={({ isActive: activaExacta }) => {
+                const isActive = activaExacta || (tab.tambien ?? []).some((r) => pathname.startsWith(r));
+                return [
                   "min-h-tap flex items-center px-3 sm:px-4 rounded-control text-sm sm:text-base font-semibold whitespace-nowrap transition-all duration-200",
                   isActive
                     ? "glass-gold text-ink"
                     : "text-ink-muted hover:text-ink hover:bg-white/5",
-                ].join(" ")
-              }
+                ].join(" ");
+              }}
             >
               {tab.label}
             </NavLink>

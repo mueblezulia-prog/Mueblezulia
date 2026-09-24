@@ -144,43 +144,80 @@ export default function AdminContenido() {
   }, []);
 
   if (cargando) {
-    return <p className="max-w-3xl mx-auto p-6 text-ink-muted text-lg">Cargando…</p>;
+    return (
+      <div className="max-w-3xl mx-auto p-6 flex flex-col gap-4" aria-busy="true">
+        <div className="esqueleto h-8 w-64" />
+        <div className="esqueleto h-40" />
+        <div className="esqueleto h-40" />
+      </div>
+    );
   }
 
+  // Índice de la página (es muy larga): un toque y baja directo a la sección.
+  const indice = [
+    { id: "sec-portada", label: "Portada" },
+    { id: "sec-sede", label: "Sede" },
+    { id: "sec-pagos", label: "Pagos" },
+    { id: "sec-ubicacion", label: "Ubicación" },
+    { id: "sec-fabricacion", label: "Fabricación" },
+    { id: "sec-inicio", label: "Inicio" },
+  ];
+
   return (
-    <div className="max-w-3xl mx-auto p-6 flex flex-col gap-10">
-      <div>
+    <div className="max-w-3xl mx-auto px-4 sm:px-6 pb-16 flex flex-col gap-10">
+      <div className="pt-6">
         <h1 className="text-2xl font-extrabold text-ink">Contenido del Sitio</h1>
-        <p className="text-sm text-ink-muted mt-0.5">
+        <p className="text-base text-ink-muted mt-1">
           Personaliza textos, fotos y la dirección que se ven en el sitio público — cada sección se guarda por separado.
         </p>
       </div>
 
-      <SeccionHero hero={hero} onGuardado={setHero} />
-      <SeccionSede sede={sede} onGuardado={setSede} />
-      <SeccionMetodosPago metodos={metodos} onGuardado={setMetodos} />
-      <SeccionBloques
-        contenidoKey="secciones_ubicacion"
-        titulo="Página de Ubicación — Secciones extra"
-        descripcion='Agrega tanto contenido como quieras a la página "Ubicación": más fotos, más texto, banners — se muestran al final, debajo de "¿Tienes dudas?".'
-        bloques={bloquesUbicacion}
-        onGuardado={setBloquesUbicacion}
-      />
-      <SeccionBloques
-        contenidoKey="secciones_fabricacion"
-        titulo="Página de Fabricación"
-        descripcion='La primera sección de la lista es la introducción ("Excelencia en Manufactura") — ya la puedes editar, cambiarle el tipo (a video, collage, etc.) o borrarla, igual que cualquier otra de aquí abajo. Agrega tantas más como quieras.'
-        bloques={bloquesFabricacion}
-        onGuardado={setBloquesFabricacion}
-        espejoClave="fabricacion"
-      />
-      <SeccionBloques
-        contenidoKey="secciones_home"
-        titulo="Página de Inicio — Secciones extra"
-        descripcion='Agrega tantas secciones como quieras a la página de inicio, en el orden que quieras. Se muestran debajo de "Excelencia en Manufactura".'
-        bloques={bloquesHome}
-        onGuardado={setBloquesHome}
-      />
+      <nav
+        aria-label="Secciones"
+        className="sticky top-[6.6rem] z-20 -mx-4 sm:mx-0 px-4 sm:px-2 py-2 bg-carbon/95 backdrop-blur border-y sm:border border-carbon-border sm:rounded-control flex gap-2 overflow-x-auto no-scrollbar -mt-6"
+      >
+        {indice.map((it) => (
+          <a
+            key={it.id}
+            href={`#${it.id}`}
+            className="shrink-0 min-h-[40px] px-3 inline-flex items-center rounded-full bg-white/5 border border-white/10 text-sm font-semibold text-ink hover:border-gold/50 hover:text-gold transition"
+          >
+            {it.label}
+          </a>
+        ))}
+      </nav>
+
+      <div id="sec-portada" className="scroll-mt-44"><SeccionHero hero={hero} onGuardado={setHero} /></div>
+      <div id="sec-sede" className="scroll-mt-44"><SeccionSede sede={sede} onGuardado={setSede} /></div>
+      <div id="sec-pagos" className="scroll-mt-44"><SeccionMetodosPago metodos={metodos} onGuardado={setMetodos} /></div>
+      <div id="sec-ubicacion" className="scroll-mt-44">
+        <SeccionBloques
+          contenidoKey="secciones_ubicacion"
+          titulo="Página de Contacto — Secciones extra"
+          descripcion='Agrega tanto contenido como quieras a la página "Contacto": más fotos, más texto, banners — se muestran al final, debajo de "¿Tienes dudas?".'
+          bloques={bloquesUbicacion}
+          onGuardado={setBloquesUbicacion}
+        />
+      </div>
+      <div id="sec-fabricacion" className="scroll-mt-44">
+        <SeccionBloques
+          contenidoKey="secciones_fabricacion"
+          titulo="Página de Fabricación"
+          descripcion='La primera sección de la lista es la introducción ("Excelencia en Manufactura") — ya la puedes editar, cambiarle el tipo (a video, collage, etc.) o borrarla, igual que cualquier otra de aquí abajo. Agrega tantas más como quieras.'
+          bloques={bloquesFabricacion}
+          onGuardado={setBloquesFabricacion}
+          espejoClave="fabricacion"
+        />
+      </div>
+      <div id="sec-inicio" className="scroll-mt-44">
+        <SeccionBloques
+          contenidoKey="secciones_home"
+          titulo="Página de Inicio — Secciones extra"
+          descripcion='Agrega tantas secciones como quieras a la página de inicio, en el orden que quieras. Se muestran debajo de "Excelencia en Manufactura".'
+          bloques={bloquesHome}
+          onGuardado={setBloquesHome}
+        />
+      </div>
     </div>
   );
 }
@@ -421,9 +458,6 @@ function SeccionSede({ sede, onGuardado }) {
         } else {
           imagenes = [...anteriores, url];
         }
-        console.log(
-          `[Nuestra Sede] Foto subida. Antes: ${anteriores.length} foto(s). Después: ${imagenes.length} foto(s).`
-        );
         return { ...f, imagenes, imagen: imagenes[0] ?? f.imagen, aspecto: aspectoCss };
       });
     } catch (err) {
@@ -580,12 +614,12 @@ function SeccionSede({ sede, onGuardado }) {
               className={`grid grid-cols-3 sm:grid-cols-4 gap-2 ${colaFotos.length > 0 ? "pointer-events-none opacity-50" : ""}`}
             >
               {imagenes.map((url, i) => (
-                <div key={url + i} className="relative rounded-control overflow-hidden border border-carbon-border h-24 group">
+                <div key={url + i} className="relative rounded-control overflow-hidden border border-carbon-border h-28 group">
                   <img src={url} alt={`Foto ${i + 1}`} className="w-full h-full object-cover" />
                   <button
                     type="button"
                     onClick={() => quitarFoto(i)}
-                    className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 text-white text-sm font-bold flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="absolute top-1 right-1 w-8 h-8 rounded-full bg-black/70 text-white text-base font-bold flex items-center justify-center sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
                     aria-label="Quitar foto"
                   >
                     ×
@@ -593,22 +627,22 @@ function SeccionSede({ sede, onGuardado }) {
                   <button
                     type="button"
                     onClick={() => recortarDeNuevo(i)}
-                    className="absolute top-1 left-1 px-1.5 h-6 rounded bg-black/60 text-white text-[11px] font-semibold opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="absolute top-1 left-1 px-2 h-8 rounded bg-black/70 text-white text-xs font-semibold sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
                     aria-label="Recortar esta foto de nuevo"
                   >
                     ✂ Recortar
                   </button>
                   {imagenes.length > 1 && (
-                    <div className="absolute bottom-1 left-1 right-1 flex justify-between opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button type="button" onClick={() => moverFoto(i, -1)} disabled={i === 0} className="w-6 h-6 rounded bg-black/60 text-white text-xs disabled:opacity-30">←</button>
-                      <button type="button" onClick={() => moverFoto(i, 1)} disabled={i === imagenes.length - 1} className="w-6 h-6 rounded bg-black/60 text-white text-xs disabled:opacity-30">→</button>
+                    <div className="absolute bottom-1 left-1 right-1 flex justify-between sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                      <button type="button" onClick={() => moverFoto(i, -1)} disabled={i === 0} aria-label="Mover a la izquierda" className="w-8 h-8 rounded bg-black/70 text-white text-sm disabled:opacity-30">←</button>
+                      <button type="button" onClick={() => moverFoto(i, 1)} disabled={i === imagenes.length - 1} aria-label="Mover a la derecha" className="w-8 h-8 rounded bg-black/70 text-white text-sm disabled:opacity-30">→</button>
                     </div>
                   )}
                 </div>
               ))}
               <label
                 className={[
-                  "h-24 rounded-control border-2 border-dashed flex items-center justify-center text-sm transition-colors",
+                  "h-28 rounded-control border-2 border-dashed flex items-center justify-center text-sm transition-colors",
                   colaFotos.length > 0
                     ? "border-carbon-border/50 text-ink-muted/50 pointer-events-none"
                     : "border-carbon-border text-ink-muted cursor-pointer hover:border-gold hover:text-ink",
@@ -823,7 +857,9 @@ function RecortadorContenido({ archivo, aspectoInicial = 16 / 9, onCancelar, onL
       // misma proporción en vez de una altura fija — así lo que se
       // recortó acá es exactamente lo que se ve después, completo, sin
       // que un contenedor angosto la recorte una segunda vez.
-      onListo(listo, aspectoACss(aspecto));
+      // `await`: antes "Procesando…" se apagaba antes de terminar de subir
+      // y un segundo toque subía la misma foto dos veces (duplicada).
+      await onListo(listo, aspectoACss(aspecto));
     } catch (err) {
       setError(`No se pudo recortar la foto: ${err.message}`);
     } finally {
@@ -1007,12 +1043,15 @@ function SeccionMetodosPago({ metodos, onGuardado }) {
   );
 }
 
+// <div> y no <label>: con <label>, tocar el TÍTULO de la sección
+// "tocaba" el primer botón de adentro (ej. borraba la primera foto al
+// tocar "Fotos", o cambiaba el tipo de fondo sin querer).
 function Campo({ label, children }) {
   return (
-    <label className="flex flex-col gap-1">
+    <div className="flex flex-col gap-1.5">
       <span className="text-base font-semibold text-ink">{label}</span>
       {children}
-    </label>
+    </div>
   );
 }
 

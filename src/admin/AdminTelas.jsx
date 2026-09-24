@@ -112,8 +112,7 @@ export default function AdminTelas() {
     setTelas((actual) => actual.filter((t) => t.id !== tela.id));
   }
 
-  async function agregarColor(familiaId) {
-    const nombre = window.prompt("Nombre del nuevo color (ej: Gris Perla):");
+  async function agregarColor(familiaId, nombre) {
     if (!nombre || !nombre.trim()) return;
     const colorEnFamilia = telas.filter((t) => t.familia_id === familiaId).length;
     const { data, error } = await supabase
@@ -220,13 +219,24 @@ export default function AdminTelas() {
 
   // Guarda de una sola vez el nombre y el color/hex de TODOS los colores
   // de una familia (ya no hay un botón "Guardar" por cada fila suelta).
+  // Devuelve true si se guardó bien (la tarjeta solo se cierra en ese
+  // caso — antes se cerraba aunque fallara y los cambios quedaban ocultos).
   async function guardarTodosLosColores(familiaId) {
     const filas = telas.filter((t) => t.familia_id === familiaId);
-    if (filas.length === 0) return;
+    if (filas.length === 0) return true;
     setGuardandoFamiliaId(familiaId);
-    const { error } = await supabase.from("telas").upsert(filas);
+    // Solo nombre y color: mandar la fila entera (fechas, foto, etc.) hacía
+    // que el guardado fallara con facilidad.
+    const resultados = await Promise.all(
+      filas.map((t) => supabase.from("telas").update({ nombre: t.nombre, hex: t.hex }).eq("id", t.id))
+    );
     setGuardandoFamiliaId(null);
-    if (error) alert(`No se pudo guardar: ${error.message}`);
+    const fallo = resultados.find((r) => r.error);
+    if (fallo) {
+      alert(`No se pudo guardar: ${fallo.error.message}`);
+      return false;
+    }
+    return true;
   }
 
   function abrirEditorTira(familia, file) {
@@ -246,7 +256,7 @@ export default function AdminTelas() {
   const telasSinFamilia = telas.filter((t) => !t.familia_id);
 
   return (
-    <div className="max-w-3xl mx-auto p-6 flex flex-col gap-8">
+    <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 flex flex-col gap-8">
       <div>
         <h1 className="text-2xl font-extrabold text-ink flex items-center gap-2">
           <img src="/assets/icons/tela.png" alt="" className="w-6 h-6" />
@@ -273,7 +283,7 @@ export default function AdminTelas() {
               onBorrarFamilia={() => borrarFamilia(familia)}
               onCambiarColor={actualizarLocal}
               onBorrarColor={borrarColor}
-              onAgregarColor={() => agregarColor(familia.id)}
+              onAgregarColor={(nombre) => agregarColor(familia.id, nombre)}
               onSubirFoto={subirFoto}
               onQuitarFoto={quitarFoto}
               onSubirTira={(file) => abrirEditorTira(familia, file)}
@@ -292,7 +302,7 @@ export default function AdminTelas() {
               <div>
                 <span className="text-lg font-bold text-ink">Sin familia</span>
                 <p className="text-sm text-ink-muted">
-                  Colores creados antes de tener familias. Asígnales una para que queden ordenados (podés seguir usándolos igual mientras tanto).
+                  Colores creados antes de tener familias. Asígnales una para que queden ordenados (puedes seguir usándolos igual mientras tanto).
                 </p>
               </div>
               {telasSinFamilia.map((tela) => (
@@ -310,7 +320,7 @@ export default function AdminTelas() {
                     <select
                       value=""
                       onChange={(e) => asignarFamilia(tela.id, e.target.value)}
-                      className="campo-input w-44 text-sm"
+                      className="campo-input w-48"
                     >
                       <option value="">Asignar a familia…</option>
                       {familias.map((f) => (
@@ -378,6 +388,18 @@ function FamiliaCard({
   // poder cargarla de una — las que ya tienen colores arrancan cerradas,
   // como un catálogo.
   const [expandida, setExpandida] = useState(colores.length === 0);
+  // Campo para escribir el nombre del color nuevo (en vez de la ventanita
+  // del navegador "prompt", que en el celular se veía fea y confusa).
+  const [nuevoColor, setNuevoColor] = useState(null);
+
+  async function confirmarNuevoColor() {
+    if (!nuevoColor?.trim()) {
+      setNuevoColor(null);
+      return;
+    }
+    await onAgregarColor(nuevoColor.trim());
+    setNuevoColor(null);
+  }
 
   function handleArchivoTira(e) {
     const file = e.target.files?.[0];
@@ -389,14 +411,15 @@ function FamiliaCard({
   // queda como un catálogo (una fila por familia) en vez de tener todo
   // abierto todo el tiempo.
   async function manejarGuardarTodos() {
-    await onGuardarTodosColores();
-    setExpandida(false);
+    const ok = await onGuardarTodosColores();
+    if (ok) setExpandida(false);
   }
 
   return (
-    <div className="bg-carbon-light border border-carbon-border rounded-card overflow-hidden">
+    <div className={["admin-card overflow-hidden", expandida ? "border-gold/40" : ""].join(" ")}>
       <div
         role="button"
+        aria-expanded={expandida}
         tabIndex={0}
         onClick={() => setExpandida((v) => !v)}
         onKeyDown={(e) => {
@@ -421,7 +444,7 @@ function FamiliaCard({
           <div className="font-bold text-lg text-ink truncate flex items-center gap-2">
             <span className="truncate">{familia.nombre || "(Sin nombre)"}</span>
           </div>
-          <div className="text-xs text-ink-muted">
+          <div className="text-sm text-ink-muted">
             {colores.length} color{colores.length === 1 ? "" : "es"}
           </div>
         </div>
@@ -435,21 +458,24 @@ function FamiliaCard({
             onAlternarDisponibilidad();
           }}
           title={disponible ? "Disponible — toca para marcar como no disponible" : "No disponible — toca para marcar como disponible"}
-          className="flex items-center gap-1.5 shrink-0"
+          role="switch"
+          aria-checked={disponible}
+          aria-label="Disponible"
+          className="flex items-center gap-1.5 shrink-0 min-h-tap px-1"
         >
-          <span className={["text-[10px] font-bold uppercase tracking-wide hidden sm:inline", disponible ? "text-green-400" : "text-terracota"].join(" ")}>
+          <span className={["text-xs font-bold uppercase tracking-wide hidden sm:inline", disponible ? "text-green-400" : "text-terracota"].join(" ")}>
             {disponible ? "Disponible" : "No disponible"}
           </span>
           <span
             className={[
-              "w-11 h-6 rounded-full relative transition-colors duration-200 border",
+              "w-12 h-7 rounded-full relative transition-colors duration-200 border",
               disponible ? "bg-green-500/80 border-green-400" : "bg-carbon border-terracota/60",
             ].join(" ")}
           >
             <span
               className={[
-                "absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all duration-200",
-                disponible ? "left-[22px]" : "left-0.5",
+                "absolute top-0.5 w-[22px] h-[22px] rounded-full bg-white shadow transition-all duration-200",
+                disponible ? "left-[23px]" : "left-0.5",
               ].join(" ")}
             />
           </span>
@@ -476,16 +502,16 @@ function FamiliaCard({
                 onBlur={onGuardarFamilia}
                 placeholder="Descripción (opcional): sensación al tacto, estilo, etc."
                 rows={2}
-                className="campo-input resize-none text-sm"
+                className="campo-input resize-none"
               />
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <input
                   type="text"
                   value={familia.composicion ?? ""}
                   onChange={(e) => onCambiarFamilia({ composicion: e.target.value })}
                   onBlur={onGuardarFamilia}
                   placeholder="Composición (ej: 100% poliéster)"
-                  className="campo-input text-sm"
+                  className="campo-input"
                   aria-label="Composición"
                 />
                 <input
@@ -494,7 +520,7 @@ function FamiliaCard({
                   onChange={(e) => onCambiarFamilia({ ancho: e.target.value })}
                   onBlur={onGuardarFamilia}
                   placeholder="Ancho (ej: 1.40 m)"
-                  className="campo-input text-sm"
+                  className="campo-input"
                   aria-label="Ancho"
                 />
                 <input
@@ -503,7 +529,7 @@ function FamiliaCard({
                   onChange={(e) => onCambiarFamilia({ cuidados: e.target.value })}
                   onBlur={onGuardarFamilia}
                   placeholder="Cuidados (ej: limpiar en seco)"
-                  className="campo-input text-sm col-span-2"
+                  className="campo-input sm:col-span-2"
                   aria-label="Cuidados"
                 />
               </div>
@@ -513,11 +539,7 @@ function FamiliaCard({
               </p>
             </div>
             <div className="flex flex-col gap-2 shrink-0">
-              <button
-                type="button"
-                onClick={onBorrarFamilia}
-                className="min-h-tap px-3 rounded-control border-2 border-terracota text-terracota font-bold text-sm"
-              >
+              <button type="button" onClick={onBorrarFamilia} className="btn-admin-danger text-sm">
                 Borrar familia
               </button>
             </div>
@@ -546,20 +568,39 @@ function FamiliaCard({
                 type="button"
                 onClick={manejarGuardarTodos}
                 disabled={guardandoTodos}
-                className="min-h-tap px-4 rounded-control bg-gold text-carbon font-bold text-sm self-start disabled:opacity-60"
+                className="btn-admin-primary self-start"
               >
                 {guardandoTodos ? "Guardando…" : "💾 Guardar y cerrar esta familia"}
               </button>
             )}
 
             <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={onAgregarColor}
-                className="min-h-tap px-4 rounded-control border-2 border-dashed border-carbon-border text-gold font-bold text-sm self-start"
-              >
-                + Agregar color
-              </button>
+              {nuevoColor === null ? (
+                <button type="button" onClick={() => setNuevoColor("")} className="btn-admin-ghost text-sm self-start">
+                  + Agregar color
+                </button>
+              ) : (
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    confirmarNuevoColor();
+                  }}
+                  className="flex gap-2 w-full sm:w-auto"
+                >
+                  <input
+                    autoFocus
+                    type="text"
+                    value={nuevoColor}
+                    onChange={(e) => setNuevoColor(e.target.value)}
+                    placeholder="Nombre del color (ej: Gris Perla)"
+                    className="campo-input flex-1 sm:w-64"
+                  />
+                  <button type="submit" className="btn-admin-primary px-4">Agregar</button>
+                  <button type="button" onClick={() => setNuevoColor(null)} className="btn-admin-secondary px-3" aria-label="Cancelar">
+                    ✕
+                  </button>
+                </form>
+              )}
 
               <label className="min-h-tap px-4 rounded-control border-2 border-dashed border-gold/50 text-gold font-bold text-sm self-start cursor-pointer flex items-center">
                 📷 Subir foto de tira de colores
@@ -619,7 +660,7 @@ function FilaColor({ tela, guardando, subiendo, onCambiar, onGuardar, onBorrar, 
         type="text"
         value={tela.nombre}
         onChange={(e) => onCambiar({ nombre: e.target.value })}
-        className="campo-input w-32 text-sm"
+        className="campo-input w-40 flex-1 min-w-[8rem]"
         aria-label="Nombre del color"
       />
 

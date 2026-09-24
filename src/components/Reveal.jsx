@@ -46,7 +46,9 @@ export default function Reveal({ children, className = "", delay = 0, as: Tag = 
         visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3",
         className,
       ].join(" ")}
-      style={{ transitionDelay: `${delay}ms` }}
+      // El retraso escalonado solo aplica a la APARICIÓN: una vez visible se
+      // quita, si no también retrasaba los efectos al pasar el mouse.
+      style={{ ...props.style, transitionDelay: visible ? undefined : `${delay}ms` }}
     >
       {children}
     </Tag>

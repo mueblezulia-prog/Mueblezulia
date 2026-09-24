@@ -5,8 +5,10 @@ import BloqueContenido from "../components/BloqueContenido";
 import FondoMultimedia from "../components/FondoMultimedia";
 import { obtenerContenido, CONTENIDO_DEFAULT, ALTOS_BLOQUE } from "../lib/contenido";
 import { sonidoConfirmar, sonidoNavegar } from "../lib/sonido";
+import { linkWhatsApp, WHATSAPP_NUMERO } from "../lib/contacto";
+import IconoWhatsApp from "../components/IconoWhatsApp";
 
-const WHATSAPP_LINK = "https://wa.me/584127519141?text=" + encodeURIComponent("Hola, tengo una consulta sobre sus muebles.");
+const WHATSAPP_LINK = linkWhatsApp("Hola, tengo una consulta sobre sus muebles.");
 
 export default function Contacto() {
   const [sede, setSede] = useState(CONTENIDO_DEFAULT.nuestra_sede);
@@ -41,12 +43,14 @@ export default function Contacto() {
   return (
     <div>
       {/* NUESTRA SEDE */}
-      <section className="max-w-5xl mx-auto">
+      <section className="max-w-6xl mx-auto">
         <div className="mb-6">
           <SectionBanner titulo="Nuestra Sede" icono="/assets/icons/ubicacion.png" imagenFondo={sede.imagen} tinte="blanco" />
         </div>
 
-        <div className="px-4">
+        {/* En computador: la sede a la izquierda y el mapa a la derecha
+            (antes el mapa quedaba abajo, lejos, con la página muy larga). */}
+        <div className="px-4 lg:grid lg:grid-cols-2 lg:gap-6 lg:items-stretch">
           {/* Un solo cuadro completo: la foto y el panel de vidrio viven
               DENTRO del mismo contenedor con overflow-hidden, así los
               bordes redondeados quedan unificados en vez de dos cajas
@@ -76,17 +80,15 @@ export default function Contacto() {
                 target="_blank"
                 rel="noreferrer"
                 onClick={sonidoNavegar}
-                className="min-h-tap inline-flex items-center justify-center px-5 rounded-control bg-gold text-carbon font-bold
+                className="min-h-tap inline-flex items-center justify-center gap-2 px-5 rounded-control bg-gold text-carbon font-bold
                            hover:bg-gold-hover active:scale-[0.98] transition-all duration-200"
               >
-                Ver en Google Maps
+                📍 Ver en Google Maps
               </a>
             </div>
           </div>
-        </div>
 
-        <div className="px-4">
-          <div className="mt-6 rounded-card overflow-hidden border border-carbon-border h-64">
+          <div className="mt-6 lg:mt-0 rounded-card overflow-hidden border border-carbon-border h-64 sm:h-80 lg:h-auto lg:min-h-[24rem]">
             <iframe
               title="Ubicación de Muebles Zulia"
               src={mapsEmbedSrc}
@@ -98,11 +100,11 @@ export default function Contacto() {
       </section>
 
       {/* MÉTODOS DE PAGO */}
-      <section className="pb-10 max-w-5xl mx-auto">
+      <section className="pb-10 max-w-6xl mx-auto">
         <div className="my-8">
           <SectionBanner titulo="Métodos de Pago" icono="/assets/icons/pago-general.png" imagenFondo="/assets/interior-tienda.jpg" tinte="blanco" />
         </div>
-        <div className="px-4 grid sm:grid-cols-2 gap-4">
+        <div className="px-4 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {metodos.map((m, i) => (
             <Reveal
               key={m.nombre || i}
@@ -127,18 +129,27 @@ export default function Contacto() {
       </section>
 
       {/* CONTACTO DIRECTO */}
-      <section className="px-4 py-10 max-w-5xl mx-auto border-t border-carbon-border text-center">
-        <h2 className="text-2xl font-extrabold text-ink mb-4">¿Tienes dudas?</h2>
-        <p className="text-ink-muted mb-6">Escríbenos y te ayudamos con tu pedido o cotización.</p>
-        <a
-          href={WHATSAPP_LINK}
-          target="_blank"
-          rel="noreferrer"
-          onClick={sonidoConfirmar}
-          className="min-h-tap inline-flex items-center justify-center px-6 rounded-control bg-gold text-carbon font-bold text-lg"
-        >
-          Escribir por WhatsApp
-        </a>
+      <section className="contenedor py-12">
+        <div className="relative overflow-hidden rounded-card glass-gold px-6 py-10 text-center flex flex-col items-center">
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-ink mb-2">¿Tienes dudas?</h2>
+          <p className="text-ink/90 mb-6 max-w-md">Escríbenos y te ayudamos con tu pedido o cotización. Respondemos rápido.</p>
+          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+            <a
+              href={WHATSAPP_LINK}
+              target="_blank"
+              rel="noreferrer"
+              onClick={sonidoConfirmar}
+              className="min-h-tap inline-flex items-center justify-center gap-2 px-6 rounded-control bg-gold text-carbon font-bold text-lg
+                         shadow-lg shadow-black/25 hover:bg-gold-hover active:scale-[0.98] transition-all duration-200"
+            >
+              <IconoWhatsApp className="w-6 h-6" />
+              Escribir por WhatsApp
+            </a>
+            <a href={`tel:+${WHATSAPP_NUMERO}`} className="btn-outline w-auto">
+              📞 Llamar
+            </a>
+          </div>
+        </div>
       </section>
 
       {/* Secciones libres, armadas y ordenadas desde /admin/contenido

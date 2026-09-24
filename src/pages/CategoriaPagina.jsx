@@ -6,6 +6,7 @@ import SectionBanner from "../components/SectionBanner";
 import Reveal from "../components/Reveal";
 import FiltroEntregaInmediata from "../components/FiltroEntregaInmediata";
 import { sonidoNavegar } from "../lib/sonido";
+import { EsqueletoTarjetas, MensajeError, MensajeVacio } from "../components/Estados";
 
 // Solo para el banner (título + ícono) mientras la categoría no tenga
 // todavía una fila real en Supabase. En cuanto exista en la tabla
@@ -28,6 +29,7 @@ export default function CategoriaPagina() {
   const [error, setError] = useState(null);
   const [subActiva, setSubActiva] = useState("todas");
   const [soloEntrega, setSoloEntrega] = useState(false);
+  const [intento, setIntento] = useState(0);
 
   useEffect(() => {
     let activo = true;
@@ -36,6 +38,9 @@ export default function CategoriaPagina() {
       setCargando(true);
       setError(null);
       setSubActiva("todas");
+      setSoloEntrega(false);
+      setCategoria(null);
+      setProductos([]);
 
       const { data: categoriaData, error: errorCategoria } = await supabase
         .from("categorias")
@@ -81,7 +86,7 @@ export default function CategoriaPagina() {
     return () => {
       activo = false;
     };
-  }, [slug]);
+  }, [slug, intento]);
 
   const bannerInfo = BANNERS[slug] ?? { banner: categoria?.nombre ?? "Catálogo", icono: "/assets/icons/puff.png", tinte: "dorado" };
   const nombreCategoria = categoria?.nombre ?? bannerInfo.banner;
@@ -99,7 +104,7 @@ export default function CategoriaPagina() {
 
   return (
     <div className="py-6">
-      <div className="px-4 max-w-5xl mx-auto">
+      <div className="contenedor">
         <Link
           to="/catalogo"
           className="min-h-tap inline-flex items-center gap-2 text-ink-muted hover:text-ink text-base font-bold mb-4 transition-colors"
@@ -117,15 +122,11 @@ export default function CategoriaPagina() {
         />
       </div>
 
-      <div className="px-4 max-w-5xl mx-auto">
-      {cargando && (
-        <p className="text-center text-ink-muted text-lg py-16">Cargando…</p>
-      )}
+      <div className="contenedor">
+      {cargando && <EsqueletoTarjetas cantidad={8} />}
 
       {!cargando && error && (
-        <p className="text-center text-terracota text-lg py-16">
-          No se pudo cargar: {error}
-        </p>
+        <MensajeError onReintentar={() => setIntento((n) => n + 1)} />
       )}
 
       {!cargando && !error && productos.length > 0 && (
@@ -150,20 +151,22 @@ export default function CategoriaPagina() {
         </div>
       )}
 
-      {!cargando && !error && productos.length === 0 && (
-        <p className="text-center text-ink-muted text-lg py-16">
+      {!cargando && !error && !categoria && !BANNERS[slug] && (
+        <MensajeVacio>Esta categoría no existe o fue renombrada. Mira todas nuestras líneas en el catálogo.</MensajeVacio>
+      )}
+
+      {!cargando && !error && (categoria || BANNERS[slug]) && productos.length === 0 && (
+        <MensajeVacio>
           Todavía no hay productos de {nombreCategoria} cargados — pronto agregamos piezas de esta línea.
-        </p>
+        </MensajeVacio>
       )}
 
       {!cargando && !error && productos.length > 0 && productosFiltrados.length === 0 && (
-        <p className="text-center text-ink-muted text-lg py-16">
-          Todavía no hay productos en "{subActiva}".
-        </p>
+        <MensajeVacio>Todavía no hay productos en "{subActiva}".</MensajeVacio>
       )}
 
       {!cargando && !error && productosFiltrados.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
           {productosOrdenados.map((producto, i) => (
             <Reveal key={producto.id} delay={(i % 9) * 60}>
               <ProductCard producto={producto} />
@@ -173,12 +176,7 @@ export default function CategoriaPagina() {
       )}
 
       <div className="text-center mt-8">
-        <Link
-          to="/catalogo"
-          onClick={sonidoNavegar}
-          className="min-h-tap inline-flex items-center justify-center px-6 rounded-control glass-gold text-ink font-bold
-                     hover:bg-gold/25 active:scale-[0.98] transition-all duration-200"
-        >
+        <Link to="/catalogo" onClick={sonidoNavegar} className="btn-gold-glass">
           Ver Catálogo Completo
         </Link>
       </div>

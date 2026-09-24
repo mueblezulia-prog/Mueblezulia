@@ -19,6 +19,7 @@ export default function Hero() {
       {datos.tipoMedia === "video" && datos.video ? (
         <video
           src={datos.video}
+          poster={datos.imagen || "/assets/fachada.jpg"}
           className="absolute inset-0 w-full h-full object-cover"
           autoPlay
           muted
@@ -66,8 +67,8 @@ export default function Hero() {
           <Link
             to="/catalogo"
             onClick={sonidoNavegar}
-            className="min-h-tap flex items-center justify-center px-6 rounded-control glass-gold text-ink font-bold text-lg
-                       hover:bg-gold/25 active:scale-[0.98] transition-all duration-200"
+            className="min-h-tap flex items-center justify-center px-7 rounded-control bg-gold text-carbon font-bold text-lg
+                       shadow-lg shadow-black/30 hover:bg-gold-hover active:scale-[0.98] transition-all duration-200"
           >
             Nuestro Catálogo
           </Link>

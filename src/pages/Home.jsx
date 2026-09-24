@@ -32,22 +32,17 @@ export default function Home() {
 
       {/* Vitrina de categorías: cada tarjeta lleva directo a su página
           dedicada /categoria/:slug (ver CategoriasGrid). */}
-      <div id="catalogo" className="px-4 py-6 max-w-6xl mx-auto scroll-mt-16">
+      <div id="catalogo" className="contenedor py-6 scroll-mt-16">
         <CategoriasGrid />
         <div className="text-center">
-          <Link
-            to="/catalogo"
-            onClick={sonidoNavegar}
-            className="min-h-tap inline-flex items-center justify-center px-6 rounded-control glass-gold text-ink font-bold
-                       hover:bg-gold/25 active:scale-[0.98] transition-all duration-200"
-          >
-            Ver Catálogo Completo
+          <Link to="/catalogo" onClick={sonidoNavegar} className="btn-gold-glass">
+            Ver Catálogo Completo →
           </Link>
         </div>
       </div>
 
       {/* NUESTRA SEDE (resumen — la versión completa vive en /contacto) */}
-      <section className="pb-10 max-w-5xl mx-auto border-t border-carbon-border pt-8">
+      <section className="pb-10 max-w-6xl mx-auto border-t border-carbon-border pt-8">
         <div className="mb-5">
           <SectionBanner titulo="Nuestra Sede" icono="/assets/icons/ubicacion.png" imagenFondo={sede.imagen} tinte="dorado" />
         </div>
@@ -61,16 +56,11 @@ export default function Home() {
             enfoque={sede.enfoque}
             alt="Fachada de Muebles Zulia"
           />
-          <div className="p-5 flex flex-col justify-center">
-            <h3 className="text-xl font-bold text-ink mb-2">{sede.titulo}</h3>
+          <div className="p-5 sm:p-8 flex flex-col justify-center">
+            <h3 className="text-xl sm:text-2xl font-bold text-ink mb-2">{sede.titulo}</h3>
             <p className="text-ink-muted mb-2">{sede.texto}</p>
             <p className="text-ink font-semibold mb-4">{sede.direccion}</p>
-            <Link
-              to="/contacto"
-              onClick={sonidoNavegar}
-              className="min-h-tap inline-flex items-center px-5 rounded-control border-2 border-ink/60 text-ink font-bold w-fit
-                         hover:bg-ink hover:text-carbon active:scale-[0.98] transition-all duration-200"
-            >
+            <Link to="/contacto" onClick={sonidoNavegar} className="btn-outline">
               Ver mapa y métodos de pago
             </Link>
           </div>
@@ -78,7 +68,7 @@ export default function Home() {
       </section>
 
       {/* EXCELENCIA EN MANUFACTURA (resumen — versión completa en /fabricacion) */}
-      <section className="pb-10 max-w-5xl mx-auto border-t border-carbon-border pt-8">
+      <section className="pb-10 max-w-6xl mx-auto border-t border-carbon-border pt-8">
         <div className="mb-5">
           <SectionBanner titulo="Excelencia en Manufactura" icono="/assets/icons/fabricacion.png" imagenFondo="/assets/carpinteria.jpg" tinte="oscuro" />
         </div>
@@ -100,15 +90,10 @@ export default function Home() {
                 aria-hidden="true"
               />
             )}
-            <div className="relative p-5">
-              <h3 className="text-xl font-bold text-ink mb-2 drop-shadow-sm">{fabricacion.titulo}</h3>
+            <div className="relative p-5 sm:p-8">
+              <h3 className="text-xl sm:text-2xl font-bold text-ink mb-2 drop-shadow-sm">{fabricacion.titulo}</h3>
               <p className="text-ink-muted mb-4 line-clamp-3 drop-shadow-sm">{fabricacion.texto}</p>
-              <Link
-                to="/fabricacion"
-                onClick={sonidoNavegar}
-                className="min-h-tap inline-flex items-center px-5 rounded-control border-2 border-ink/60 text-ink font-bold w-fit
-                           hover:bg-ink hover:text-carbon active:scale-[0.98] transition-all duration-200"
-              >
+              <Link to="/fabricacion" onClick={sonidoNavegar} className="btn-outline">
                 Conocer nuestro proceso
               </Link>
             </div>

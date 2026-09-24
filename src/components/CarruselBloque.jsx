@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { TAMANOS_TITULO, COLORES_TEXTO } from "../lib/contenido";
+import { TAMANOS_TITULO, COLORES_TEXTO, COLORES_TEXTO_SUAVE } from "../lib/contenido";
 
 export const CLASE_TINTE = {
   dorado: "glass-caption-gold",
@@ -57,6 +57,7 @@ export default function CarruselBloque({
   const claseVidrio = CLASE_TINTE[tinte] ?? CLASE_TINTE.dorado;
   const claseTamano = TAMANOS_TITULO[tamanoTitulo] ?? TAMANOS_TITULO.mediano;
   const claseColor = COLORES_TEXTO[colorTexto] ?? COLORES_TEXTO.blanco;
+  const claseColorSuave = COLORES_TEXTO_SUAVE[colorTexto] ?? COLORES_TEXTO_SUAVE.blanco;
   const estiloMarco = aspecto ? { aspectRatio: aspecto } : undefined;
   const imagenEspejo = imagenes[indice] ?? imagenes[0];
 
@@ -106,7 +107,7 @@ export default function CarruselBloque({
               <h3 className={`${claseTamano} font-extrabold ${claseColor} drop-shadow-sm`}>{titulo}</h3>
             )}
             {texto && (
-              <p className={`${claseColor}/90 text-sm sm:text-base mt-1 leading-snug drop-shadow-sm whitespace-pre-line`}>
+              <p className={`${claseColorSuave} text-sm sm:text-base mt-1 leading-snug drop-shadow-sm whitespace-pre-line`}>
                 {texto}
               </p>
             )}

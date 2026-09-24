@@ -28,7 +28,7 @@ export default function ColorSwatchSelector({ colores, seleccionado, onSeleccion
               style={{ backgroundColor: color.hex }}
             >
               {activo && (
-                <span className="absolute inset-0 flex items-center justify-center text-carbon font-black text-lg">
+                <span className="absolute inset-0 flex items-center justify-center text-white font-black text-lg [text-shadow:0_1px_3px_rgba(0,0,0,0.9)]">
                   ✓
                 </span>
               )}
@@ -37,7 +37,9 @@ export default function ColorSwatchSelector({ colores, seleccionado, onSeleccion
         })}
       </div>
       {seleccionado && (
-        <span className="text-ink-muted text-base">{seleccionado.nombre}</span>
+        <span className="text-ink text-base">
+          Elegido: <strong className="text-gold">{seleccionado.nombre}</strong>
+        </span>
       )}
     </div>
   );

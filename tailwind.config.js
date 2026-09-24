@@ -17,7 +17,7 @@ export default {
         terracota: "#C1440E", // acento secundario (usado en el sitio actual)
         ink: {
           DEFAULT: "#FFFFFF", // texto principal
-          muted: "#8C8C8C",   // texto secundario / descripciones
+          muted: "#A3A3A3",   // texto secundario / descripciones (más claro: mejor contraste sobre fondo oscuro)
         },
       },
       borderRadius: {
@@ -35,6 +35,9 @@ export default {
       },
       minHeight: {
         tap: "48px", // objetivo táctil mínimo cómodo para adultos 45+
+      },
+      minWidth: {
+        tap: "48px", // mismo objetivo táctil, a lo ancho (botones ✕, ←, →)
       },
     },
   },

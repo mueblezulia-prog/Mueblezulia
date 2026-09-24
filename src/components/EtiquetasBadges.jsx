@@ -29,8 +29,12 @@ export default function EtiquetasBadges({ etiquetas, compacto = false, tamano = 
       {etiquetas.map((etiqueta, i) => {
         const abierta = abiertaId === etiqueta.id;
         const revelar = !modoIconos || abierta;
+        // Solo es un botón cuando se puede tocar (modo íconos); si no, es
+        // un simple <span> — un <button> sin función dentro del link de
+        // la tarjeta era HTML inválido.
+        const Etiqueta = modoIconos ? "button" : "span";
         return (
-          <button
+          <Etiqueta
             key={etiqueta.id}
             type={modoIconos ? "button" : undefined}
             onClick={
@@ -43,7 +47,7 @@ export default function EtiquetasBadges({ etiquetas, compacto = false, tamano = 
                 : undefined
             }
             className={[
-              "inline-flex items-center gap-1 self-start font-semibold text-gold bg-gold/15 border border-gold/40 rounded-control",
+              "inline-flex items-center gap-1 self-start max-w-full min-w-0 font-semibold text-gold bg-gold/15 border border-gold/40 rounded-control",
               "transition-all duration-300 ease-out overflow-hidden animar-entrada",
               tamTexto,
               padding,
@@ -60,13 +64,13 @@ export default function EtiquetasBadges({ etiquetas, compacto = false, tamano = 
             </span>
             <span
               className={[
-                "whitespace-nowrap transition-all duration-300 ease-out",
-                revelar ? "max-w-[220px] opacity-100 ml-0.5" : "max-w-0 opacity-0 ml-0",
+                "whitespace-nowrap truncate min-w-0 transition-all duration-300 ease-out",
+                revelar ? "max-w-[20rem] opacity-100 ml-0.5" : "max-w-0 opacity-0 ml-0",
               ].join(" ")}
             >
               {etiqueta.texto}
             </span>
-          </button>
+          </Etiqueta>
         );
       })}
     </div>

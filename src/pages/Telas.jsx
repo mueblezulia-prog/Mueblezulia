@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import SectionBanner from "../components/SectionBanner";
 import VentanaTelaFamilia from "../components/VentanaTelaFamilia";
 import { supabase } from "../lib/supabaseClient";
+import { EsqueletoTarjetas, MensajeError, MensajeVacio } from "../components/Estados";
 
 /**
  * Catálogo público de telas: todas las familias de tela (con sus colores)
@@ -15,22 +16,35 @@ export default function Telas() {
   const [telas, setTelas] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [familiaAbierta, setFamiliaAbierta] = useState(null);
+  const [error, setError] = useState(false);
+  const [intento, setIntento] = useState(0);
 
   useEffect(() => {
     let activo = true;
+    setCargando(true);
+    setError(false);
     Promise.all([
       supabase.from("telas_familias").select("*").order("orden"),
       supabase.from("telas").select("*").order("orden"),
-    ]).then(([{ data: familiasData }, { data: telasData }]) => {
-      if (!activo) return;
-      setFamilias(familiasData ?? []);
-      setTelas(telasData ?? []);
-      setCargando(false);
-    });
+    ])
+      .then(([{ data: familiasData, error: e1 }, { data: telasData, error: e2 }]) => {
+        if (!activo) return;
+        if (e1 || e2) {
+          setError(true);
+        } else {
+          // Solo se muestran familias que tengan al menos un color cargado
+          // (una familia recién creada y vacía no le sirve al cliente).
+          const conColores = (familiasData ?? []).filter((f) => (telasData ?? []).some((t) => t.familia_id === f.id));
+          setFamilias(conColores);
+          setTelas(telasData ?? []);
+        }
+      })
+      .catch(() => activo && setError(true))
+      .finally(() => activo && setCargando(false));
     return () => {
       activo = false;
     };
-  }, []);
+  }, [intento]);
 
   return (
     <div>
@@ -38,19 +52,19 @@ export default function Telas() {
         <SectionBanner titulo="Nuestras Telas" icono="/assets/icons/tela.png" imagenFondo="/assets/carpinteria.jpg" tinte="oscuro" />
       </div>
 
-      <div className="px-4 max-w-5xl mx-auto pb-10">
-        <p className="text-ink-muted text-base mb-6">
+      <div className="contenedor pb-10">
+        <p className="text-ink-muted text-base mb-6 max-w-3xl">
           Estas son las telas y colores con los que fabricamos nuestros muebles. Toca cualquiera para ver todos sus colores, sus
           características y en qué muebles la puedes pedir.
         </p>
 
-        {cargando && <p className="text-ink-muted text-lg">Cargando…</p>}
+        {cargando && <EsqueletoTarjetas cantidad={4} />}
 
-        {!cargando && familias.length === 0 && (
-          <p className="text-ink-muted text-base">Todavía no hay telas cargadas.</p>
-        )}
+        {!cargando && error && <MensajeError titulo="No pudimos cargar las telas" onReintentar={() => setIntento((n) => n + 1)} />}
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+        {!cargando && !error && familias.length === 0 && <MensajeVacio>Todavía no hay telas cargadas.</MensajeVacio>}
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 items-start">
           {familias.map((familia) => {
             const colores = telas.filter((t) => t.familia_id === familia.id);
             const disponible = familia.disponible ?? true;
@@ -86,22 +100,33 @@ export default function Telas() {
                     </div>
                   )}
                   {!disponible && (
-                    <span className="absolute top-2 left-2 text-[10px] font-bold uppercase tracking-wide bg-terracota text-white rounded-full px-2 py-0.5 shadow">
+                    <span className="absolute top-2 left-2 text-xs font-bold uppercase tracking-wide bg-terracota text-white rounded-full px-2 py-0.5 shadow">
                       No disponible
                     </span>
                   )}
                 </div>
                 <div className="p-3 bg-white/[0.03] backdrop-blur-sm border-t border-white/10 flex flex-col gap-1">
-                  <div className="font-bold text-ink text-base truncate">{familia.nombre}</div>
-                  <div className="text-xs text-ink-muted">
-                    {colores.length} color{colores.length === 1 ? "" : "es"}
+                  <div className="font-bold text-ink text-base sm:text-lg truncate">{familia.nombre}</div>
+                  <div className="flex items-center gap-2">
+                    <div className="flex -space-x-1.5">
+                      {colores.slice(0, 5).map((c) => (
+                        <span
+                          key={c.id}
+                          className="w-4 h-4 rounded-full border border-carbon bg-cover bg-center"
+                          style={c.imagen ? { backgroundImage: `url(${c.imagen})` } : { backgroundColor: c.hex }}
+                        />
+                      ))}
+                    </div>
+                    <span className="text-sm text-ink-muted">
+                      {colores.length} color{colores.length === 1 ? "" : "es"}
+                    </span>
                   </div>
                   {propiedades.length > 0 && (
                     <div className="flex flex-wrap gap-1 mt-0.5">
                       {propiedades.map((p, i) => (
                         <span
                           key={i}
-                          className="inline-flex items-center gap-1 text-[10px] font-semibold text-gold bg-gold/15 border border-gold/40 rounded-control px-1.5 py-0.5"
+                          className="inline-flex items-center gap-1 text-xs font-semibold text-gold bg-gold/15 border border-gold/40 rounded-control px-1.5 py-0.5"
                         >
                           <span>{p.icono}</span>
                           <span className="truncate max-w-[80px]">{p.texto}</span>

@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { sonidoNavegar } from "../lib/sonido";
 import { obtenerEtiquetasProducto } from "../lib/etiquetas";
+import { formatearPrecio } from "../lib/formato";
 import EtiquetasBadges from "./EtiquetasBadges";
 import BadgeDisponibilidad from "./BadgeDisponibilidad";
 
@@ -17,29 +18,36 @@ export default function ProductCard({ producto }) {
     <Link
       to={`/producto/${id}`}
       onClick={sonidoNavegar}
-      className="group relative rounded-card overflow-hidden flex flex-col
+      className="group relative rounded-card flex flex-col focus-within:z-20 has-[[aria-expanded=true]]:z-20
                  glass hover:border-gold/50 hover:shadow-xl hover:shadow-black/40 hover:-translate-y-0.5
                  transition-all duration-300 ease-out"
     >
-      <div className="relative aspect-[4/5] overflow-hidden bg-carbon">
-        <img
-          src={imagen_recortada_url}
-          alt={titulo}
-          className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.07]"
-          loading="lazy"
-        />
+      <div className="relative aspect-[4/5] overflow-hidden rounded-t-card bg-carbon">
+        {imagen_recortada_url ? (
+          <img
+            src={imagen_recortada_url}
+            alt={titulo}
+            className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.07]"
+            loading="lazy"
+          />
+        ) : (
+          // Sin foto todavía: logo tenue en vez del ícono de "imagen rota".
+          <div className="w-full h-full flex items-center justify-center">
+            <img src="/assets/logo.png" alt="" className="w-14 h-14 object-contain opacity-30" />
+          </div>
+        )}
         <span className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/75 via-black/10 to-transparent" />
-        {/* Siempre visible arriba de la foto, sin importar cuántas otras
-            etiquetas tenga el producto abajo. */}
-        <span className="absolute top-2.5 left-2.5">
-          <BadgeDisponibilidad disponible={producto.disponible_entrega ?? true} />
-        </span>
         <span className="absolute bottom-2.5 left-2.5 flex items-center gap-1 bg-gold text-carbon text-sm sm:text-base font-extrabold px-2.5 py-1 rounded-control shadow-md shadow-black/30">
           <img src="/assets/icons/precio-tag.png" alt="" className="w-4 h-4 sm:w-5 sm:h-5" />
-          ${Number(precio).toLocaleString("es-VE")}
+          {formatearPrecio(precio)}
         </span>
       </div>
-      <div className="p-3 flex flex-col gap-1 bg-white/[0.03] backdrop-blur-sm border-t border-white/10">
+      {/* La insignia vive FUERA del recuadro con overflow-hidden de la foto,
+          para que su explicación (al tocarla) no quede cortada. */}
+      <span className="absolute top-2.5 left-2.5 z-10">
+        <BadgeDisponibilidad disponible={producto.disponible_entrega ?? true} hacia="abajo" />
+      </span>
+      <div className="p-3 flex flex-col gap-1.5 flex-1 bg-white/[0.03] backdrop-blur-sm border-t border-white/10 rounded-b-card">
         <h3 className="text-base sm:text-lg font-bold text-ink leading-snug line-clamp-2 group-hover:text-gold transition-colors duration-200">
           {titulo}
         </h3>

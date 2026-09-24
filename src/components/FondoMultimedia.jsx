@@ -14,10 +14,14 @@ import { useEffect, useState } from "react";
  * No trae su propio borde ni esquinas redondeadas: el contenedor que lo
  * usa (Home.jsx, Contacto.jsx) ya se encarga de eso, así no se duplica.
  */
-export default function FondoMultimedia({ imagenes = [], video, tipoMedia = "foto", alto, ajuste, alt = "", aspecto }) {
+export default function FondoMultimedia({ imagenes = [], video, tipoMedia = "foto", alto, ajuste, alt = "", aspecto, enfoque }) {
   const [indice, setIndice] = useState(0);
-  const total = imagenes.length;
+  const lista = imagenes.filter(Boolean);
+  const total = lista.length;
   const estiloMarco = aspecto ? { aspectRatio: aspecto } : undefined;
+  // `enfoque` = punto de la foto que el admin quiere mantener a la vista
+  // (ej. "50% 20%"). Antes llegaba pero nunca se aplicaba.
+  const estiloMedia = { ...estiloMarco, ...(enfoque ? { objectPosition: enfoque } : null) };
 
   useEffect(() => {
     if (tipoMedia === "video" || total <= 1) return;
@@ -26,22 +30,23 @@ export default function FondoMultimedia({ imagenes = [], video, tipoMedia = "fot
   }, [indice, total, tipoMedia]);
 
   if (tipoMedia === "video" && video) {
-    return <video src={video} className={`w-full ${alto} ${ajuste}`} style={estiloMarco} autoPlay muted loop playsInline />;
+    return <video src={video} className={`w-full ${alto} ${ajuste}`} style={estiloMedia} autoPlay muted loop playsInline />;
   }
 
   if (total === 0) return null;
 
   if (total === 1) {
-    return <img src={imagenes[0]} alt={alt} className={`w-full ${alto} ${ajuste}`} style={estiloMarco} />;
+    return <img src={lista[0]} alt={alt} className={`w-full ${alto} ${ajuste}`} style={estiloMedia} />;
   }
 
   return (
     <div className={`relative w-full ${alto}`} style={estiloMarco}>
-      {imagenes.map((url, i) => (
+      {lista.map((url, i) => (
         <img
           key={url + i}
           src={url}
           alt={alt}
+          style={enfoque ? { objectPosition: enfoque } : undefined}
           className={`carrusel-slide absolute inset-0 w-full h-full ${ajuste} ${i === indice ? "opacity-100" : "opacity-0"}`}
         />
       ))}

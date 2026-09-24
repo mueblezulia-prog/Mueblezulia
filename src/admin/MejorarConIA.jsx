@@ -29,7 +29,9 @@ export default function MejorarConIA({ texto, tipo, onUsar }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ texto, tipo }),
       });
-      const datos = await res.json();
+      // Si el servidor no respondió con JSON (ej. se cayó o se está
+      // reiniciando), mostramos un mensaje entendible en vez de un error raro.
+      const datos = await res.json().catch(() => ({ ok: false, error: "El servidor no respondió. Intenta de nuevo en unos segundos." }));
       if (!res.ok || !datos.ok) throw new Error(datos.error || "No se pudo mejorar el texto.");
       setSugerencia(datos.mejorado);
     } catch (err) {

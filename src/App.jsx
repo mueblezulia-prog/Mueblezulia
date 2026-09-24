@@ -54,6 +54,25 @@ function usarFaviconSegunRuta(esAdmin) {
   }, [esAdmin]);
 }
 
+// Al navegar a otra página, arrancar siempre desde arriba (antes, si
+// tocabas un mueble a mitad del catálogo, el detalle se abría a mitad
+// de página). Si solo cambia el "#ancla", no se toca el scroll.
+function ScrollArriba() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+  }, [pathname]);
+  return null;
+}
+
+// `key={id}` hace que al pasar de un mueble a otro (por ejemplo desde
+// "Muebles con esta tela") la página se reinicie por completo — antes
+// se quedaban la foto, el contador y el color del mueble anterior.
+function ProductoRuta() {
+  const { id } = useParams();
+  return <ProductoDetalle key={id} />;
+}
+
 export default function App() {
   const { pathname } = useLocation();
   const esAdmin = pathname.startsWith("/admin");
@@ -67,16 +86,17 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-carbon">
+      <ScrollArriba />
       {esAdmin ? <AdminHeader /> : <NavBar />}
 
       {/* pb-16 deja espacio para que la barra inferior móvil no tape el
           contenido; en desktop no aplica porque BottomNav está oculto. */}
-      <div className={ocultarBottomNav ? "" : "pb-16 sm:pb-0"}>
+      <div className={ocultarBottomNav ? "" : "pb-[calc(4.75rem+env(safe-area-inset-bottom))] sm:pb-0"}>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/catalogo" element={<CatalogoProductos />} />
           <Route path="/categoria/:slug" element={<CategoriaPagina />} />
-          <Route path="/producto/:id" element={<ProductoDetalle />} />
+          <Route path="/producto/:id" element={<ProductoRuta />} />
           <Route path="/fabricacion" element={<Fabricacion />} />
           <Route path="/telas" element={<Telas />} />
           <Route path="/contacto" element={<Contacto />} />
@@ -102,7 +122,7 @@ export default function App() {
 
 function NuevoProducto() {
   const navigate = useNavigate();
-  return <ProductForm onGuardado={() => navigate("/admin/productos")} />;
+  return <ProductForm onGuardado={(_id, aviso) => navigate("/admin/productos", { state: { aviso } })} />;
 }
 
 function EditarProducto() {
@@ -150,18 +170,23 @@ function EditarProducto() {
     <ProductForm
       key={producto.id}
       productoExistente={producto}
-      onGuardado={() => navigate("/admin/productos")}
+      onGuardado={(_id, aviso) => navigate("/admin/productos", { state: { aviso } })}
     />
   );
 }
 
 function NoEncontrado() {
   return (
-    <div className="p-8 text-center">
-      <p className="text-xl text-ink-muted mb-4">Página no encontrada.</p>
-      <Link to="/" className="text-gold font-bold">
-        Volver al inicio
-      </Link>
+    <div className="contenedor py-20 flex flex-col items-center text-center gap-4">
+      <img src="/assets/logo.png" alt="" className="w-16 h-16 object-contain opacity-80" />
+      <h1 className="text-2xl font-extrabold text-ink">Página no encontrada</h1>
+      <p className="text-ink-muted max-w-md">
+        La dirección que abriste no existe o fue movida. Puedes volver al inicio o ver todos nuestros muebles.
+      </p>
+      <div className="flex flex-wrap justify-center gap-3 mt-2">
+        <Link to="/" className="btn-outline">Volver al inicio</Link>
+        <Link to="/catalogo" className="btn-gold-glass">Ver catálogo</Link>
+      </div>
     </div>
   );
 }

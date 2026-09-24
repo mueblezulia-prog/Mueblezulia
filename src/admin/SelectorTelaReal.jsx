@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 
 /**
- * Elegí LA tela real de este mueble en específico (la que trae puesta en
+ * Elige LA tela real de este mueble en específico (la que trae puesta en
  * la foto): primero la familia, después el color de esa familia. Es
  * opcional — "Ninguna" la deja sin asignar.
  *
@@ -49,7 +49,7 @@ export default function SelectorTelaReal({ telaColorId, onChange, onTambienAgreg
           🧵 Tela real de este mueble
         </span>
         <p className="text-sm text-ink-muted mt-1">
-          La tela y color que trae puesto ESTE mueble en la foto. Es opcional — si no elegís ninguna, queda sin asignar.
+          La tela y color que trae puesto ESTE mueble en la foto. Es opcional — si no eliges ninguna, queda sin asignar.
         </p>
       </div>
 
@@ -89,7 +89,7 @@ export default function SelectorTelaReal({ telaColorId, onChange, onTambienAgreg
               {familias.length === 0 && (
                 <span className="text-sm text-ink-muted">
                   Todavía no hay familias de tela. Crea la primera en{" "}
-                  <a href="/admin/telas" className="text-gold underline">Administrar telas →</a>
+                  <a href="/admin/telas" target="_blank" rel="noopener" className="text-gold underline">Administrar telas →</a>
                 </span>
               )}
             </div>

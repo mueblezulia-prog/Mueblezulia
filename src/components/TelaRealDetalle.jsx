@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
+import { formatearPrecio } from "../lib/formato";
+import useModal from "../hooks/useModal";
 
 const MAX_VISIBLES = 4;
 
@@ -24,6 +27,14 @@ export default function TelaRealDetalle({ producto }) {
   const [relacionados, setRelacionados] = useState([]);
   const [verTodos, setVerTodos] = useState(false);
   const [fotoCompletaAbierta, setFotoCompletaAbierta] = useState(false);
+  const [cargandoRel, setCargandoRel] = useState(true);
+
+  // Escape cierra (primero la foto completa, si está abierta) y el fondo
+  // no se desplaza mientras la ventana está abierta.
+  useModal(
+    () => (fotoCompletaAbierta ? setFotoCompletaAbierta(false) : setAbierta(false)),
+    abierta || fotoCompletaAbierta
+  );
 
   const disponible = familia ? (familia.disponible ?? true) : true;
   const propiedades = familia
@@ -76,6 +87,7 @@ export default function TelaRealDetalle({ producto }) {
     let activo = true;
     async function cargarRelacionados() {
       const idsFiltro = modoFamilia && coloresFamilia.length ? coloresFamilia.map((c) => c.id) : [tela.id];
+      setCargandoRel(true);
       const { data } = await supabase
         .from("productos")
         .select("id, titulo, precio, imagen_recortada_url")
@@ -83,7 +95,10 @@ export default function TelaRealDetalle({ producto }) {
         .neq("id", producto.id)
         .eq("activo", true)
         .order("orden");
-      if (activo) setRelacionados(data ?? []);
+      if (activo) {
+        setRelacionados(data ?? []);
+        setCargandoRel(false);
+      }
     }
     cargarRelacionados();
     return () => {
@@ -100,7 +115,7 @@ export default function TelaRealDetalle({ producto }) {
       <button
         type="button"
         onClick={() => setAbierta(true)}
-        className="flex items-center gap-2.5 bg-carbon-light border border-carbon-border rounded-control px-3.5 py-2.5 min-h-tap text-left"
+        className="flex items-center gap-2.5 bg-carbon-light/80 border border-carbon-border rounded-control px-3.5 py-2.5 min-h-tap text-left hover:border-gold/50 active:scale-[0.99] transition"
       >
         <span className="text-base leading-none">🧵</span>
         <span
@@ -111,21 +126,24 @@ export default function TelaRealDetalle({ producto }) {
           {familia ? `${familia.nombre} — ${tela.nombre}` : tela.nombre}
         </span>
         {!disponible && (
-          <span className="text-[10px] font-bold uppercase tracking-wide bg-terracota/15 text-terracota border border-terracota/40 rounded-full px-2 py-0.5 shrink-0">
+          <span className="text-xs font-bold uppercase tracking-wide bg-terracota/15 text-terracota border border-terracota/40 rounded-full px-2 py-0.5 shrink-0">
             No disponible
           </span>
         )}
-        <span className="text-xs text-gold font-bold shrink-0">Ver más ›</span>
+        <span className="text-sm text-gold font-bold shrink-0">Ver más ›</span>
       </button>
 
-      {abierta && (
+      {abierta && createPortal(
         <div
           className="fixed inset-0 z-50 flex flex-col justify-end sm:items-center sm:justify-center bg-black/55 sm:p-4"
           onClick={() => setAbierta(false)}
         >
           <div
-            className="bg-carbon rounded-t-3xl sm:rounded-3xl px-5 pt-2.5 pb-7 max-h-[85vh] sm:max-h-[85vh] w-full sm:max-w-lg
-                       overflow-y-auto flex flex-col gap-4 shadow-2xl shadow-black/50"
+            role="dialog"
+            aria-modal="true"
+            aria-label={`Tela ${familia?.nombre ?? tela.nombre}`}
+            className="bg-carbon border border-white/10 rounded-t-3xl sm:rounded-3xl px-5 pt-2.5 pb-[calc(1.75rem+env(safe-area-inset-bottom))] sm:pb-7 max-h-[88vh] sm:max-h-[85vh] w-full sm:max-w-lg
+                       overflow-y-auto overscroll-contain flex flex-col gap-4 shadow-2xl shadow-black/50 animar-subida"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="w-9 h-1 rounded-full bg-carbon-border mx-auto sm:hidden" />
@@ -135,7 +153,7 @@ export default function TelaRealDetalle({ producto }) {
                 <div className="text-xs font-bold text-ink-muted uppercase tracking-wide">Familia de tela</div>
                 <div className="text-lg font-extrabold text-ink mt-0.5">{familia?.nombre ?? tela.nombre}</div>
               </div>
-              <button type="button" onClick={() => setAbierta(false)} aria-label="Cerrar" className="text-2xl text-ink-muted min-h-tap min-w-tap">
+              <button type="button" onClick={() => setAbierta(false)} aria-label="Cerrar" className="text-2xl text-ink-muted hover:text-ink min-h-tap min-w-tap rounded-full hover:bg-white/5 transition">
                 ✕
               </button>
             </div>
@@ -147,16 +165,26 @@ export default function TelaRealDetalle({ producto }) {
             )}
 
             {familia?.foto_completa && (
+              // Vista previa de la foto REAL de la tela, completa (sin
+              // recortar ni hacer zoom) — tócala para verla en grande.
               <button
                 type="button"
                 onClick={() => setFotoCompletaAbierta(true)}
-                className="flex items-center gap-2.5 bg-carbon-light border border-carbon-border rounded-control px-3.5 py-2.5 min-h-tap text-left self-start"
+                className="group relative rounded-card overflow-hidden border border-white/10 bg-carbon-light"
               >
-                <span
-                  className="w-8 h-10 rounded border border-white/15 shrink-0 bg-cover bg-center"
+                <div
+                  className="absolute inset-0 bg-cover bg-center scale-110 blur-xl opacity-40"
                   style={{ backgroundImage: `url(${familia.foto_completa})` }}
+                  aria-hidden="true"
                 />
-                <span className="text-sm font-semibold text-gold">📷 Ver tela completa</span>
+                <img
+                  src={familia.foto_completa}
+                  alt={`Tela ${familia.nombre}`}
+                  className="relative mx-auto max-h-64 w-auto object-contain"
+                />
+                <span className="absolute bottom-2 right-2 glass-dark text-ink text-xs font-bold px-2.5 py-1 rounded-full group-hover:bg-black/60 transition">
+                  🔍 Ver tela completa
+                </span>
               </button>
             )}
 
@@ -225,18 +253,25 @@ export default function TelaRealDetalle({ producto }) {
                 Muebles con esta tela {relacionados.length > 0 ? `(${relacionados.length})` : ""}
               </span>
 
-              {relacionados.length === 0 && (
+              {cargandoRel && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="esqueleto aspect-[4/5]" />
+                  <div className="esqueleto aspect-[4/5]" />
+                </div>
+              )}
+
+              {!cargandoRel && relacionados.length === 0 && (
                 <p className="text-sm text-ink-muted">Todavía no hay otros muebles con esta tela.</p>
               )}
 
-              {relacionados.length > 0 && (
+              {!cargandoRel && relacionados.length > 0 && (
                 <div className="grid grid-cols-2 gap-3">
                   {visibles.map((p) => (
                     <Link
                       key={p.id}
                       to={`/producto/${p.id}`}
                       onClick={() => setAbierta(false)}
-                      className="bg-carbon-light border border-carbon-border rounded-control overflow-hidden"
+                      className="bg-carbon-light border border-carbon-border rounded-control overflow-hidden hover:border-gold/50 transition-colors"
                     >
                       <div
                         className="w-full aspect-[4/5] bg-cover bg-center bg-carbon-border"
@@ -244,14 +279,14 @@ export default function TelaRealDetalle({ producto }) {
                       />
                       <div className="px-2.5 py-2">
                         <div className="text-sm font-bold text-ink truncate">{p.titulo}</div>
-                        <div className="text-xs text-ink-muted">${Number(p.precio).toLocaleString("es-VE")}</div>
+                        <div className="text-sm text-gold font-bold">{formatearPrecio(p.precio)}</div>
                       </div>
                     </Link>
                   ))}
                 </div>
               )}
 
-              {relacionados.length > MAX_VISIBLES && !verTodos && (
+              {!cargandoRel && relacionados.length > MAX_VISIBLES && !verTodos && (
                 <button
                   type="button"
                   onClick={() => setVerTodos(true)}
@@ -262,10 +297,11 @@ export default function TelaRealDetalle({ producto }) {
               )}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
-      {fotoCompletaAbierta && familia?.foto_completa && (
+      {fotoCompletaAbierta && familia?.foto_completa && createPortal(
         <div
           className="fixed inset-0 z-[60] bg-black/85 flex items-center justify-center p-4"
           onClick={() => setFotoCompletaAbierta(false)}
@@ -284,7 +320,8 @@ export default function TelaRealDetalle({ producto }) {
             className="max-w-full max-h-full rounded-card object-contain"
             onClick={(e) => e.stopPropagation()}
           />
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );

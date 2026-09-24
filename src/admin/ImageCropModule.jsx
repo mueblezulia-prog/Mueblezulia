@@ -14,6 +14,7 @@ export default function ImageCropModule({
   imagenOriginalUrl,
   cropInicial = { x: 0, y: 0 },
   zoomInicial = 1,
+  areaInicial = null,
   onChange,
 }) {
   const aspecto = 4 / 5;
@@ -37,7 +38,10 @@ export default function ImageCropModule({
 
   return (
     <div className="flex flex-col gap-4">
-      <span className="text-lg font-bold text-ink">Imagen de Producto (Crop &amp; Encuadre)</span>
+      <div>
+        <span className="text-lg font-bold text-ink">Encuadre de la foto</span>
+        <p className="text-sm text-ink-muted">Arrastra la foto para acomodarla y usa el zoom para acercar. Así se verá en el catálogo.</p>
+      </div>
 
       <div className="relative w-full aspect-[4/5] bg-black rounded-card overflow-hidden">
         <Cropper
@@ -49,6 +53,8 @@ export default function ImageCropModule({
           onZoomChange={setZoom}
           onCropComplete={handleCropComplete}
           objectFit="contain"
+          // Al editar, arranca con el MISMO encuadre que ya estaba guardado.
+          initialCroppedAreaPixels={areaInicial ?? undefined}
         />
       </div>
 
@@ -64,7 +70,7 @@ export default function ImageCropModule({
           step={0.01}
           value={zoom}
           onChange={(e) => setZoom(Number(e.target.value))}
-          className="w-full accent-gold h-6"
+          className="w-full accent-gold h-8"
         />
       </div>
     </div>

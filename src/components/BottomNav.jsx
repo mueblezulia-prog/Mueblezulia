@@ -41,10 +41,10 @@ const IconUbicacion = ({ activo }) => (
 
 const TABS = [
   { to: "/", label: "Inicio", end: true, Icon: IconInicio },
-  { to: "/catalogo", label: "Catálogo", Icon: IconCatalogo },
+  { to: "/catalogo", label: "Catálogo", Icon: IconCatalogo, tambien: ["/categoria/", "/producto/"] },
   { to: "/telas", label: "Telas", Icon: IconTelas },
   { to: "/fabricacion", label: "Fabricación", Icon: IconFabricacion },
-  { to: "/contacto", label: "Ubicación", Icon: IconUbicacion },
+  { to: "/contacto", label: "Contacto", Icon: IconUbicacion },
 ];
 
 export default function BottomNav() {
@@ -60,7 +60,7 @@ export default function BottomNav() {
   return (
     <nav className="sm:hidden fixed bottom-0 inset-x-0 z-30 bg-carbon/80 backdrop-blur-md border-t border-white/10 pb-[env(safe-area-inset-bottom)] shadow-lg shadow-black/30">
       <div className="grid grid-cols-5">
-        {TABS.map(({ to, label, end, Icon }) => (
+        {TABS.map(({ to, label, end, Icon, tambien }) => (
           <NavLink
             key={to}
             to={to}
@@ -68,7 +68,9 @@ export default function BottomNav() {
             onClick={() => alTocar(to, end)}
             className="min-h-tap flex flex-col items-center justify-center py-2 gap-0.5"
           >
-            {({ isActive }) => (
+            {({ isActive: activaExacta }) => {
+              const isActive = activaExacta || (tambien ?? []).some((r) => pathname.startsWith(r));
+              return (
               <>
                 <span
                   className={[
@@ -78,11 +80,12 @@ export default function BottomNav() {
                 >
                   <Icon activo={isActive} />
                 </span>
-                <span className={["text-[11px] font-semibold", isActive ? "text-gold" : "text-ink-muted"].join(" ")}>
+                <span className={["text-xs font-semibold", isActive ? "text-gold" : "text-ink-muted"].join(" ")}>
                   {label}
                 </span>
               </>
-            )}
+              );
+            }}
           </NavLink>
         ))}
       </div>

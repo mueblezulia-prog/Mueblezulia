@@ -137,6 +137,16 @@ export const COLORES_TEXTO = {
 };
 
 /**
+ * Versión suave (90%) del mismo color, para el párrafo debajo del título.
+ * Tiene que estar escrita completa aquí: si se arma en tiempo de ejecución
+ * (`${clase}/90`), Tailwind no la genera y el texto "dorado" salía blanco.
+ */
+export const COLORES_TEXTO_SUAVE = {
+  blanco: "text-ink/90",
+  dorado: "text-gold/90",
+};
+
+/**
  * Trae el bloque `clave` ya combinado con sus valores por defecto
  * (así si el admin solo llenó "direccion" pero no "titulo", el resto
  * sigue mostrando algo razonable en vez de quedar vacío).

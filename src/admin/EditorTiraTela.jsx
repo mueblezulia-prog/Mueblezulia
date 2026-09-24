@@ -227,6 +227,13 @@ export default function EditorTiraTela({ archivo, familia, ordenInicial, onCerra
     actualizarPin(id, { x, y, preview: canvas ? canvas.toDataURL("image/jpeg", 0.85) : undefined });
   }
 
+  // Si ya marcaste colores, pregunta antes de cerrar (antes se perdía
+  // todo el trabajo con un toque en la ✕).
+  function cerrarConConfirmacion() {
+    if (pines.length > 0 && !window.confirm("Ya marcaste colores en esta foto. ¿Cerrar sin guardarlos?")) return;
+    onCerrar();
+  }
+
   function quitarPin(id) {
     setPines((actual) => actual.filter((p) => p.id !== id));
   }
@@ -235,6 +242,8 @@ export default function EditorTiraTela({ archivo, familia, ordenInicial, onCerra
     e.preventDefault();
     e.stopPropagation();
     function mover(ev) {
+      if (!contenedorRef.current) return; // la ventana se cerró a mitad del arrastre
+      if (ev.cancelable) ev.preventDefault(); // que la página no se desplace mientras mueves el pin
       const rect = contenedorRef.current.getBoundingClientRect();
       const punto = ev.touches ? ev.touches[0] : ev;
       const x = limitar((punto.clientX - rect.left) / rect.width, 0, 1);
@@ -246,11 +255,13 @@ export default function EditorTiraTela({ archivo, familia, ordenInicial, onCerra
       window.removeEventListener("mouseup", soltar);
       window.removeEventListener("touchmove", mover);
       window.removeEventListener("touchend", soltar);
+      window.removeEventListener("touchcancel", soltar);
     }
     window.addEventListener("mousemove", mover);
     window.addEventListener("mouseup", soltar);
     window.addEventListener("touchmove", mover, { passive: false });
     window.addEventListener("touchend", soltar);
+    window.addEventListener("touchcancel", soltar);
   }
 
   async function guardarTodos() {
@@ -337,7 +348,7 @@ export default function EditorTiraTela({ archivo, familia, ordenInicial, onCerra
                 : "Paso 2 de 2 · Marca dónde está cada color"}
             </p>
           </div>
-          <button type="button" onClick={onCerrar} aria-label="Cerrar" className="text-ink-muted text-xl leading-none px-1">
+          <button type="button" onClick={cerrarConConfirmacion} aria-label="Cerrar" className="text-ink-muted hover:text-ink text-2xl leading-none min-h-tap min-w-tap rounded-full hover:bg-white/5">
             ×
           </button>
         </div>
@@ -471,8 +482,20 @@ export default function EditorTiraTela({ archivo, familia, ordenInicial, onCerra
               <div
                 ref={contenedorRef}
                 onClick={clicEnFoto}
-                className="relative w-full sm:w-56 shrink-0 rounded-card overflow-hidden border border-carbon-border bg-black cursor-crosshair select-none mx-auto"
-                style={dimsNaturales ? { aspectRatio: `${dimsNaturales.w} / ${dimsNaturales.h}`, maxHeight: "60vh" } : { minHeight: 200 }}
+                className="relative shrink-0 sm:max-w-[14rem] rounded-card overflow-hidden border border-carbon-border bg-black cursor-crosshair select-none mx-auto"
+                // BUG corregido: antes el alto se cortaba a 60vh pero el ancho
+                // seguía completo, así que la foto se recortaba y los pines
+                // marcaban un punto distinto al que se guardaba. Ahora el
+                // ANCHO se ajusta para que la foto entre completa y sin
+                // deformarse, sea cual sea su forma.
+                style={
+                  dimsNaturales
+                    ? {
+                        aspectRatio: `${dimsNaturales.w} / ${dimsNaturales.h}`,
+                        width: `min(100%, ${((dimsNaturales.w / dimsNaturales.h) * 60).toFixed(3)}vh)`,
+                      }
+                    : { minHeight: 200, width: "100%" }
+                }
               >
                 <img
                   ref={imgElRef}
@@ -480,7 +503,7 @@ export default function EditorTiraTela({ archivo, familia, ordenInicial, onCerra
                   alt=""
                   draggable={false}
                   onLoad={(e) => setDimsNaturales({ w: e.currentTarget.naturalWidth, h: e.currentTarget.naturalHeight })}
-                  className="w-full h-full object-cover pointer-events-none select-none"
+                  className="w-full h-full object-contain pointer-events-none select-none"
                 />
                 {pines.map((pin, i) => (
                   <div
@@ -489,7 +512,7 @@ export default function EditorTiraTela({ archivo, familia, ordenInicial, onCerra
                     onTouchStart={(e) => iniciarArrastre(e, pin.id)}
                     onClick={(e) => e.stopPropagation()}
                     style={{ left: `${pin.x * 100}%`, top: `${pin.y * 100}%` }}
-                    className="absolute w-7 h-7 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/90 border-[3px] border-gold text-carbon font-extrabold text-xs flex items-center justify-center cursor-grab active:cursor-grabbing shadow"
+                    className="absolute w-9 h-9 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/90 border-[3px] border-gold text-carbon font-extrabold text-sm flex items-center justify-center cursor-grab active:cursor-grabbing shadow touch-none"
                   >
                     {i + 1}
                   </div>
@@ -510,7 +533,7 @@ export default function EditorTiraTela({ archivo, familia, ordenInicial, onCerra
                       value={pin.nombre}
                       onChange={(e) => actualizarPin(pin.id, { nombre: e.target.value })}
                       placeholder="Nombre del color"
-                      className="campo-input flex-1 text-sm min-w-0"
+                      className="campo-input flex-1 min-w-0"
                     />
                     <button type="button" onClick={() => quitarPin(pin.id)} aria-label="Quitar este color" className="text-terracota text-lg leading-none px-1 shrink-0">
                       ×

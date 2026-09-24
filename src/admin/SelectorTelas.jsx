@@ -80,7 +80,7 @@ export default function SelectorTelas({
       </span>
       <p className="text-sm text-ink-muted">
         Elige cuáles telas del catálogo puede escoger el cliente para este producto.{" "}
-        <a href="/admin/telas" className="text-gold underline">Administrar catálogo de telas →</a>
+        <a href="/admin/telas" target="_blank" rel="noopener" className="text-gold underline">Administrar catálogo de telas →</a>
       </p>
 
       {cargando && <p className="text-ink-muted text-base">Cargando…</p>}
@@ -88,7 +88,7 @@ export default function SelectorTelas({
       {!cargando && telas.length === 0 && (
         <p className="text-ink-muted text-base">
           Todavía no hay telas en el catálogo.{" "}
-          <a href="/admin/telas" className="text-gold underline">Crea la primera aquí</a>.
+          <a href="/admin/telas" target="_blank" rel="noopener" className="text-gold underline">Crea la primera aquí</a>.
         </p>
       )}
 

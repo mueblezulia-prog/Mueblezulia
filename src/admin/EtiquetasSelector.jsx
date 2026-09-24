@@ -38,13 +38,13 @@ export default function EtiquetasSelector({ seleccionadas, onChange }) {
       <span className="text-lg font-bold text-ink">Etiquetas para este mueble</span>
       <p className="text-sm text-ink-muted -mt-1">
         Además de las de arriba, agrega las que quieras (envío, promociones, lo que sea).{" "}
-        <a href="/admin/etiquetas" className="text-gold underline">Crear/editar etiquetas →</a>
+        <a href="/admin/etiquetas" target="_blank" rel="noopener" className="text-gold underline">Crear/editar etiquetas →</a>
       </p>
 
       {etiquetas.length === 0 && (
         <p className="text-ink-muted text-base">
           Todavía no hay etiquetas creadas.{" "}
-          <a href="/admin/etiquetas" className="text-gold underline">Crea la primera aquí</a>.
+          <a href="/admin/etiquetas" target="_blank" rel="noopener" className="text-gold underline">Crea la primera aquí</a>.
         </p>
       )}
 

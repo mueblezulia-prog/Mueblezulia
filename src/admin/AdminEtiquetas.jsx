@@ -90,6 +90,10 @@ export default function AdminEtiquetas() {
     setSubiendoId(etiqueta.id);
     try {
       const url = await subirIconoEtiqueta(file);
+      // Se guarda al instante (igual que en Categorías y Telas) — antes
+      // solo cambiaba en pantalla y se perdía si no tocabas "Guardar".
+      const { error } = await supabase.from("etiquetas").update({ icono: url }).eq("id", etiqueta.id);
+      if (error) throw error;
       actualizarLocal(etiqueta.id, { icono: url });
     } catch (err) {
       alert(`No se pudo subir la imagen: ${err.message}`);
@@ -118,7 +122,7 @@ export default function AdminEtiquetas() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto p-6 flex flex-col gap-8">
+    <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 flex flex-col gap-8">
       <div>
         <h1 className="text-2xl font-extrabold text-ink flex items-center gap-2">
           🏷️ Etiquetas de Productos
@@ -129,7 +133,12 @@ export default function AdminEtiquetas() {
         </p>
       </div>
 
-      {cargando && <p className="text-ink-muted text-lg">Cargando…</p>}
+      {cargando && (
+        <div className="flex flex-col gap-3" aria-busy="true">
+          <div className="esqueleto h-16" />
+          <div className="esqueleto h-16" />
+        </div>
+      )}
       {error && <p className="text-terracota text-lg">Error: {error}</p>}
 
       {!cargando && !error && (
@@ -142,8 +151,12 @@ export default function AdminEtiquetas() {
                 ) : (
                   etiqueta.icono
                 )}
-                <span className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/60 text-white text-[10px] font-semibold text-center opacity-0 group-hover:opacity-100 transition-all duration-150">
+                <span className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/60 text-white text-xs font-semibold text-center opacity-0 group-hover:opacity-100 transition-all duration-150">
                   {subiendoId === etiqueta.id ? "…" : "Subir foto"}
+                </span>
+                {/* Indicador siempre visible (en el celular no existe "pasar el mouse") */}
+                <span className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-gold text-carbon text-[11px] flex items-center justify-center sm:hidden" aria-hidden="true">
+                  📷
                 </span>
                 <input
                   type="file"
@@ -161,10 +174,11 @@ export default function AdminEtiquetas() {
               />
               <input
                 type="text"
-                value={etiqueta.icono}
+                // Si el ícono es una foto, no mostramos su dirección web larga.
+                value={etiqueta.icono?.startsWith("/") || etiqueta.icono?.startsWith("http") ? "" : etiqueta.icono}
                 onChange={(e) => actualizarLocal(etiqueta.id, { icono: e.target.value })}
-                className="campo-input w-24 text-center"
-                placeholder="🏷️"
+                className="campo-input w-24 text-center text-xl"
+                placeholder="foto"
                 aria-label="Ícono (emoji), o sube una foto con el botón de la izquierda"
               />
               <button
@@ -199,7 +213,7 @@ export default function AdminEtiquetas() {
             ) : (
               nuevoIcono
             )}
-            <span className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/60 text-white text-[10px] font-semibold text-center opacity-0 group-hover:opacity-100 transition-all duration-150">
+            <span className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/60 text-white text-xs font-semibold text-center opacity-0 group-hover:opacity-100 transition-all duration-150">
               {subiendoNueva ? "…" : "Subir foto"}
             </span>
             <input

@@ -25,7 +25,9 @@ const CATEGORIAS_PLACEHOLDER = [
  * igual y siempre aterrizan en la categoría correcta.
  */
 export default function CategoriasGrid({ titulo = "¿Cuál te llevas a Casa?" }) {
-  const [categorias, setCategorias] = useState(CATEGORIAS_PLACEHOLDER);
+  // null = cargando. Antes arrancaba mostrando las categorías de ejemplo y
+  // luego las cambiaba por las reales (se veía un "salto" raro al entrar).
+  const [categorias, setCategorias] = useState(null);
 
   useEffect(() => {
     let activo = true;
@@ -37,7 +39,7 @@ export default function CategoriasGrid({ titulo = "¿Cuál te llevas a Casa?" })
       if (!activo) return;
       // Si aún no has cargado categorías reales en Supabase, se mantienen
       // los placeholders de arriba en vez de mostrar una sección vacía.
-      if (!error && data && data.length > 0) setCategorias(data);
+      setCategorias(!error && data && data.length > 0 ? data : CATEGORIAS_PLACEHOLDER);
     }
     cargar();
     return () => {
@@ -54,11 +56,14 @@ export default function CategoriasGrid({ titulo = "¿Cuál te llevas a Casa?" })
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
-        {categorias.map((cat, i) => (
-          <Reveal key={cat.id} delay={i * 60}>
+        {categorias === null &&
+          Array.from({ length: 6 }).map((_, i) => <div key={i} className="esqueleto aspect-[4/3]" />)}
+        {(categorias ?? []).map((cat, i) => (
+          <Reveal key={cat.id} delay={(i % 6) * 60}>
             <Link
               to={`/categoria/${cat.slug}`}
               onClick={sonidoNavegar}
+              aria-label={cat.nombre}
               className="group relative rounded-card overflow-hidden aspect-[4/3] flex items-end text-left w-full
                          border border-carbon-border shadow-sm
                          hover:border-gold/60 hover:shadow-lg hover:shadow-black/30 hover:-translate-y-0.5

@@ -23,7 +23,7 @@ export const ANIMACIONES_ICONO = {
  */
 export default function SectionBanner({ titulo, icono, imagenFondo, tinte = "dorado", tamano = "normal", animacionIcono = "suave" }) {
   const claseVidrio = tinte === "blanco" ? "glass" : tinte === "oscuro" ? "glass-dark" : "glass-gold";
-  const claseTexto = tinte === "oscuro" ? "text-ink" : "text-ink";
+  const claseTexto = "text-ink";
   const claseAnimIcono = ANIMACIONES_ICONO[animacionIcono] ?? ANIMACIONES_ICONO.suave;
 
   return (

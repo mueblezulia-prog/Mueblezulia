@@ -8,14 +8,24 @@
     -webkit-text-size-adjust: 100%;
     scroll-behavior: smooth;
   }
+  /* Los banners de borde a borde usan 100vw, que en Windows incluye el
+     ancho de la barra de scroll y hacía que TODA la página se pudiera
+     mover de lado unos pixeles. "clip" (no "hidden") para no romper la
+     barra de navegación fija de arriba. */
+  html, body {
+    overflow-x: clip;
+  }
   body {
-    @apply bg-carbon text-ink;
+    @apply bg-carbon text-ink antialiased;
     font-family: "Inter", system-ui, -apple-system, sans-serif;
+  }
+  ::selection {
+    background: rgba(242, 185, 12, 0.35);
   }
   a, button {
     -webkit-tap-highlight-color: transparent;
   }
-  a:focus-visible, button:focus-visible {
+  a:focus-visible, button:focus-visible, [role="button"]:focus-visible {
     outline: 2px solid theme("colors.gold.DEFAULT");
     outline-offset: 2px;
   }
@@ -32,6 +42,14 @@
     }
     .animar-entrada {
       animation: entrada-suave 0.8s ease-out both;
+    }
+    /* Ventanas emergentes: suben un poquito al abrir */
+    @keyframes subida-ventana {
+      from { opacity: 0; transform: translateY(24px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animar-subida {
+      animation: subida-ventana 0.28s ease-out both;
     }
   }
 
@@ -140,6 +158,26 @@
            hover:bg-ink hover:text-carbon
            active:scale-[0.98] transition-all duration-200;
   }
+  /* Botón dorado con vidrio (CTA secundario del sitio, ej. "Ver Catálogo") */
+  .btn-gold-glass {
+    @apply min-h-tap inline-flex items-center justify-center gap-2 px-6 rounded-control glass-gold text-ink font-bold
+           hover:bg-gold/25 active:scale-[0.98] transition-all duration-200;
+  }
+  /* Botón de contorno claro (ej. "Ver mapa", "Conocer nuestro proceso") */
+  .btn-outline {
+    @apply min-h-tap inline-flex items-center justify-center gap-2 px-5 rounded-control border-2 border-ink/60 text-ink font-bold w-fit
+           hover:bg-ink hover:text-carbon active:scale-[0.98] transition-all duration-200;
+  }
+  /* Contenedor estándar de página: mismo ancho en todas las secciones del
+     sitio, para que los bordes no "salten" de una sección a otra. */
+  .contenedor {
+    @apply w-full max-w-6xl mx-auto px-4;
+  }
+  /* Esqueleto de carga (en vez de un "Cargando…" de texto suelto) */
+  .esqueleto {
+    @apply bg-carbon-light rounded-card animate-pulse;
+  }
+
   /* Input estándar de los formularios del panel admin */
   .campo-input {
     @apply min-h-tap px-3 py-2 rounded-control bg-carbon-light border border-carbon-border
@@ -160,6 +198,12 @@
   .btn-admin-secondary {
     @apply min-h-tap px-5 rounded-control border-2 border-ink/70 text-ink font-bold
            hover:bg-ink hover:text-carbon active:scale-[0.98]
+           disabled:opacity-50 disabled:pointer-events-none
+           transition-all duration-150;
+  }
+  .btn-admin-ghost {
+    @apply min-h-tap px-4 rounded-control border-2 border-dashed border-carbon-border text-gold font-bold
+           hover:border-gold/60 active:scale-[0.98]
            disabled:opacity-50 disabled:pointer-events-none
            transition-all duration-150;
   }

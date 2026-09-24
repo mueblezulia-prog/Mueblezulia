@@ -1,6 +1,6 @@
 import SectionBanner from "./SectionBanner";
 import CarruselBloque, { CLASE_TINTE } from "./CarruselBloque";
-import { ALTOS_BLOQUE, ALTOS_MAX, TAMANOS_TITULO, COLORES_TEXTO } from "../lib/contenido";
+import { ALTOS_BLOQUE, ALTOS_MAX, TAMANOS_TITULO, COLORES_TEXTO, COLORES_TEXTO_SUAVE } from "../lib/contenido";
 
 /**
  * Dibuja UN bloque de contenido armado desde el admin (ver
@@ -22,6 +22,7 @@ export default function BloqueContenido({ bloque }) {
   const imagenes = bloque.imagenes ?? [];
   const claseTamano = TAMANOS_TITULO[bloque.tamanoTitulo] ?? TAMANOS_TITULO.mediano;
   const claseColor = COLORES_TEXTO[bloque.colorTexto] ?? COLORES_TEXTO.blanco;
+  const claseColorSuave = COLORES_TEXTO_SUAVE[bloque.colorTexto] ?? COLORES_TEXTO_SUAVE.blanco;
 
   if (bloque.tipo === "banner") {
     return (
@@ -47,7 +48,7 @@ export default function BloqueContenido({ bloque }) {
   if (bloque.tipo === "galeria") {
     if (bloque.modoPresentacion && imagenes.length > 0) {
       return (
-        <section className="px-4 py-8 max-w-5xl mx-auto">
+        <section className="contenedor py-8">
           <CarruselBloque
             imagenes={imagenes}
             titulo={bloque.titulo}
@@ -63,7 +64,7 @@ export default function BloqueContenido({ bloque }) {
       );
     }
     return (
-      <section className="px-4 py-8 max-w-5xl mx-auto">
+      <section className="contenedor py-8">
         {bloque.titulo && <h2 className="text-2xl font-extrabold text-ink mb-5 text-center">{bloque.titulo}</h2>}
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {imagenes.map((url, i) => (
@@ -91,7 +92,7 @@ export default function BloqueContenido({ bloque }) {
               />
             )}
             <div className="relative p-4 sm:p-5">
-              <p className={`${claseColor}/90 text-sm sm:text-base leading-snug whitespace-pre-line`}>{bloque.texto}</p>
+              <p className={`${claseColorSuave} text-sm sm:text-base leading-snug whitespace-pre-line`}>{bloque.texto}</p>
             </div>
           </div>
         )}
@@ -103,7 +104,7 @@ export default function BloqueContenido({ bloque }) {
     // Video arriba, completo — el texto va en su propio bloque de vidrio
     // DEBAJO (nunca encima tapando el video).
     return (
-      <section className="px-4 py-8 max-w-5xl mx-auto">
+      <section className="contenedor py-8">
         <div className="w-full rounded-card overflow-hidden border border-carbon-border flex flex-col">
           <div className={`relative w-full ${alto}`} style={estiloAspecto}>
             <video
@@ -118,7 +119,7 @@ export default function BloqueContenido({ bloque }) {
           {(bloque.vidrioSiempre ?? true) && (bloque.titulo || bloque.texto) && (
             <div className={`p-4 sm:p-6 ${CLASE_TINTE[bloque.tinte] ?? CLASE_TINTE.dorado}`}>
               {bloque.titulo && <h3 className={`${claseTamano} font-extrabold ${claseColor} drop-shadow-sm`}>{bloque.titulo}</h3>}
-              {bloque.texto && <p className={`${claseColor}/90 text-sm sm:text-base mt-1 leading-snug drop-shadow-sm whitespace-pre-line`}>{bloque.texto}</p>}
+              {bloque.texto && <p className={`${claseColorSuave} text-sm sm:text-base mt-1 leading-snug drop-shadow-sm whitespace-pre-line`}>{bloque.texto}</p>}
             </div>
           )}
         </div>
@@ -194,7 +195,7 @@ export default function BloqueContenido({ bloque }) {
     // que se sale del cuadro.
     const esMosaico = estiloCollage === "mosaico";
     return (
-      <section className="px-4 py-8 max-w-5xl mx-auto">
+      <section className="contenedor py-8">
         <div className={esMosaico ? "w-full flex flex-col" : "w-full rounded-card overflow-hidden border border-carbon-border flex flex-col"}>
           {cuerpoFotos}
           {(bloque.vidrioSiempre ?? true) && (bloque.titulo || bloque.texto) && (
@@ -208,7 +209,7 @@ export default function BloqueContenido({ bloque }) {
               )}
               <div className="relative p-4 sm:p-6">
                 {bloque.titulo && <h3 className={`${claseTamano} font-extrabold ${claseColor} drop-shadow-sm`}>{bloque.titulo}</h3>}
-                {bloque.texto && <p className={`${claseColor}/90 text-sm sm:text-base mt-1 leading-snug drop-shadow-sm whitespace-pre-line`}>{bloque.texto}</p>}
+                {bloque.texto && <p className={`${claseColorSuave} text-sm sm:text-base mt-1 leading-snug drop-shadow-sm whitespace-pre-line`}>{bloque.texto}</p>}
               </div>
             </div>
           )}
@@ -223,7 +224,7 @@ export default function BloqueContenido({ bloque }) {
   // igual con 1 foto fija o varias que pasan solas como diapositiva.
   if (bloque.vidrioSiempre ?? true) {
     return (
-      <section className="px-4 py-8 max-w-5xl mx-auto">
+      <section className="contenedor py-8">
         <CarruselBloque
           imagenes={imagenes}
           titulo={bloque.titulo}
@@ -243,7 +244,7 @@ export default function BloqueContenido({ bloque }) {
   // título + texto al otro, sin superponerse.
   const imagenDerecha = bloque.posicionImagen === "derecha";
   return (
-    <section className="px-4 py-8 max-w-5xl mx-auto">
+    <section className="contenedor py-8">
       <div className="glass border-0 rounded-card overflow-hidden grid sm:grid-cols-2">
         <img
           src={imagenes[0]}
