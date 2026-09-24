@@ -80,7 +80,7 @@ export default function BottomNav() {
                 >
                   <Icon activo={isActive} />
                 </span>
-                <span className={["text-xs font-semibold", isActive ? "text-gold" : "text-ink-muted"].join(" ")}>
+                <span className={["text-[11px] min-[380px]:text-xs font-semibold whitespace-nowrap", isActive ? "text-gold" : "text-ink-muted"].join(" ")}>
                   {label}
                 </span>
               </>

@@ -19,6 +19,7 @@ export default function CatalogoProductos() {
   const [error, setError] = useState(null);
   const [soloEntrega, setSoloEntrega] = useState(false);
   const [intento, setIntento] = useState(0);
+  const [busqueda, setBusqueda] = useState("");
 
   useEffect(() => {
     let activo = true;
@@ -53,6 +54,13 @@ export default function CatalogoProductos() {
     };
   }, [intento]);
 
+  // Búsqueda sin importar mayúsculas ni acentos ("comedor" encuentra "Comedor").
+  const normalizar = (t) => (t ?? "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const texto = normalizar(busqueda.trim());
+  const filtrados = texto
+    ? productos.filter((p) => normalizar(`${p.titulo} ${p.descripcion_corta ?? ""}`).includes(texto))
+    : productos;
+
   return (
     // `isolate`: sin esto, las fotos de fondo (-z-10) quedaban DETRÁS del
     // fondo negro de la app y nunca se veían.
@@ -69,11 +77,13 @@ export default function CatalogoProductos() {
 
       <div className="relative contenedor py-6">
         <h1 className="text-3xl font-extrabold text-ink mb-1 drop-shadow">Catálogo</h1>
-        <p className="text-ink-muted mb-6">Explora todas nuestras líneas de muebles.</p>
+        <p className="text-ink-muted mb-5">Explora todas nuestras líneas de muebles.</p>
 
-        <CategoriasGrid />
+        <CategoriasGrid filaEnMovil />
 
-        <div className="relative isolate rounded-card overflow-hidden border border-white/10 mt-2">
+        {/* En el celular el panel va de borde a borde: así cada tarjeta
+            gana espacio y nada queda apretado en pantallas chicas. */}
+        <div className="relative isolate -mx-4 sm:mx-0 rounded-none sm:rounded-card overflow-hidden border-y sm:border border-white/10 mt-2">
           {/* A diferencia del fondo de la página (una sola foto estirada
               y difuminada), aquí la textura se REPITE en mosaico detrás
               de un panel de vidrio — para que se sienta como una
@@ -84,13 +94,43 @@ export default function CatalogoProductos() {
           />
           <div className="absolute inset-0 -z-10 glass-dark" />
 
-          <div className="relative px-3 sm:px-5 py-6">
-            <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+          <div className="relative px-3 sm:px-5 py-5 sm:py-6">
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
               <h2 className="text-xl sm:text-2xl font-extrabold text-ink">Todos los productos</h2>
               {!cargando && !error && productos.length > 0 && (
                 <FiltroEntregaInmediata activo={soloEntrega} onClick={() => setSoloEntrega((v) => !v)} />
               )}
             </div>
+
+            {/* Buscador: escribe "comedor", "cama", "Grecia"… */}
+            {!cargando && !error && productos.length > 0 && (
+              <div className="relative mb-4">
+                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-muted pointer-events-none" aria-hidden="true">
+                  🔍
+                </span>
+                <input
+                  type="search"
+                  inputMode="search"
+                  enterKeyHint="search"
+                  value={busqueda}
+                  onChange={(e) => setBusqueda(e.target.value)}
+                  placeholder="Buscar mueble (ej: comedor, cama…)"
+                  aria-label="Buscar mueble"
+                  className="w-full min-h-tap pl-11 pr-11 rounded-full bg-black/35 border border-white/15 text-ink text-base placeholder:text-ink-muted
+                             focus:outline-none focus:border-gold/60 focus:ring-2 focus:ring-gold/20"
+                />
+                {busqueda && (
+                  <button
+                    type="button"
+                    onClick={() => setBusqueda("")}
+                    aria-label="Borrar búsqueda"
+                    className="absolute right-1 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full text-ink-muted hover:text-ink"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+            )}
 
             {cargando && <EsqueletoTarjetas />}
 
@@ -103,18 +143,23 @@ export default function CatalogoProductos() {
             )}
 
             {!cargando && !error && productos.length > 0 && (
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+              <>
+              {busqueda.trim() && filtrados.length === 0 && (
+                <MensajeVacio>No encontramos muebles con "{busqueda.trim()}". Prueba con otra palabra.</MensajeVacio>
+              )}
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-4">
                 {(soloEntrega
-                  ? [...productos].sort(
+                  ? [...filtrados].sort(
                       (a, b) => Number(b.disponible_entrega ?? true) - Number(a.disponible_entrega ?? true)
                     )
-                  : productos
+                  : filtrados
                 ).map((producto, i) => (
                   <Reveal key={producto.id} delay={(i % 8) * 60}>
                     <ProductCard producto={producto} />
                   </Reveal>
                 ))}
               </div>
+              </>
             )}
           </div>
         </div>

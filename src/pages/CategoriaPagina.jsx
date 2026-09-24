@@ -130,9 +130,10 @@ export default function CategoriaPagina() {
       )}
 
       {!cargando && !error && productos.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2 mb-5">
+        <div className="flex flex-col gap-3 mb-5">
           {subcategorias.length > 0 && (
-            <>
+            // Una sola fila que se desliza con el dedo en el celular.
+            <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap">
               <PestanaSub activa={subActiva === "todas"} onClick={() => { setSubActiva("todas"); sonidoNavegar(); }}>
                 Todas
               </PestanaSub>
@@ -141,13 +142,17 @@ export default function CategoriaPagina() {
                   {s}
                 </PestanaSub>
               ))}
-            </>
+            </div>
           )}
-          <FiltroEntregaInmediata
-            activo={soloEntrega}
-            onClick={() => { setSoloEntrega((v) => !v); sonidoNavegar(); }}
-            className="ml-auto"
-          />
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-sm text-ink-muted">
+              {productosFiltrados.length} mueble{productosFiltrados.length === 1 ? "" : "s"}
+            </span>
+            <FiltroEntregaInmediata
+              activo={soloEntrega}
+              onClick={() => { setSoloEntrega((v) => !v); sonidoNavegar(); }}
+            />
+          </div>
         </div>
       )}
 
@@ -166,7 +171,7 @@ export default function CategoriaPagina() {
       )}
 
       {!cargando && !error && productosFiltrados.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-4">
           {productosOrdenados.map((producto, i) => (
             <Reveal key={producto.id} delay={(i % 9) * 60}>
               <ProductCard producto={producto} />
@@ -192,7 +197,7 @@ function PestanaSub({ activa, onClick, children }) {
       type="button"
       onClick={onClick}
       className={[
-        "min-h-tap px-4 rounded-full text-sm font-bold transition-all duration-200",
+        "min-h-tap px-4 shrink-0 whitespace-nowrap rounded-full text-sm font-bold transition-all duration-200",
         activa
           ? "bg-gold text-carbon shadow-sm shadow-black/20"
           : "bg-carbon-light border border-carbon-border text-ink-muted hover:text-ink hover:border-gold/40",

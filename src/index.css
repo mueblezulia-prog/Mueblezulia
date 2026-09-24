@@ -15,6 +15,9 @@
   html, body {
     overflow-x: clip;
   }
+  :root {
+    color-scheme: dark; /* ver index.html: evita el modo oscuro forzado del navegador */
+  }
   body {
     @apply bg-carbon text-ink antialiased;
     font-family: "Inter", system-ui, -apple-system, sans-serif;

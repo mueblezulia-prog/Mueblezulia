@@ -78,7 +78,7 @@ export default function VentanaTelaFamilia({ familia, colores, onCerrar }) {
           aria-modal="true"
           aria-label={`Tela ${familia.nombre}`}
           className="bg-carbon border border-white/10 rounded-t-3xl sm:rounded-3xl px-5 pt-2.5 pb-[calc(1.75rem+env(safe-area-inset-bottom))] sm:pb-7 max-h-[88vh] sm:max-h-[85vh] w-full sm:max-w-lg
-                     overflow-y-auto overscroll-contain flex flex-col gap-4 shadow-2xl shadow-black/50 animar-subida"
+                     overflow-y-auto overscroll-contain flex flex-col gap-4 [&>*]:shrink-0 shadow-2xl shadow-black/50 animar-subida"
           onClick={(e) => e.stopPropagation()}
         >
           <div className="w-9 h-1 rounded-full bg-carbon-border mx-auto sm:hidden" />

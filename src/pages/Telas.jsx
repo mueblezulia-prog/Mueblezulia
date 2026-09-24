@@ -126,10 +126,10 @@ export default function Telas() {
                       {propiedades.map((p, i) => (
                         <span
                           key={i}
-                          className="inline-flex items-center gap-1 text-xs font-semibold text-gold bg-gold/15 border border-gold/40 rounded-control px-1.5 py-0.5"
+                          className="inline-flex items-center gap-1 max-w-full min-w-0 text-xs font-semibold text-gold bg-gold/15 border border-gold/40 rounded-control px-1.5 py-0.5"
                         >
                           <span>{p.icono}</span>
-                          <span className="truncate max-w-[80px]">{p.texto}</span>
+                          <span className="truncate">{p.texto}</span>
                         </span>
                       ))}
                     </div>

@@ -24,7 +24,12 @@ const CATEGORIAS_PLACEHOLDER = [
  * en ningún lado, así todas las entradas (Home, Catálogo) se comportan
  * igual y siempre aterrizan en la categoría correcta.
  */
-export default function CategoriasGrid({ titulo = "¿Cuál te llevas a Casa?" }) {
+/**
+ * `filaEnMovil`: en el celular las categorías van en UNA fila que se
+ * desliza con el dedo (en vez de 3 filas de 2 que ocupaban casi toda la
+ * pantalla antes de llegar a los muebles). En computador, cuadrícula normal.
+ */
+export default function CategoriasGrid({ titulo = "¿Cuál te llevas a Casa?", filaEnMovil = false }) {
   // null = cargando. Antes arrancaba mostrando las categorías de ejemplo y
   // luego las cambiaba por las reales (se veía un "salto" raro al entrar).
   const [categorias, setCategorias] = useState(null);
@@ -55,11 +60,19 @@ export default function CategoriasGrid({ titulo = "¿Cuál te llevas a Casa?" })
         <SectionBanner titulo={titulo} imagenFondo="/assets/interior-tienda.jpg" tinte="dorado" />
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+      <div
+        className={
+          filaEnMovil
+            ? "flex gap-3 overflow-x-auto snap-x snap-mandatory no-scrollbar -mx-4 px-4 scroll-px-4 pb-1 sm:mx-0 sm:px-0 sm:grid sm:grid-cols-3 sm:gap-4 sm:overflow-visible"
+            : "grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4"
+        }
+      >
         {categorias === null &&
-          Array.from({ length: 6 }).map((_, i) => <div key={i} className="esqueleto aspect-[4/3]" />)}
+          Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className={`esqueleto aspect-[4/3] ${filaEnMovil ? "w-[44%] shrink-0 sm:w-auto" : ""}`} />
+          ))}
         {(categorias ?? []).map((cat, i) => (
-          <Reveal key={cat.id} delay={(i % 6) * 60}>
+          <Reveal key={cat.id} delay={(i % 6) * 60} className={filaEnMovil ? "w-[44%] shrink-0 snap-start sm:w-auto" : ""}>
             <Link
               to={`/categoria/${cat.slug}`}
               onClick={sonidoNavegar}
@@ -67,7 +80,7 @@ export default function CategoriasGrid({ titulo = "¿Cuál te llevas a Casa?" })
               className="group relative rounded-card overflow-hidden aspect-[4/3] flex items-end text-left w-full
                          border border-carbon-border shadow-sm
                          hover:border-gold/60 hover:shadow-lg hover:shadow-black/30 hover:-translate-y-0.5
-                         transition-all duration-300 ease-out"
+                         active:scale-[0.97] transition-all duration-300 ease-out"
               style={!cat.imagen ? { backgroundColor: "#2A2A2A" } : undefined}
             >
               {cat.imagen && (

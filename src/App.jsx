@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "./lib/supabaseClient";
 import NavBar from "./components/NavBar";
 import BottomNav from "./components/BottomNav";
+import BotonWhatsAppFlotante from "./components/BotonWhatsAppFlotante";
 import AdminHeader from "./admin/AdminHeader";
 import Home from "./pages/Home";
 import CatalogoProductos from "./pages/CatalogoProductos";
@@ -127,6 +128,7 @@ export default function App() {
       </div>
 
       {!ocultarBottomNav && <BottomNav />}
+      {!esAdmin && !esDetalleProducto && pathname !== "/contacto" && <BotonWhatsAppFlotante />}
     </>
   );
 

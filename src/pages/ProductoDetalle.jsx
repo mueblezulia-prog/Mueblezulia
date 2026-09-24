@@ -96,6 +96,25 @@ export default function ProductoDetalle() {
   // Si la persona llegó por un link compartido (WhatsApp, Instagram), no
   // hay página anterior dentro del sitio: "Atrás" la sacaría de la tienda.
   // En ese caso la llevamos al catálogo.
+  // Compartir el mueble: en el celular abre el menú de compartir del
+  // teléfono (WhatsApp, Instagram, etc.); en computador copia el enlace.
+  const [copiado, setCopiado] = useState(false);
+  async function compartir() {
+    const url = `${window.location.origin}/producto/${producto.id}`;
+    const datos = { title: producto.titulo, text: `Mira este mueble de Mueble Zulia: ${producto.titulo}`, url };
+    try {
+      if (navigator.share) {
+        await navigator.share(datos);
+        return;
+      }
+      await navigator.clipboard.writeText(url);
+      setCopiado(true);
+      setTimeout(() => setCopiado(false), 2000);
+    } catch {
+      /* la persona canceló: no pasa nada */
+    }
+  }
+
   function volver() {
     if (window.history.state?.idx > 0) navigate(-1);
     else navigate("/catalogo");
@@ -160,6 +179,25 @@ export default function ProductoDetalle() {
             ←
           </button>
 
+          <button
+            type="button"
+            onClick={compartir}
+            aria-label="Compartir este mueble"
+            className="absolute right-3 top-3 z-20 w-11 h-11 rounded-full glass-dark text-ink flex items-center justify-center hover:bg-black/60 active:scale-95 transition"
+          >
+            {copiado ? (
+              <span className="text-xs font-bold text-green-300">✓</span>
+            ) : (
+              <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                <path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7" strokeLinecap="round" />
+                <path d="M12 3v12M7.5 7.5 12 3l4.5 4.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            )}
+          </button>
+          {copiado && (
+            <span className="absolute right-3 top-16 z-20 glass-dark text-ink text-xs font-bold px-2.5 py-1 rounded-full">Enlace copiado</span>
+          )}
+
           <div
             ref={scrollRef}
             onScroll={alHacerScroll}
@@ -215,7 +253,7 @@ export default function ProductoDetalle() {
                   ›
                 </button>
               )}
-              <span className="absolute top-4 right-3 glass-dark text-white text-xs font-bold px-2.5 py-1 rounded-full">
+              <span className="absolute top-5 right-16 glass-dark text-white text-xs font-bold px-2.5 py-1 rounded-full">
                 {indiceImagen + 1}/{imagenes.length}
               </span>
               <div className="absolute bottom-16 lg:bottom-4 inset-x-0 flex justify-center gap-1.5">
@@ -250,7 +288,7 @@ export default function ProductoDetalle() {
             </>
           )}
           <div className="relative glass px-5 sm:px-7 pt-8 pb-8 flex flex-col gap-5 border-x-0 lg:border-0">
-            <h1 className="text-3xl font-extrabold text-ink tracking-tight leading-tight">{producto.titulo}</h1>
+            <h1 className="text-2xl min-[400px]:text-3xl font-extrabold text-ink tracking-tight leading-tight text-balance">{producto.titulo}</h1>
 
             <div className="flex flex-wrap items-center gap-3">
               <span className="inline-flex items-center gap-2 text-price font-extrabold text-gold glass-gold px-3 py-1 rounded-control">

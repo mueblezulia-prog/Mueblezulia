@@ -18,9 +18,9 @@ export default function ProductCard({ producto }) {
     <Link
       to={`/producto/${id}`}
       onClick={sonidoNavegar}
-      className="group relative rounded-card flex flex-col focus-within:z-20 has-[[aria-expanded=true]]:z-20
+      className="group relative rounded-card flex flex-col min-w-0 focus-within:z-20 has-[[aria-expanded=true]]:z-20
                  glass hover:border-gold/50 hover:shadow-xl hover:shadow-black/40 hover:-translate-y-0.5
-                 transition-all duration-300 ease-out"
+                 active:scale-[0.98] transition-all duration-300 ease-out"
     >
       <div className="relative aspect-[4/5] overflow-hidden rounded-t-card bg-carbon">
         {imagen_recortada_url ? (
@@ -37,24 +37,25 @@ export default function ProductCard({ producto }) {
           </div>
         )}
         <span className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/75 via-black/10 to-transparent" />
-        <span className="absolute bottom-2.5 left-2.5 flex items-center gap-1 bg-gold text-carbon text-sm sm:text-base font-extrabold px-2.5 py-1 rounded-control shadow-md shadow-black/30">
+        <span className="absolute bottom-2 left-2 sm:bottom-2.5 sm:left-2.5 flex items-center gap-1 bg-gold text-carbon text-sm sm:text-base font-extrabold px-2 sm:px-2.5 py-1 rounded-control shadow-md shadow-black/30">
           <img src="/assets/icons/precio-tag.png" alt="" className="w-4 h-4 sm:w-5 sm:h-5" />
           {formatearPrecio(precio)}
         </span>
       </div>
       {/* La insignia vive FUERA del recuadro con overflow-hidden de la foto,
           para que su explicación (al tocarla) no quede cortada. */}
-      <span className="absolute top-2.5 left-2.5 z-10">
-        <BadgeDisponibilidad disponible={producto.disponible_entrega ?? true} hacia="abajo" />
+      <span className="absolute top-2 left-2 sm:top-2.5 sm:left-2.5 z-10 max-w-[calc(100%-1rem)]">
+        <BadgeDisponibilidad disponible={producto.disponible_entrega ?? true} hacia="abajo" compacto />
       </span>
-      <div className="p-3 flex flex-col gap-1.5 flex-1 bg-white/[0.03] backdrop-blur-sm border-t border-white/10 rounded-b-card">
+      <div className="p-2.5 sm:p-3 flex flex-col gap-1.5 flex-1 min-w-0 bg-white/[0.03] backdrop-blur-sm border-t border-white/10 rounded-b-card">
         <h3 className="text-base sm:text-lg font-bold text-ink leading-snug line-clamp-2 group-hover:text-gold transition-colors duration-200">
           {titulo}
         </h3>
-        <div className="flex flex-wrap gap-1">
+        <div className="flex flex-wrap gap-1 min-w-0">
           {medida && (
-            <span className="inline-flex items-center gap-1 self-start text-xs text-ink-muted bg-white/5 border border-white/10 rounded-control px-2 py-0.5">
-              📏 {medida}
+            <span className="inline-flex items-center gap-1 self-start max-w-full text-xs text-ink-muted bg-white/5 border border-white/10 rounded-control px-2 py-0.5">
+              <span aria-hidden="true">📏</span>
+              <span className="truncate">{medida}</span>
             </span>
           )}
           <EtiquetasBadges etiquetas={etiquetas} compacto tamano="sm" />

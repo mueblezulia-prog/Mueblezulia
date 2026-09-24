@@ -25,7 +25,9 @@ export default function EtiquetasBadges({ etiquetas, compacto = false, tamano = 
   const padding = tamano === "sm" ? "px-2 py-0.5" : "px-3 py-1";
 
   return (
-    <div className="flex flex-wrap gap-1">
+    // w-full + min-w-0: sin esto, en tarjetas angostas (celulares chicos)
+    // una etiqueta larga empujaba y se salía de la tarjeta.
+    <div className="flex flex-wrap gap-1 w-full min-w-0">
       {etiquetas.map((etiqueta, i) => {
         const abierta = abiertaId === etiqueta.id;
         const revelar = !modoIconos || abierta;
