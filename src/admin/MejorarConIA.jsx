@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { supabase } from "../lib/supabaseClient";
 
 /**
  * Botón "✨ Mejorar con IA" para un campo de descripción: manda el texto
@@ -24,9 +25,13 @@ export default function MejorarConIA({ texto, tipo, onUsar }) {
     setError(null);
     setSugerencia(null);
     try {
+      // Se manda la sesión del panel: el servidor solo acepta pedidos de
+      // alguien que inició sesión (así nadie más gasta tu cuota de Gemini).
+      const { data } = await supabase.auth.getSession();
+      const token = data?.session?.access_token;
       const res = await fetch("/api/mejorar-descripcion", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify({ texto, tipo }),
       });
       // Si el servidor no respondió con JSON (ej. se cayó o se está

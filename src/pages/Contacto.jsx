@@ -7,6 +7,7 @@ import { obtenerContenido, CONTENIDO_DEFAULT, ALTOS_BLOQUE } from "../lib/conten
 import { sonidoConfirmar, sonidoNavegar } from "../lib/sonido";
 import { linkWhatsApp, WHATSAPP_NUMERO } from "../lib/contacto";
 import IconoWhatsApp from "../components/IconoWhatsApp";
+import { registrarClicWhatsApp } from "../lib/estadisticas";
 
 const WHATSAPP_LINK = linkWhatsApp("Hola, tengo una consulta sobre sus muebles.");
 
@@ -138,7 +139,10 @@ export default function Contacto() {
               href={WHATSAPP_LINK}
               target="_blank"
               rel="noreferrer"
-              onClick={sonidoConfirmar}
+              onClick={() => {
+                sonidoConfirmar();
+                registrarClicWhatsApp(null);
+              }}
               className="min-h-tap inline-flex items-center justify-center gap-2 px-6 rounded-control bg-gold text-carbon font-bold text-lg
                          shadow-lg shadow-black/25 hover:bg-gold-hover active:scale-[0.98] transition-all duration-200"
             >

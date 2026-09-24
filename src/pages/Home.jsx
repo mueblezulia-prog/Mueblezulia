@@ -6,6 +6,7 @@ import SectionBanner from "../components/SectionBanner";
 import BloqueContenido from "../components/BloqueContenido";
 import FondoMultimedia from "../components/FondoMultimedia";
 import Reveal from "../components/Reveal";
+import OpinionesClientes from "../components/OpinionesClientes";
 import { obtenerContenido, CONTENIDO_DEFAULT } from "../lib/contenido";
 import { sonidoNavegar } from "../lib/sonido";
 
@@ -100,6 +101,9 @@ export default function Home() {
           </div>
         </Reveal>
       </section>
+
+      {/* Opiniones de clientes (se cargan desde el panel → Opiniones) */}
+      <OpinionesClientes />
 
       {/* Secciones libres, armadas y ordenadas desde /admin/contenido */}
       {bloques.map((bloque) => (

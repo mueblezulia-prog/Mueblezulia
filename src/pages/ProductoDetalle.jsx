@@ -10,6 +10,7 @@ import { obtenerEtiquetasProducto } from "../lib/etiquetas";
 import { sonidoConfirmar } from "../lib/sonido";
 import { formatearPrecio } from "../lib/formato";
 import { linkWhatsApp } from "../lib/contacto";
+import { registrarClicWhatsApp } from "../lib/estadisticas";
 
 const ES_VIDEO = /\.(mp4|mov|webm|m4v)(\?|$)/i;
 
@@ -131,7 +132,10 @@ export default function ProductoDetalle() {
       href={hrefWhatsApp}
       target="_blank"
       rel="noreferrer"
-      onClick={sonidoConfirmar}
+      onClick={() => {
+        sonidoConfirmar();
+        registrarClicWhatsApp(producto.id);
+      }}
       className="btn-primary gap-2"
     >
       <IconoWhatsApp className="w-6 h-6" />

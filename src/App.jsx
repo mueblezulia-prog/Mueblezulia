@@ -17,6 +17,10 @@ import AdminCategorias from "./admin/AdminCategorias";
 import AdminTelas from "./admin/AdminTelas";
 import AdminEtiquetas from "./admin/AdminEtiquetas";
 import AdminContenido from "./admin/AdminContenido";
+import AdminAcceso from "./admin/AdminAcceso";
+import AdminOpiniones from "./admin/AdminOpiniones";
+import AdminEstadisticas from "./admin/AdminEstadisticas";
+import { registrarVisita } from "./lib/estadisticas";
 
 // Íconos de pestaña (favicon): el logo de la mueblería en el sitio público,
 // y un engranaje dorado en el panel de administración — así, con varias
@@ -84,9 +88,14 @@ export default function App() {
 
   usarFaviconSegunRuta(esAdmin);
 
-  return (
-    <div className="min-h-screen bg-carbon">
-      <ScrollArriba />
+  // Estadísticas: cada página del sitio público que se abre cuenta como
+  // una visita (el panel admin nunca se cuenta).
+  useEffect(() => {
+    if (!esAdmin) registrarVisita(pathname);
+  }, [pathname, esAdmin]);
+
+  const contenido = (
+    <>
       {esAdmin ? <AdminHeader /> : <NavBar />}
 
       {/* pb-16 deja espacio para que la barra inferior móvil no tape el
@@ -110,12 +119,22 @@ export default function App() {
           <Route path="/admin/telas" element={<AdminTelas />} />
           <Route path="/admin/etiquetas" element={<AdminEtiquetas />} />
           <Route path="/admin/contenido" element={<AdminContenido />} />
+          <Route path="/admin/opiniones" element={<AdminOpiniones />} />
+          <Route path="/admin/estadisticas" element={<AdminEstadisticas />} />
           <Route path="/admin" element={<Navigate to="/admin/productos" replace />} />
           <Route path="*" element={<NoEncontrado />} />
         </Routes>
       </div>
 
       {!ocultarBottomNav && <BottomNav />}
+    </>
+  );
+
+  return (
+    <div className="min-h-screen bg-carbon">
+      <ScrollArriba />
+      {/* El panel solo se ve después de iniciar sesión. */}
+      {esAdmin ? <AdminAcceso>{contenido}</AdminAcceso> : contenido}
     </div>
   );
 }

@@ -1,12 +1,15 @@
 import { Link, useLocation } from "react-router-dom";
+import { supabase } from "../lib/supabaseClient";
 
 // Pestañas del panel admin. (Se quitaron "Estadísticas" y "Pedidos", que
 // aparecían deshabilitadas y ocupaban espacio sin hacer nada.)
 const TABS = [
+  { label: "Estadísticas", ruta: "/admin/estadisticas", icono: "📊" },
   { label: "Muebles", ruta: "/admin/productos", icono: "🛋️" },
   { label: "Categorías", ruta: "/admin/categorias", icono: "🗂️" },
   { label: "Telas", ruta: "/admin/telas", icono: "🧵" },
   { label: "Etiquetas", ruta: "/admin/etiquetas", icono: "🏷️" },
+  { label: "Opiniones", ruta: "/admin/opiniones", icono: "💬" },
   { label: "Contenido", ruta: "/admin/contenido", icono: "🖼️" },
 ];
 
@@ -29,14 +32,25 @@ export default function AdminHeader() {
               Mueble Zulia <span className="text-gold font-bold">· Panel</span>
             </span>
           </Link>
-          <Link
-            to="/"
-            target="_blank"
-            rel="noopener"
-            className="shrink-0 min-h-[40px] inline-flex items-center gap-1.5 px-3 rounded-control text-sm text-ink-muted hover:text-ink hover:bg-white/5 font-semibold transition"
-          >
-            Ver sitio ↗
-          </Link>
+          <div className="flex items-center gap-1 shrink-0">
+            <Link
+              to="/"
+              target="_blank"
+              rel="noopener"
+              className="min-h-[40px] inline-flex items-center gap-1.5 px-3 rounded-control text-sm text-ink-muted hover:text-ink hover:bg-white/5 font-semibold transition"
+            >
+              Ver sitio ↗
+            </Link>
+            <button
+              type="button"
+              onClick={() => {
+                if (window.confirm("¿Cerrar sesión en este dispositivo?")) supabase.auth.signOut();
+              }}
+              className="min-h-[40px] px-3 rounded-control text-sm text-ink-muted hover:text-terracota hover:bg-white/5 font-semibold transition"
+            >
+              Salir
+            </button>
+          </div>
         </div>
 
         <nav className="h-14 flex items-center gap-2 overflow-x-auto no-scrollbar -mx-4 px-4" aria-label="Secciones del panel">

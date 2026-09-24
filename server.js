@@ -284,6 +284,54 @@ app.get("/api/admin/estadisticas", requireAdmin, async (req, res) => {
   });
 });
 
+// ================= UBICACIÓN APROXIMADA (para Estadísticas) =================
+// El sitio pregunta aquí, una vez por visita, de qué país/ciudad viene la
+// persona (según su conexión a internet). No se guarda la IP en ningún
+// lado — solo se devuelve país/región/ciudad. Es aproximado: a veces
+// sale la ciudad de la compañía de internet y no la exacta.
+const cacheGeo = new Map();
+app.get("/api/geo", async (req, res) => {
+  const ip = String(req.headers["x-forwarded-for"] || req.socket.remoteAddress || "")
+    .split(",")[0]
+    .trim()
+    .replace(/^::ffff:/, "");
+  if (!ip || ip === "127.0.0.1" || ip === "::1") return res.json({});
+  if (cacheGeo.has(ip)) return res.json(cacheGeo.get(ip));
+  try {
+    const r = await fetch(`https://ipwho.is/${encodeURIComponent(ip)}?fields=success,country,region,city`, {
+      signal: AbortSignal.timeout(3000),
+    });
+    const d = await r.json();
+    const datos = d.success ? { pais: d.country || null, region: d.region || null, ciudad: d.city || null } : {};
+    if (cacheGeo.size > 5000) cacheGeo.clear();
+    cacheGeo.set(ip, datos);
+    res.json(datos);
+  } catch {
+    res.json({});
+  }
+});
+
+// Comprueba que quien llama inició sesión en el panel (token de Supabase).
+// Si el servidor no tiene los datos de Supabase configurados, deja pasar
+// (para no romper nada), pero lo avisa en los registros.
+async function requireSesionPanel(req, res, next) {
+  const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+  const clave = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_KEY;
+  if (!url || !clave) {
+    console.warn("Aviso: sin SUPABASE_URL/clave en el servidor — no se puede verificar la sesión del panel.");
+    return next();
+  }
+  const token = (req.header("authorization") || "").replace(/^Bearer\s+/i, "");
+  if (!token) return res.status(401).json({ ok: false, error: "Inicia sesión en el panel para usar esta función." });
+  try {
+    const r = await fetch(`${url}/auth/v1/user`, { headers: { apikey: clave, Authorization: `Bearer ${token}` } });
+    if (!r.ok) return res.status(401).json({ ok: false, error: "Tu sesión venció. Vuelve a iniciar sesión en el panel." });
+    next();
+  } catch {
+    res.status(503).json({ ok: false, error: "No se pudo verificar la sesión. Intenta de nuevo." });
+  }
+}
+
 // ================= GEMINI: mejorar descripción de producto =================
 // El admin escribe una descripción corta o larga y pide "Mejorar con IA";
 // esto la manda a Gemini (Google) desde el SERVIDOR (nunca desde el
@@ -291,7 +339,7 @@ app.get("/api/admin/estadisticas", requireAdmin, async (req, res) => {
 // variable de entorno GEMINI_API_KEY configurada en Railway — mientras no
 // esté puesta, este endpoint responde con un error claro en vez de fallar
 // en silencio.
-app.post("/api/mejorar-descripcion", async (req, res) => {
+app.post("/api/mejorar-descripcion", requireSesionPanel, async (req, res) => {
   if (!process.env.GEMINI_API_KEY) {
     return res.status(500).json({
       ok: false,
