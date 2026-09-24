@@ -11,6 +11,7 @@ const TABS = [
   { label: "Etiquetas", ruta: "/admin/etiquetas", icono: "🏷️" },
   { label: "Opiniones", ruta: "/admin/opiniones", icono: "💬" },
   { label: "Contenido", ruta: "/admin/contenido", icono: "🖼️" },
+  { label: "Usuarios", ruta: "/admin/usuarios", icono: "👤" },
 ];
 
 /**

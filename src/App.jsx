@@ -21,6 +21,7 @@ import AdminContenido from "./admin/AdminContenido";
 import AdminAcceso from "./admin/AdminAcceso";
 import AdminOpiniones from "./admin/AdminOpiniones";
 import AdminEstadisticas from "./admin/AdminEstadisticas";
+import AdminUsuarios from "./admin/AdminUsuarios";
 import { registrarVisita } from "./lib/estadisticas";
 
 // Íconos de pestaña (favicon): el logo de la mueblería en el sitio público,
@@ -122,6 +123,7 @@ export default function App() {
           <Route path="/admin/contenido" element={<AdminContenido />} />
           <Route path="/admin/opiniones" element={<AdminOpiniones />} />
           <Route path="/admin/estadisticas" element={<AdminEstadisticas />} />
+          <Route path="/admin/usuarios" element={<AdminUsuarios />} />
           <Route path="/admin" element={<Navigate to="/admin/productos" replace />} />
           <Route path="*" element={<NoEncontrado />} />
         </Routes>

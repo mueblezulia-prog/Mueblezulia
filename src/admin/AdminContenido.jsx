@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Cropper from "react-easy-crop";
 import { supabase } from "../lib/supabaseClient";
 import { convertirSiEsHeic } from "../lib/heic";
 import { prepararImagen, optimizarBlob } from "../lib/imagenOptimizada";
 import { getCroppedImageBlob } from "../lib/cropImage";
-import { obtenerContenido, guardarContenido, CONTENIDO_DEFAULT, ALTOS_BLOQUE, ALTOS_MAX, TAMANOS_TITULO, COLORES_TEXTO } from "../lib/contenido";
+import { obtenerContenidoEstricto as obtenerContenido, guardarContenido, CONTENIDO_DEFAULT, ALTOS_BLOQUE, ALTOS_MAX, TAMANOS_TITULO, COLORES_TEXTO } from "../lib/contenido";
 import { sonidoConfirmar } from "../lib/sonido";
 import FondoMultimedia from "../components/FondoMultimedia";
 import BloqueContenido from "../components/BloqueContenido";
@@ -46,6 +46,54 @@ async function subirVideoContenido(file) {
   return supabase.storage.from(BUCKET).getPublicUrl(nombreArchivo).data.publicUrl;
 }
 /**
+ * ¿Hay cambios sin guardar? Compara lo que hay ahora con lo último que se
+ * guardó (o con cómo llegó al abrir). Mientras haya cambios, si intentas
+ * cerrar o recargar la pestaña, el navegador pregunta antes.
+ */
+function useSucio(valor) {
+  const base = useRef(JSON.stringify(valor));
+  const sucio = JSON.stringify(valor) !== base.current;
+  useEffect(() => {
+    if (!sucio) return undefined;
+    function antesDeSalir(e) {
+      e.preventDefault();
+      e.returnValue = "";
+    }
+    window.addEventListener("beforeunload", antesDeSalir);
+    return () => window.removeEventListener("beforeunload", antesDeSalir);
+  }, [sucio]);
+  return [sucio, () => (base.current = JSON.stringify(valor))];
+}
+
+/**
+ * Botón de guardar de cada sección. Cuando hay cambios sin guardar, se
+ * queda PEGADO abajo de la pantalla mientras bajas por esa sección (así
+ * nunca hay que buscarlo al final) y avisa "Cambios sin guardar".
+ */
+function BarraGuardado({ sucio, guardando, mensaje, onGuardar, etiqueta }) {
+  const esError = mensaje?.startsWith("Error");
+  return (
+    <div
+      className={[
+        "flex flex-wrap items-center gap-3 rounded-control transition-all",
+        sucio ? "sticky bottom-3 z-10 bg-carbon/95 backdrop-blur border border-gold/50 shadow-lg shadow-black/40 p-3" : "",
+      ].join(" ")}
+    >
+      <button type="button" onClick={onGuardar} disabled={guardando} className="btn-admin-primary">
+        {guardando ? "Guardando…" : `💾 ${etiqueta}`}
+      </button>
+      {sucio && !guardando && <span className="text-sm font-semibold text-gold">● Cambios sin guardar</span>}
+      {mensaje && !sucio && (
+        <span className={esError ? "text-terracota text-sm" : "text-green-400 text-sm font-semibold"}>
+          {esError ? mensaje : `✓ ${mensaje}`}
+        </span>
+      )}
+      {mensaje && sucio && esError && <span className="text-terracota text-sm">{mensaje}</span>}
+    </div>
+  );
+}
+
+/**
  * Panel para editar el contenido del sitio sin tocar código: la
  * dirección y foto de "Nuestra Sede", el texto y las fotos de
  * "Fabricación", y la lista de "Métodos de Pago". Cada sección se
@@ -54,6 +102,8 @@ async function subirVideoContenido(file) {
  */
 export default function AdminContenido() {
   const [cargando, setCargando] = useState(true);
+  const [errorCarga, setErrorCarga] = useState(null);
+  const [intento, setIntento] = useState(0);
 
   const [hero, setHero] = useState(CONTENIDO_DEFAULT.hero);
   const [sede, setSede] = useState(CONTENIDO_DEFAULT.nuestra_sede);
@@ -63,6 +113,8 @@ export default function AdminContenido() {
   const [bloquesUbicacion, setBloquesUbicacion] = useState([]);
 
   useEffect(() => {
+    setCargando(true);
+    setErrorCarga(null);
     Promise.all([
       obtenerContenido("hero"),
       obtenerContenido("nuestra_sede"),
@@ -121,8 +173,10 @@ export default function AdminContenido() {
       // primera de cada título repetido — si de verdad quieres dos
       // secciones con el mismo título, cámbiale el nombre a una y no se
       // va a volver a tocar.
+      // (Solo junto con la migración: antes corría CADA vez que se abría el
+      // panel y borraba sola cualquier sección con título repetido.)
       const titulosVistos = new Set();
-      const bloquesFabSinDuplicados = bloquesFab.filter((b) => {
+      const bloquesFabSinDuplicados = bf.migrado ? bloquesFab : bloquesFab.filter((b) => {
         const clave = (b.titulo || "").trim().toLowerCase();
         if (!clave) return true;
         if (titulosVistos.has(clave)) return false;
@@ -140,8 +194,31 @@ export default function AdminContenido() {
       setBloquesFabricacion(bloquesFab);
 
       setCargando(false);
+    }).catch((err) => {
+      setErrorCarga(err?.message ?? "Error de conexión");
+      setCargando(false);
     });
-  }, []);
+  }, [intento]);
+
+  // Si no se pudo cargar lo que ya está guardado, NO se muestran los
+  // editores (si no, se verían los textos de ejemplo y al guardar se
+  // borraría tu contenido real).
+  if (!cargando && errorCarga) {
+    return (
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-10">
+        <div className="admin-card p-6 flex flex-col items-start gap-3">
+          <p className="text-lg font-bold text-ink">No se pudo cargar el contenido del sitio</p>
+          <p className="text-ink-muted">
+            Revisa tu conexión e inténtalo de nuevo. (No se muestra el editor para no guardar nada encima de lo que ya tienes.)
+          </p>
+          <p className="text-xs text-ink-muted">{errorCarga}</p>
+          <button type="button" onClick={() => setIntento((n) => n + 1)} className="btn-admin-primary">
+            Reintentar
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (cargando) {
     return (
@@ -229,6 +306,7 @@ function SeccionHero({ hero, onGuardado }) {
   const [form, setForm] = useState({ imagen: "/assets/fachada.jpg", video: "", tipoMedia: "foto", ...hero });
   const [guardando, setGuardando] = useState(false);
   const [mensaje, setMensaje] = useState(null);
+  const [sucio, marcarGuardado] = useSucio(form);
   const [pendiente, setPendiente] = useState(null);
   const [subiendoVideo, setSubiendoVideo] = useState(false);
 
@@ -276,6 +354,7 @@ function SeccionHero({ hero, onGuardado }) {
     try {
       await guardarContenido("hero", form);
       onGuardado(form);
+      marcarGuardado();
       sonidoConfirmar();
       setMensaje("Guardado correctamente.");
     } catch (err) {
@@ -372,14 +451,7 @@ function SeccionHero({ hero, onGuardado }) {
         />
       </Campo>
 
-      <div className="flex items-center gap-3">
-        <button type="button" onClick={handleGuardar} disabled={guardando} className="btn-admin-primary text-sm">
-          {guardando ? "Guardando…" : "Guardar Portada"}
-        </button>
-        {mensaje && (
-          <span className={mensaje.startsWith("Error") ? "text-terracota text-sm" : "text-gold text-sm"}>{mensaje}</span>
-        )}
-      </div>
+      <BarraGuardado sucio={sucio} guardando={guardando} mensaje={mensaje} onGuardar={handleGuardar} etiqueta="Guardar Portada" />
     </section>
   );
 }
@@ -400,6 +472,7 @@ function SeccionSede({ sede, onGuardado }) {
   const [guardando, setGuardando] = useState(false);
   const [mensaje, setMensaje] = useState(null);
   const [colaFotos, setColaFotos] = useState([]);
+  const [sucio, marcarGuardado] = useSucio(form);
 
   function cambiar(campo, valor) {
     setForm((f) => ({ ...f, [campo]: valor }));
@@ -518,6 +591,7 @@ function SeccionSede({ sede, onGuardado }) {
     try {
       await guardarContenido("nuestra_sede", form);
       onGuardado(form);
+      marcarGuardado();
       sonidoConfirmar();
       setMensaje("Guardado correctamente.");
     } catch (err) {
@@ -788,14 +862,7 @@ function SeccionSede({ sede, onGuardado }) {
         "Compartir" → copia el enlace; los dos números después de "@" son las coordenadas (ej. 10.6804354,-71.6224744).
       </p>
 
-      <div className="flex items-center gap-3">
-        <button type="button" onClick={handleGuardar} disabled={guardando} className="btn-admin-primary text-sm">
-          {guardando ? "Guardando…" : "Guardar Nuestra Sede"}
-        </button>
-        {mensaje && (
-          <span className={mensaje.startsWith("Error") ? "text-terracota text-sm" : "text-gold text-sm"}>{mensaje}</span>
-        )}
-      </div>
+      <BarraGuardado sucio={sucio} guardando={guardando} mensaje={mensaje} onGuardar={handleGuardar} etiqueta="Guardar Nuestra Sede" />
     </section>
   );
 }
@@ -817,7 +884,7 @@ function aspectoACss(valor) {
   return String(valor);
 }
 
-function RecortadorContenido({ archivo, aspectoInicial = 16 / 9, onCancelar, onListo }) {
+function RecortadorContenido({ archivo, aspectoInicial = 16 / 9, onCancelar, onListo, restantes = 0 }) {
   const [archivoListo, setArchivoListo] = useState(null);
   const [urlOriginal, setUrlOriginal] = useState(null);
   const [error, setError] = useState(null);
@@ -870,7 +937,10 @@ function RecortadorContenido({ archivo, aspectoInicial = 16 / 9, onCancelar, onL
   return (
     <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
       <div className="bg-carbon-light rounded-card border border-carbon-border max-w-lg w-full p-4 flex flex-col gap-3">
-        <p className="text-ink font-bold">Encuadra tu foto</p>
+        <p className="text-ink font-bold">
+          Encuadra tu foto
+          {restantes > 0 && <span className="ml-2 text-sm font-semibold text-gold">(quedan {restantes} más)</span>}
+        </p>
         <p className="text-xs text-ink-muted -mt-2">Arrastra para moverla y usa el control de abajo para acercar o alejar.</p>
 
         <div className="flex gap-2">
@@ -943,6 +1013,7 @@ function SeccionMetodosPago({ metodos, onGuardado }) {
   const [lista, setLista] = useState(metodos);
   const [guardando, setGuardando] = useState(false);
   const [mensaje, setMensaje] = useState(null);
+  const [sucio, marcarGuardado] = useSucio(lista);
 
   function cambiarFila(i, campo, valor) {
     setLista((l) => l.map((m, idx) => (idx === i ? { ...m, [campo]: valor } : m)));
@@ -962,6 +1033,7 @@ function SeccionMetodosPago({ metodos, onGuardado }) {
     try {
       await guardarContenido("metodos_pago", { metodos: lista });
       onGuardado(lista);
+      marcarGuardado();
       sonidoConfirmar();
       setMensaje("Guardado correctamente.");
     } catch (err) {
@@ -1031,14 +1103,7 @@ function SeccionMetodosPago({ metodos, onGuardado }) {
         + Añadir método
       </button>
 
-      <div className="flex items-center gap-3">
-        <button type="button" onClick={handleGuardar} disabled={guardando} className="btn-admin-primary text-sm">
-          {guardando ? "Guardando…" : "Guardar Métodos de Pago"}
-        </button>
-        {mensaje && (
-          <span className={mensaje.startsWith("Error") ? "text-terracota text-sm" : "text-gold text-sm"}>{mensaje}</span>
-        )}
-      </div>
+      <BarraGuardado sucio={sucio} guardando={guardando} mensaje={mensaje} onGuardar={handleGuardar} etiqueta="Guardar Métodos de Pago" />
     </section>
   );
 }
@@ -1357,21 +1422,36 @@ function SeccionBloques({ contenidoKey, titulo, descripcion, bloques, onGuardado
   const [expandidoId, setExpandidoId] = useState(null);
   const [guardando, setGuardando] = useState(false);
   const [mensaje, setMensaje] = useState(null);
-  // Si borras, reordenas o editas una sección y NO tocas "Guardar
-  // Secciones", nada de eso queda guardado — al recargar la página vuelve
-  // a aparecer todo tal como estaba antes. Este aviso es para que nunca
-  // se pierda un cambio por olvido (como el de la sección duplicada que
-  // "vuelve a aparecer" después de borrarla).
-  const [sinGuardar, setSinGuardar] = useState(false);
+  // Si borras, reordenas o editas una sección y NO tocas "Guardar", nada
+  // de eso queda guardado — por eso se avisa y el botón se queda pegado
+  // abajo de la pantalla hasta que guardes.
+  const [sucio, marcarGuardado] = useSucio(lista);
 
+  // `cambios` puede ser un objeto o una función (bloque) => objeto; la
+  // función siempre recibe la versión MÁS RECIENTE del bloque (evita que
+  // dos fotos subidas seguidas se pisen entre sí).
   function actualizarBloque(id, cambios) {
-    setLista((l) => l.map((b) => (b.id === id ? { ...b, ...cambios } : b)));
-    setSinGuardar(true);
+    setLista((l) =>
+      l.map((b) => (b.id === id ? { ...b, ...(typeof cambios === "function" ? cambios(b) : cambios) } : b))
+    );
+    setMensaje(null);
   }
 
-  function quitarBloque(id) {
-    setLista((l) => l.filter((b) => b.id !== id));
-    setSinGuardar(true);
+  function quitarBloque(bloque) {
+    const nombre = bloque.titulo ? `"${bloque.titulo}"` : "esta sección";
+    if (!window.confirm(`¿Borrar ${nombre}? (Si solo quieres que no se vea por un tiempo, usa "Ocultar".)`)) return;
+    setLista((l) => l.filter((b) => b.id !== bloque.id));
+  }
+
+  function duplicarBloque(bloque) {
+    const copia = { ...bloque, id: crypto.randomUUID(), titulo: bloque.titulo ? `${bloque.titulo} (copia)` : "" };
+    setLista((l) => {
+      const i = l.findIndex((b) => b.id === bloque.id);
+      const nueva = [...l];
+      nueva.splice(i + 1, 0, copia);
+      return nueva;
+    });
+    setExpandidoId(copia.id);
   }
 
   function moverBloque(id, direccion) {
@@ -1383,43 +1463,39 @@ function SeccionBloques({ contenidoKey, titulo, descripcion, bloques, onGuardado
       [copia[i], copia[j]] = [copia[j], copia[i]];
       return copia;
     });
-    setSinGuardar(true);
   }
 
   function agregarBloque(tipo) {
     const nuevo = bloqueVacio(tipo);
     setLista((l) => [...l, nuevo]);
     setExpandidoId(nuevo.id);
-    setSinGuardar(true);
   }
 
   async function handleGuardar() {
     setGuardando(true);
     setMensaje(null);
     try {
-      // "migrado: true" no molesta a "secciones_home"/"secciones_ubicacion"
-      // (nadie lo lee ahí) pero es IMPRESCINDIBLE para "secciones_fabricacion":
-      // si se guarda sin esa bandera se borra, y la migración de la
-      // introducción se volvería a disparar sola en la próxima carga.
+      // "migrado: true" es IMPRESCINDIBLE para "secciones_fabricacion" (ver
+      // la migración al cargar el panel); en las demás no molesta.
       await guardarContenido(contenidoKey, { bloques: lista, migrado: true });
-      // Algunas páginas (como la portada) muestran un resumen de la
-      // primera sección de aquí — lo mantenemos al día automáticamente
-      // para no tener que editarlo dos veces en dos lugares distintos.
-      if (espejoClave && lista[0]) {
+      // La portada muestra un resumen de la primera sección VISIBLE de
+      // Fabricación — se mantiene al día sola.
+      const primera = lista.find((b) => !b.oculto);
+      if (espejoClave && primera) {
         await guardarContenido(espejoClave, {
-          titulo: lista[0].titulo ?? "",
-          texto: lista[0].texto ?? "",
-          imagenes: lista[0].imagenes ?? [],
-          ajusteImagen: lista[0].ajusteImagen ?? "cover",
-          aspecto: lista[0].aspecto ?? null,
-          tamanoTitulo: lista[0].tamanoTitulo ?? "mediano",
-          colorTexto: lista[0].colorTexto ?? "blanco",
+          titulo: primera.titulo ?? "",
+          texto: primera.texto ?? "",
+          imagenes: primera.imagenes ?? [],
+          ajusteImagen: primera.ajusteImagen ?? "cover",
+          aspecto: primera.aspecto ?? null,
+          tamanoTitulo: primera.tamanoTitulo ?? "mediano",
+          colorTexto: primera.colorTexto ?? "blanco",
         });
       }
       onGuardado(lista);
+      marcarGuardado();
       sonidoConfirmar();
-      setMensaje("Guardado correctamente.");
-      setSinGuardar(false);
+      setMensaje("Guardado — ya se ve así en el sitio.");
     } catch (err) {
       setMensaje(`Error al guardar: ${err.message}`);
     } finally {
@@ -1428,18 +1504,11 @@ function SeccionBloques({ contenidoKey, titulo, descripcion, bloques, onGuardado
   }
 
   return (
-    <section className="admin-card p-5 flex flex-col gap-4">
+    <section className="admin-card p-4 sm:p-5 flex flex-col gap-4">
       <div>
         <h2 className="text-xl font-bold text-ink">🧩 {titulo}</h2>
         <p className="text-sm text-ink-muted mt-1">{descripcion}</p>
       </div>
-
-      {sinGuardar && (
-        <p className="text-sm font-semibold text-gold bg-gold/10 border border-gold/40 rounded-control px-3.5 py-2.5">
-          ⚠ Tienes cambios sin guardar aquí abajo — presiona "Guardar Secciones" al final para que no se pierdan. Si
-          recargas la página antes de guardar, todo vuelve a como estaba.
-        </p>
-      )}
 
       {lista.length === 0 && (
         <p className="text-ink-muted text-base bg-carbon border border-dashed border-carbon-border rounded-control px-4 py-6 text-center">
@@ -1451,41 +1520,75 @@ function SeccionBloques({ contenidoKey, titulo, descripcion, bloques, onGuardado
         {lista.map((bloque, i) => {
           const meta = TIPOS_BLOQUE.find((t) => t.tipo === bloque.tipo) ?? TIPOS_BLOQUE[0];
           const abierto = expandidoId === bloque.id;
+          const miniatura = bloque.tipo === "video" ? null : bloque.imagenes?.[0];
           return (
-            <div key={bloque.id} className="bg-carbon border border-carbon-border rounded-control overflow-hidden">
+            <div
+              key={bloque.id}
+              className={[
+                "bg-carbon border rounded-control overflow-hidden transition-colors",
+                abierto ? "border-gold/50" : "border-carbon-border",
+                bloque.oculto ? "opacity-60" : "",
+              ].join(" ")}
+            >
               <button
                 type="button"
                 onClick={() => setExpandidoId(abierto ? null : bloque.id)}
+                aria-expanded={abierto}
                 className="w-full flex items-center gap-3 p-3 text-left hover:bg-carbon-light/50 transition-colors duration-150"
               >
-                <span className="text-xl shrink-0">{meta.icono}</span>
+                <span className="text-ink-muted text-sm font-bold w-5 text-center shrink-0">{i + 1}</span>
+                {miniatura ? (
+                  <img src={miniatura} alt="" className="w-12 h-12 rounded object-cover shrink-0 bg-carbon-light" />
+                ) : (
+                  <span className="w-12 h-12 rounded bg-carbon-light flex items-center justify-center text-xl shrink-0">{meta.icono}</span>
+                )}
                 <div className="flex-1 min-w-0">
                   <p className="text-ink font-bold truncate">{bloque.titulo || `${meta.label} sin título`}</p>
-                  <p className="text-ink-muted text-xs">{meta.label}</p>
+                  <p className="text-ink-muted text-xs flex items-center gap-1.5">
+                    {meta.icono} {meta.label}
+                    {bloque.oculto && <span className="font-bold uppercase text-ink bg-white/10 rounded-full px-1.5">Oculta</span>}
+                  </p>
                 </div>
-                <span className="text-ink-muted text-sm shrink-0">{abierto ? "▲" : "▼"}</span>
+                <span className="text-ink-muted text-sm shrink-0">{abierto ? "▲ Cerrar" : "✏️ Editar"}</span>
               </button>
 
               {abierto && (
-                <div className="p-4 border-t border-carbon-border flex flex-col gap-4">
+                <div className="p-3 sm:p-4 border-t border-carbon-border flex flex-col gap-4">
                   <EditorBloque bloque={bloque} onCambiar={(c) => actualizarBloque(bloque.id, c)} />
                 </div>
               )}
 
-              <div className="flex items-center justify-between px-3 py-2 border-t border-carbon-border bg-carbon-light/30">
+              <div className="flex flex-wrap items-center justify-between gap-1 px-2 py-1.5 border-t border-carbon-border bg-carbon-light/30">
                 <div className="flex gap-1">
                   <button type="button" onClick={() => moverBloque(bloque.id, -1)} disabled={i === 0}
-                    className="min-h-tap min-w-tap text-ink-muted disabled:opacity-30 hover:text-ink transition-colors" aria-label="Subir sección">↑</button>
+                    className="min-h-[40px] min-w-[40px] rounded text-ink-muted disabled:opacity-30 hover:text-ink hover:bg-white/5 transition-colors" aria-label="Subir sección">↑</button>
                   <button type="button" onClick={() => moverBloque(bloque.id, 1)} disabled={i === lista.length - 1}
-                    className="min-h-tap min-w-tap text-ink-muted disabled:opacity-30 hover:text-ink transition-colors" aria-label="Bajar sección">↓</button>
+                    className="min-h-[40px] min-w-[40px] rounded text-ink-muted disabled:opacity-30 hover:text-ink hover:bg-white/5 transition-colors" aria-label="Bajar sección">↓</button>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => quitarBloque(bloque.id)}
-                  className="min-h-tap px-3 text-terracota text-sm font-semibold hover:text-ink transition-colors"
-                >
-                  Borrar sección
-                </button>
+                <div className="flex flex-wrap gap-1">
+                  <button
+                    type="button"
+                    onClick={() => actualizarBloque(bloque.id, { oculto: !bloque.oculto })}
+                    className="min-h-[40px] px-2.5 rounded text-ink-muted text-sm font-semibold hover:text-ink hover:bg-white/5 transition-colors"
+                    title={bloque.oculto ? "Volver a mostrarla en el sitio" : "Esconderla del sitio sin borrarla"}
+                  >
+                    {bloque.oculto ? "👁 Mostrar" : "🙈 Ocultar"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => duplicarBloque(bloque)}
+                    className="min-h-[40px] px-2.5 rounded text-ink-muted text-sm font-semibold hover:text-ink hover:bg-white/5 transition-colors"
+                  >
+                    ⧉ Duplicar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => quitarBloque(bloque)}
+                    className="min-h-[40px] px-2.5 rounded text-terracota text-sm font-semibold hover:bg-terracota/10 transition-colors"
+                  >
+                    Borrar
+                  </button>
+                </div>
               </div>
             </div>
           );
@@ -1494,7 +1597,7 @@ function SeccionBloques({ contenidoKey, titulo, descripcion, bloques, onGuardado
 
       <div className="flex flex-col gap-2 pt-1 border-t border-carbon-border">
         <span className="text-sm font-semibold text-ink-muted">+ Agregar sección:</span>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
           {TIPOS_BLOQUE.map((t) => (
             <button
               key={t.tipo}
@@ -1504,26 +1607,14 @@ function SeccionBloques({ contenidoKey, titulo, descripcion, bloques, onGuardado
                          hover:border-gold/50 hover:bg-gold/5 transition-all duration-150"
             >
               <span className="text-2xl">{t.icono}</span>
-              <span className="text-xs font-bold text-ink text-center">{t.label}</span>
-              <span className="text-[11px] text-ink-muted text-center leading-tight">{t.ayuda}</span>
+              <span className="text-sm font-bold text-ink text-center">{t.label}</span>
+              <span className="text-xs text-ink-muted text-center leading-tight">{t.ayuda}</span>
             </button>
           ))}
         </div>
       </div>
 
-      <div className="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={handleGuardar}
-          disabled={guardando}
-          className={`btn-admin-primary text-sm ${sinGuardar ? "ring-2 ring-gold ring-offset-2 ring-offset-carbon animate-pulse" : ""}`}
-        >
-          {guardando ? "Guardando…" : "Guardar Secciones"}
-        </button>
-        {mensaje && (
-          <span className={mensaje.startsWith("Error") ? "text-terracota text-sm" : "text-gold text-sm"}>{mensaje}</span>
-        )}
-      </div>
+      <BarraGuardado sucio={sucio} guardando={guardando} mensaje={mensaje} onGuardar={handleGuardar} etiqueta="Guardar secciones" />
     </section>
   );
 }
@@ -1531,20 +1622,27 @@ function SeccionBloques({ contenidoKey, titulo, descripcion, bloques, onGuardado
 /** Formulario de UN bloque — los campos que muestra dependen de `bloque.tipo`. */
 function EditorBloque({ bloque, onCambiar }) {
   const [subiendo, setSubiendo] = useState(false);
-  const [pendiente, setPendiente] = useState(null); // { modo: "unica" | "multiple" | "reemplazar", file, index? }
+  // Fila de fotos por recortar (se pueden elegir VARIAS a la vez; antes
+  // solo se tomaba la primera). `pendiente` es la que se está recortando.
+  const [cola, setCola] = useState([]); // [{ id, modo: "unica" | "multiple" | "reemplazar", file, index? }]
+  const pendiente = cola[0] ?? null;
 
   function elegirUnica(e) {
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
-    setPendiente({ modo: "unica", file });
+    setCola([{ id: crypto.randomUUID(), modo: "unica", file }]);
   }
 
   function elegirMultiple(e) {
-    const file = e.target.files?.[0];
+    const files = Array.from(e.target.files || []);
     e.target.value = "";
-    if (!file) return;
-    setPendiente({ modo: "multiple", file });
+    if (!files.length) return;
+    setCola((c) => [...c, ...files.map((file) => ({ id: crypto.randomUUID(), modo: "multiple", file }))]);
+  }
+
+  function quitarDeLaCola(id) {
+    setCola((c) => c.filter((it) => it.id !== id));
   }
 
   /** Reabre el recortador sobre una foto YA subida (banner: index = 0),
@@ -1555,7 +1653,7 @@ function EditorBloque({ bloque, onCambiar }) {
     try {
       const resp = await fetch(url);
       const blob = await resp.blob();
-      setPendiente({ modo: "reemplazar", index, file: blob });
+      setCola((c) => [...c, { id: crypto.randomUUID(), modo: "reemplazar", index, file: blob }]);
     } catch {
       alert("No se pudo cargar esa foto para recortarla de nuevo. Intenta bajarla y subirla otra vez.");
     }
@@ -1568,20 +1666,24 @@ function EditorBloque({ bloque, onCambiar }) {
     setSubiendo(true);
     try {
       const url = await subirBlobContenido(blob);
+      // Se usa la versión más reciente del bloque (b), no la de cuando se
+      // abrió el recorte — así varias fotos seguidas nunca se pisan.
       if (item?.modo === "unica") {
         onCambiar({ imagenes: [url], aspecto: aspectoCss });
       } else if (item?.modo === "reemplazar") {
-        const copia = [...(bloque.imagenes ?? [])];
-        copia[item.index] = url;
-        onCambiar({ imagenes: copia, aspecto: aspectoCss });
+        onCambiar((b) => {
+          const copia = [...(b.imagenes ?? [])];
+          copia[item.index] = url;
+          return { imagenes: copia, aspecto: aspectoCss };
+        });
       } else {
-        onCambiar({ imagenes: [...(bloque.imagenes ?? []), url], aspecto: aspectoCss });
+        onCambiar((b) => ({ imagenes: [...(b.imagenes ?? []), url], aspecto: aspectoCss }));
       }
     } catch (err) {
       alert(`No se pudo subir la foto: ${err.message}`);
     } finally {
       setSubiendo(false);
-      setPendiente(null);
+      if (item) quitarDeLaCola(item.id);
     }
   }
 
@@ -1623,12 +1725,35 @@ function EditorBloque({ bloque, onCambiar }) {
 
       {pendiente && (
         <RecortadorContenido
+          key={pendiente.id}
           archivo={pendiente.file}
           aspectoInicial={bloque.tipo === "banner" ? 16 / 9 : 4 / 5}
-          onCancelar={() => setPendiente(null)}
+          restantes={cola.length - 1}
+          onCancelar={() => quitarDeLaCola(pendiente.id)}
           onListo={(blob, aspectoCss) => fotoRecortadaLista(blob, aspectoCss, pendiente)}
         />
       )}
+
+      {/* Cambiar el tipo de la sección sin perder el título, texto ni fotos */}
+      <Campo label="Tipo de sección">
+        <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
+          {TIPOS_BLOQUE.map((t) => (
+            <button
+              key={t.tipo}
+              type="button"
+              onClick={() => onCambiar({ tipo: t.tipo })}
+              aria-pressed={bloque.tipo === t.tipo}
+              className={[
+                "min-h-[52px] rounded-control border-2 px-1 flex flex-col items-center justify-center text-xs font-semibold transition",
+                bloque.tipo === t.tipo ? "border-gold bg-gold/10 text-ink" : "border-carbon-border text-ink-muted hover:border-gold/40",
+              ].join(" ")}
+            >
+              <span className="text-lg leading-none mb-0.5">{t.icono}</span>
+              {t.label}
+            </button>
+          ))}
+        </div>
+      </Campo>
 
       {bloque.tipo === "banner" && (
         <Campo label="Ícono (emoji)">
@@ -1694,7 +1819,7 @@ function EditorBloque({ bloque, onCambiar }) {
                 <button
                   type="button"
                   onClick={() => recortarDeNuevo(i)}
-                  className="absolute top-0.5 left-0.5 w-5 h-5 rounded bg-black/60 text-white text-[10px] flex items-center justify-center"
+                  className="absolute top-0.5 left-0.5 w-7 h-7 rounded bg-black/70 text-white text-xs flex items-center justify-center"
                   aria-label="Recortar esta foto de nuevo"
                   title="Recortar de nuevo"
                 >
@@ -1718,8 +1843,8 @@ function EditorBloque({ bloque, onCambiar }) {
                   : "border-carbon-border text-ink-muted cursor-pointer hover:border-gold/50 hover:text-ink",
               ].join(" ")}
             >
-              <input type="file" accept="image/*,.heic,.heif" className="hidden" onChange={elegirMultiple} disabled={!!pendiente} />
-              {subiendo ? "…" : pendiente ? "Recortando…" : "+ Foto"}
+              <input type="file" accept="image/*,.heic,.heif" multiple className="hidden" onChange={elegirMultiple} disabled={!!pendiente} />
+              {subiendo ? "…" : pendiente ? "Recortando…" : "+ Fotos"}
             </label>
           </div>
           {bloque.tipo === "imagen_texto" && (bloque.imagenes?.length ?? 0) === 0 && (
@@ -1777,6 +1902,11 @@ function EditorBloque({ bloque, onCambiar }) {
             etiqueta="Efecto vidrio (difuminado + transparencia)"
             ayuda="El título y el texto quedan sobre una tarjeta de vidrio que se adapta a lo que escribas, en vez de una caja fija."
           />
+          {bloque.tipo === "imagen_texto" && !(bloque.vidrioSiempre ?? true) && (
+            <Campo label="¿De qué lado va la foto? (en computador)">
+              <SelectorPosicion valor={bloque.posicionImagen} onCambiar={(v) => onCambiar({ posicionImagen: v })} />
+            </Campo>
+          )}
           <Campo label="Tamaño del título">
             <SelectorTamanoTitulo valor={bloque.tamanoTitulo} onCambiar={(v) => onCambiar({ tamanoTitulo: v })} />
           </Campo>

@@ -16,7 +16,7 @@ export default function Fabricacion() {
 
   useEffect(() => {
     let activo = true;
-    obtenerContenido("secciones_fabricacion").then((d) => activo && setBloques(d.bloques ?? []));
+    obtenerContenido("secciones_fabricacion").then((d) => activo && setBloques((d.bloques ?? []).filter((b) => !b.oculto)));
     return () => {
       activo = false;
     };

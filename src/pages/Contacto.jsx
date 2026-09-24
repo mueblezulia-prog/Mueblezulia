@@ -20,7 +20,7 @@ export default function Contacto() {
     let activo = true;
     obtenerContenido("nuestra_sede").then((d) => activo && setSede(d));
     obtenerContenido("metodos_pago").then((d) => activo && setMetodos(d.metodos ?? []));
-    obtenerContenido("secciones_ubicacion").then((d) => activo && setBloques(d.bloques ?? []));
+    obtenerContenido("secciones_ubicacion").then((d) => activo && setBloques((d.bloques ?? []).filter((b) => !b.oculto)));
     return () => {
       activo = false;
     };

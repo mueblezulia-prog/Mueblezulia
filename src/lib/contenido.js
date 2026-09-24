@@ -166,6 +166,19 @@ export async function obtenerContenido(clave) {
   }
 }
 
+/**
+ * Igual que obtenerContenido, pero si falla la conexión LANZA un error en
+ * vez de devolver los textos de ejemplo. Lo usa el panel: si no, al fallar
+ * la carga el panel mostraba los ejemplos y al tocar "Guardar" se
+ * sobrescribía tu contenido real con ellos.
+ */
+export async function obtenerContenidoEstricto(clave) {
+  const base = CONTENIDO_DEFAULT[clave] ?? {};
+  const { data, error } = await supabase.from("contenido_sitio").select("datos").eq("clave", clave).maybeSingle();
+  if (error) throw error;
+  return data ? { ...base, ...data.datos } : base;
+}
+
 /** Guarda (crea o reemplaza) el bloque `clave` completo. */
 export async function guardarContenido(clave, datos) {
   const { error } = await supabase

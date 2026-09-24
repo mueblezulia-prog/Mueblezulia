@@ -19,7 +19,7 @@ export default function Home() {
     let activo = true;
     obtenerContenido("nuestra_sede").then((d) => activo && setSede(d));
     obtenerContenido("fabricacion").then((d) => activo && setFabricacion(d));
-    obtenerContenido("secciones_home").then((d) => activo && setBloques(d.bloques ?? []));
+    obtenerContenido("secciones_home").then((d) => activo && setBloques((d.bloques ?? []).filter((b) => !b.oculto)));
     return () => {
       activo = false;
     };

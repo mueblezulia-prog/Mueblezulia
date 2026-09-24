@@ -49,6 +49,14 @@ export default function AdminAcceso({ children }) {
   return children;
 }
 
+// Por dentro Supabase necesita un correo: el usuario "maria" se guarda
+// como "maria@mueblezulia.app" (ver supabase/fase_1_18_usuarios_panel.sql).
+// Si alguien escribe un correo completo, se usa tal cual.
+export function correoDeUsuario(usuario) {
+  const limpio = usuario.trim().toLowerCase();
+  return limpio.includes("@") ? limpio : `${limpio}@mueblezulia.app`;
+}
+
 function PantallaLogin() {
   const [correo, setCorreo] = useState("");
   const [clave, setClave] = useState("");
@@ -59,17 +67,17 @@ function PantallaLogin() {
   async function entrar(e) {
     e.preventDefault();
     if (!correo.trim() || !clave) {
-      setError("Escribe tu correo y tu contraseña.");
+      setError("Escribe tu usuario y tu contraseña.");
       return;
     }
     setEntrando(true);
     setError(null);
-    const { error: errorLogin } = await supabase.auth.signInWithPassword({ email: correo.trim(), password: clave });
+    const { error: errorLogin } = await supabase.auth.signInWithPassword({ email: correoDeUsuario(correo), password: clave });
     setEntrando(false);
     if (errorLogin) {
       setError(
         /invalid/i.test(errorLogin.message)
-          ? "Correo o contraseña incorrectos."
+          ? "Usuario o contraseña incorrectos."
           : `No se pudo entrar: ${errorLogin.message}`
       );
     }
@@ -92,14 +100,17 @@ function PantallaLogin() {
         </div>
 
         <label className="flex flex-col gap-1.5">
-          <span className="text-base font-semibold text-ink">Correo</span>
+          <span className="text-base font-semibold text-ink">Usuario</span>
           <input
-            type="email"
+            type="text"
             autoComplete="username"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
             value={correo}
             onChange={(e) => setCorreo(e.target.value)}
             className="campo-input"
-            placeholder="tucorreo@gmail.com"
+            placeholder="tu usuario"
           />
         </label>
 
