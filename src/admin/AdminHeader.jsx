@@ -1,17 +1,20 @@
+import { useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
+import { usePermisos } from "../lib/permisos";
 
-// Pestañas del panel admin. (Se quitaron "Estadísticas" y "Pedidos", que
-// aparecían deshabilitadas y ocupaban espacio sin hacer nada.)
-const TABS = [
-  { label: "Estadísticas", ruta: "/admin/estadisticas", icono: "📊" },
-  { label: "Muebles", ruta: "/admin/productos", icono: "🛋️" },
-  { label: "Categorías", ruta: "/admin/categorias", icono: "🗂️" },
-  { label: "Telas", ruta: "/admin/telas", icono: "🧵" },
-  { label: "Etiquetas", ruta: "/admin/etiquetas", icono: "🏷️" },
-  { label: "Opiniones", ruta: "/admin/opiniones", icono: "💬" },
-  { label: "Contenido", ruta: "/admin/contenido", icono: "🖼️" },
-  { label: "Usuarios", ruta: "/admin/usuarios", icono: "👤" },
+// Pestañas del panel de la PÁGINA WEB. (Pedidos y clientes van en la app
+// de gestión, aparte.) Cada una se muestra solo si el usuario tiene el
+// permiso correspondiente.
+export const TABS = [
+  { label: "Muebles", ruta: "/admin/productos", icono: "🛋️", permiso: "catalogo" },
+  { label: "Categorías", ruta: "/admin/categorias", icono: "🗂️", permiso: "catalogo" },
+  { label: "Telas", ruta: "/admin/telas", icono: "🧵", permiso: "catalogo" },
+  { label: "Etiquetas", ruta: "/admin/etiquetas", icono: "🏷️", permiso: "catalogo" },
+  { label: "Contenido", ruta: "/admin/contenido", icono: "🖼️", permiso: "contenido" },
+  { label: "Opiniones", ruta: "/admin/opiniones", icono: "💬", permiso: "contenido" },
+  { label: "Estadísticas", ruta: "/admin/estadisticas", icono: "📊", permiso: "estadisticas" },
+  { label: "Usuarios", ruta: "/admin/usuarios", icono: "👤", permiso: "usuarios" },
 ];
 
 /**
@@ -22,12 +25,21 @@ const TABS = [
  */
 export default function AdminHeader() {
   const { pathname } = useLocation();
+  const { puede } = usePermisos();
+  const tabs = TABS.filter((t) => puede(t.permiso));
+  // En el celular, la pestaña activa siempre a la vista (antes quedaba
+  // escondida a la derecha, p. ej. "Usuarios").
+  const navRef = useRef(null);
+  useEffect(() => {
+    const activa = navRef.current?.querySelector('[aria-current="page"]');
+    activa?.scrollIntoView?.({ block: "nearest", inline: "center" });
+  }, [pathname]);
 
   return (
     <header className="sticky top-0 z-40 bg-carbon/95 backdrop-blur border-b border-carbon-border shadow-sm shadow-black/30">
       <div className="max-w-5xl mx-auto px-4">
         <div className="h-12 flex items-center justify-between gap-3">
-          <Link to="/admin/productos" className="flex items-center gap-2 min-w-0">
+          <Link to={tabs[0]?.ruta ?? "/admin"} className="flex items-center gap-2 min-w-0">
             <img src="/assets/logo.png" alt="" className="w-7 h-7 object-contain shrink-0" />
             <span className="text-base sm:text-lg font-extrabold text-ink truncate">
               Mueble Zulia <span className="text-gold font-bold">· Panel</span>
@@ -54,8 +66,8 @@ export default function AdminHeader() {
           </div>
         </div>
 
-        <nav className="h-14 flex items-center gap-2 overflow-x-auto no-scrollbar -mx-4 px-4" aria-label="Secciones del panel">
-          {TABS.map((tab) => {
+        <nav ref={navRef} className="h-14 flex items-center gap-2 overflow-x-auto no-scrollbar -mx-4 px-4" aria-label="Secciones del panel">
+          {tabs.map((tab) => {
             // "Muebles" también se considera activa en /admin/productos/nuevo
             // y /admin/productos/:id/editar, no solo en la lista exacta.
             const activa = pathname.startsWith(tab.ruta);

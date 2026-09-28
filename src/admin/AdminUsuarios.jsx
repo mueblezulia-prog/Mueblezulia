@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { PERMISOS, ROLES, rolDe, usePermisos } from "../lib/permisos";
 
 function fecha(valor) {
   if (!valor) return "Nunca";
@@ -10,18 +11,111 @@ function fecha(valor) {
 // funciones SQL; si no, se muestra uno genérico entendible.
 function mensajeError(error) {
   const texto = error?.message ?? "";
+  if (/admin_guardar_permisos|p_rol|p_permisos/i.test(texto) && /Could not find|does not exist/i.test(texto)) {
+    return "Falta correr supabase/fase_1_21_permisos_usuarios.sql en tu Supabase.";
+  }
   if (/function .* does not exist|Could not find the function/i.test(texto)) {
     return "Falta correr supabase/fase_1_18_usuarios_panel.sql en tu Supabase.";
   }
   return texto || "Algo salió mal. Intenta de nuevo.";
 }
 
+function mismoConjunto(a = [], b = []) {
+  return a.length === b.length && a.every((x) => b.includes(x));
+}
+
 /**
- * Usuarios que pueden entrar al panel: crear nuevos, cambiarles la
- * contraseña o borrarlos. Usa las funciones de
- * supabase/fase_1_18_usuarios_panel.sql (no hace falta entrar a Supabase).
+ * Elegir el rol (Dueño, Vendedor, Taller, Página web…) y, si hace falta,
+ * ajustar los permisos uno por uno.
+ */
+function SelectorPermisos({ rol, permisos, onCambiar, esDueno }) {
+  function elegirRol(r) {
+    onCambiar({ rol: r.id, permisos: r.id === "personalizado" ? permisos : r.permisos });
+  }
+  function alternar(id) {
+    const nuevos = permisos.includes(id) ? permisos.filter((p) => p !== id) : [...permisos, id];
+    // Si coincide con un rol listo, se marca ese rol; si no, "Personalizado".
+    const coincide = ROLES.find((r) => r.id !== "dueno" && r.id !== "personalizado" && mismoConjunto(r.permisos, nuevos));
+    onCambiar({ rol: coincide?.id ?? "personalizado", permisos: nuevos });
+  }
+  const todo = rol === "dueno";
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+        {ROLES.map((r) => {
+          const bloqueado = r.id === "dueno" && !esDueno;
+          const activo = rol === r.id;
+          return (
+            <button
+              key={r.id}
+              type="button"
+              disabled={bloqueado}
+              onClick={() => elegirRol(r)}
+              aria-pressed={activo}
+              className={[
+                "min-h-tap p-2.5 rounded-control border-2 text-left flex flex-col gap-0.5 transition disabled:opacity-40",
+                activo ? "border-gold bg-gold/10" : "border-carbon-border hover:border-white/30",
+              ].join(" ")}
+            >
+              <span className="text-sm font-bold text-ink">
+                <span aria-hidden="true">{r.icono}</span> {r.label}
+              </span>
+              <span className="text-xs text-ink-muted leading-snug">{r.detalle}</span>
+            </button>
+          );
+        })}
+      </div>
+      <div className="flex flex-col gap-1.5">
+        <p className="text-sm font-semibold text-ink-muted">{todo ? "El dueño tiene todos los permisos:" : "Puede tocar:"}</p>
+        {PERMISOS.map((p) => {
+          const marcado = todo || permisos.includes(p.id);
+          const bloqueado = todo || (p.id === "usuarios" && !esDueno);
+          return (
+            <label
+              key={p.id}
+              className={[
+                "flex items-center gap-3 min-h-tap px-3 py-2 rounded-control border transition",
+                marcado ? "border-gold/40 bg-gold/5" : "border-carbon-border",
+                bloqueado ? "opacity-70" : "cursor-pointer hover:border-white/30",
+              ].join(" ")}
+            >
+              <input type="checkbox" checked={marcado} disabled={bloqueado} onChange={() => alternar(p.id)} className="w-5 h-5 accent-gold shrink-0" />
+              <span className="text-lg shrink-0" aria-hidden="true">
+                {p.icono}
+              </span>
+              <span className="min-w-0">
+                <span className="block text-base font-semibold text-ink">{p.label}</span>
+                <span className="block text-sm text-ink-muted">{p.detalle}</span>
+              </span>
+            </label>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function ChipRol({ rol }) {
+  const r = rolDe(rol);
+  return (
+    <span className="inline-flex items-center gap-1 text-xs font-bold rounded-full border border-gold/40 bg-gold/10 text-gold px-2 py-0.5 whitespace-nowrap">
+      <span aria-hidden="true">{r.icono}</span>
+      {r.label}
+    </span>
+  );
+}
+
+/**
+ * Usuarios que pueden entrar al panel y a la app de gestión: crearlos,
+ * darles un rol (Dueño, Vendedor, Taller, Página web…) o permisos
+ * sueltos, cambiarles la contraseña, desactivarlos o borrarlos.
  */
 export default function AdminUsuarios() {
+  const { perfil } = usePermisos();
+  const sinSQL = !!perfil?.sinSQL; // todavía no se corrió fase_1_21
+  const esDueno = perfil?.rol === "dueno";
+
   const [usuarios, setUsuarios] = useState([]);
   const [miId, setMiId] = useState(null);
   const [cargando, setCargando] = useState(true);
@@ -31,18 +125,18 @@ export default function AdminUsuarios() {
   const [nuevoUsuario, setNuevoUsuario] = useState("");
   const [nuevaClave, setNuevaClave] = useState("");
   const [verClave, setVerClave] = useState(false);
+  const [nuevoAcceso, setNuevoAcceso] = useState({ rol: "vendedor", permisos: rolDe("vendedor").permisos });
   const [creando, setCreando] = useState(false);
 
-  const [cambiandoId, setCambiandoId] = useState(null);
+  const [abierto, setAbierto] = useState(null); // { id, modo: "permisos" | "clave" }
   const [claveCambio, setClaveCambio] = useState("");
+  const [edicion, setEdicion] = useState(null); // { rol, permisos, activo }
+  const [guardando, setGuardando] = useState(false);
 
   async function cargar() {
     setCargando(true);
     setError(null);
-    const [{ data, error: e }, { data: sesion }] = await Promise.all([
-      supabase.rpc("admin_listar_usuarios"),
-      supabase.auth.getUser(),
-    ]);
+    const [{ data, error: e }, { data: sesion }] = await Promise.all([supabase.rpc("admin_listar_usuarios"), supabase.auth.getUser()]);
     if (e) setError(mensajeError(e));
     else setUsuarios(data ?? []);
     setMiId(sesion?.user?.id ?? null);
@@ -55,7 +149,7 @@ export default function AdminUsuarios() {
 
   function avisar(texto, tipo = "ok") {
     setAviso({ texto, tipo });
-    setTimeout(() => setAviso((a) => (a?.texto === texto ? null : a)), 4000);
+    setTimeout(() => setAviso((a) => (a?.texto === texto ? null : a)), 4500);
   }
 
   async function crear(e) {
@@ -69,17 +163,56 @@ export default function AdminUsuarios() {
       avisar("La contraseña debe tener al menos 6 caracteres.", "error");
       return;
     }
+    if (!sinSQL && nuevoAcceso.rol !== "dueno" && nuevoAcceso.permisos.length === 0) {
+      avisar("Marca al menos un permiso (o elige un rol).", "error");
+      return;
+    }
     setCreando(true);
-    const { error: e2 } = await supabase.rpc("admin_crear_usuario", { p_usuario: usuario, p_clave: nuevaClave });
+    const params = sinSQL
+      ? { p_usuario: usuario, p_clave: nuevaClave }
+      : { p_usuario: usuario, p_clave: nuevaClave, p_rol: nuevoAcceso.rol, p_permisos: nuevoAcceso.permisos };
+    const { error: e2 } = await supabase.rpc("admin_crear_usuario", params);
     setCreando(false);
     if (e2) {
       avisar(mensajeError(e2), "error");
       return;
     }
-    avisar(`✓ Usuario "${usuario}" creado. Ya puede entrar al panel con esa contraseña.`);
+    avisar(`✓ Usuario "${usuario}" creado como ${rolDe(nuevoAcceso.rol).label}. Ya puede entrar con esa contraseña.`);
     setNuevoUsuario("");
     setNuevaClave("");
     cargar();
+  }
+
+  function abrir(u, modo) {
+    if (abierto?.id === u.id && abierto.modo === modo) {
+      setAbierto(null);
+      return;
+    }
+    setAbierto({ id: u.id, modo });
+    setClaveCambio("");
+    setEdicion({ rol: u.rol ?? "personalizado", permisos: u.permisos ?? [], activo: u.activo !== false });
+  }
+
+  async function guardarPermisos(u) {
+    if (edicion.rol !== "dueno" && edicion.permisos.length === 0 && edicion.activo) {
+      avisar("Marca al menos un permiso, o desactiva el usuario.", "error");
+      return;
+    }
+    setGuardando(true);
+    const { error: e } = await supabase.rpc("admin_guardar_permisos", {
+      p_id: u.id,
+      p_rol: edicion.rol,
+      p_permisos: edicion.rol === "dueno" ? [] : edicion.permisos,
+      p_activo: edicion.activo,
+    });
+    setGuardando(false);
+    if (e) {
+      avisar(mensajeError(e), "error");
+      return;
+    }
+    setUsuarios((l) => l.map((x) => (x.id === u.id ? { ...x, ...edicion } : x)));
+    setAbierto(null);
+    avisar(`✓ Permisos de "${u.usuario}" guardados.`);
   }
 
   async function guardarClave(u) {
@@ -98,12 +231,12 @@ export default function AdminUsuarios() {
       return;
     }
     avisar(`✓ Contraseña de "${u.usuario}" cambiada.`);
-    setCambiandoId(null);
+    setAbierto(null);
     setClaveCambio("");
   }
 
   async function borrar(u) {
-    if (!window.confirm(`¿Borrar el usuario "${u.usuario}"? Ya no podrá entrar al panel.`)) return;
+    if (!window.confirm(`¿Borrar el usuario "${u.usuario}"? Ya no podrá entrar.\n\nSi solo quieres quitarle el acceso por un tiempo, mejor desactívalo desde "Permisos".`)) return;
     const { error: e4 } = await supabase.rpc("admin_borrar_usuario", { p_id: u.id });
     if (e4) {
       avisar(mensajeError(e4), "error");
@@ -116,11 +249,18 @@ export default function AdminUsuarios() {
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-extrabold text-ink">👤 Usuarios del panel</h1>
+        <h1 className="text-2xl font-extrabold text-ink">👤 Usuarios</h1>
         <p className="text-base text-ink-muted mt-1">
-          Personas que pueden entrar al panel de control. Cada una entra con su propio usuario y contraseña.
+          Quién puede entrar al panel de la página y a la app de gestión, y qué puede tocar cada uno.
         </p>
       </div>
+
+      {sinSQL && (
+        <p className="rounded-control border border-gold/40 bg-gold/10 px-4 py-3 text-ink">
+          Para dar roles y permisos (vendedor, taller…) falta correr <b>supabase/fase_1_21_permisos_usuarios.sql</b> en tu Supabase. Mientras
+          tanto, todos los usuarios pueden tocar todo.
+        </p>
+      )}
 
       {aviso && (
         <div
@@ -172,6 +312,12 @@ export default function AdminUsuarios() {
             </div>
           </label>
         </div>
+        {!sinSQL && (
+          <div className="flex flex-col gap-2">
+            <p className="text-base font-semibold text-ink">¿Qué va a hacer?</p>
+            <SelectorPermisos rol={nuevoAcceso.rol} permisos={nuevoAcceso.permisos} esDueno={esDueno} onCambiar={setNuevoAcceso} />
+          </div>
+        )}
         <button type="submit" disabled={creando} className="btn-admin-primary self-start">
           {creando ? "Creando…" : "+ Crear usuario"}
         </button>
@@ -183,60 +329,126 @@ export default function AdminUsuarios() {
         {error && <p className="admin-card p-4 text-terracota">{error}</p>}
         {!cargando &&
           !error &&
-          usuarios.map((u) => (
-            <div key={u.id} className="admin-card p-4 flex flex-col gap-3">
-              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="text-lg font-bold text-ink break-all">
-                    {u.usuario}
-                    {u.id === miId && <span className="ml-2 text-xs font-bold text-gold uppercase">(tú)</span>}
-                  </p>
-                  <p className="text-sm text-ink-muted">Último ingreso: {fecha(u.ultimo_ingreso)}</p>
+          usuarios.map((u) => {
+            const yo = u.id === miId;
+            const desactivado = u.activo === false;
+            const abiertoPermisos = abierto?.id === u.id && abierto.modo === "permisos";
+            const abiertoClave = abierto?.id === u.id && abierto.modo === "clave";
+            // Solo un dueño puede tocar a otro dueño.
+            const puedeTocar = !yo && (esDueno || u.rol !== "dueno");
+            return (
+              <div key={u.id} className={`admin-card p-4 flex flex-col gap-3 ${desactivado ? "opacity-70" : ""}`}>
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                  <div className="min-w-0 flex flex-col gap-1">
+                    <p className="text-lg font-bold text-ink break-all">
+                      {u.usuario}
+                      {yo && <span className="ml-2 text-xs font-bold text-gold uppercase">(tú)</span>}
+                    </p>
+                    {!sinSQL && (
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <ChipRol rol={u.rol} />
+                        {desactivado && (
+                          <span className="text-xs font-bold rounded-full border border-terracota/50 bg-terracota/10 text-terracota px-2 py-0.5">Desactivado</span>
+                        )}
+                        {u.rol !== "dueno" &&
+                          PERMISOS.filter((p) => (u.permisos ?? []).includes(p.id)).map((p) => (
+                            <span key={p.id} title={p.label} className="text-base" aria-label={p.label}>
+                              {p.icono}
+                            </span>
+                          ))}
+                      </div>
+                    )}
+                    <p className="text-sm text-ink-muted">Último ingreso: {fecha(u.ultimo_ingreso)}</p>
+                  </div>
+                  <div className="flex flex-wrap gap-2 sm:justify-end shrink-0">
+                    {!sinSQL && puedeTocar && (
+                      <button
+                        type="button"
+                        onClick={() => abrir(u, "permisos")}
+                        aria-expanded={abiertoPermisos}
+                        className="min-h-[40px] px-3 rounded-control border-2 border-gold/60 text-gold text-sm font-bold hover:bg-gold hover:text-carbon transition"
+                      >
+                        🛡️ Permisos
+                      </button>
+                    )}
+                    {(yo || puedeTocar) && (
+                      <button
+                        type="button"
+                        onClick={() => abrir(u, "clave")}
+                        aria-expanded={abiertoClave}
+                        className="min-h-[40px] px-3 rounded-control border-2 border-ink/60 text-ink text-sm font-bold hover:bg-ink hover:text-carbon transition"
+                      >
+                        🔑 Contraseña
+                      </button>
+                    )}
+                    {puedeTocar && (
+                      <button
+                        type="button"
+                        onClick={() => borrar(u)}
+                        className="min-h-[40px] px-3 rounded-control border-2 border-terracota text-terracota text-sm font-bold hover:bg-terracota hover:text-ink transition"
+                      >
+                        Borrar
+                      </button>
+                    )}
+                  </div>
                 </div>
-                <div className="flex flex-wrap gap-2 sm:justify-end shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setCambiandoId(cambiandoId === u.id ? null : u.id);
-                      setClaveCambio("");
+
+                {abiertoPermisos && edicion && (
+                  <div className="flex flex-col gap-4 border-t border-carbon-border pt-4">
+                    <SelectorPermisos
+                      rol={edicion.rol}
+                      permisos={edicion.permisos}
+                      esDueno={esDueno}
+                      onCambiar={(c) => setEdicion((e) => ({ ...e, ...c }))}
+                    />
+                    <label className="flex items-center gap-3 min-h-tap px-3 rounded-control border border-carbon-border cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={edicion.activo}
+                        onChange={(e) => setEdicion((x) => ({ ...x, activo: e.target.checked }))}
+                        className="w-5 h-5 accent-gold"
+                      />
+                      <span className="text-base text-ink">
+                        <b>Activo</b> <span className="text-ink-muted text-sm">— desmárcalo para quitarle el acceso sin borrarlo</span>
+                      </span>
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      <button type="button" onClick={() => guardarPermisos(u)} disabled={guardando} className="btn-admin-primary">
+                        {guardando ? "Guardando…" : "Guardar permisos"}
+                      </button>
+                      <button type="button" onClick={() => setAbierto(null)} className="btn-admin-secondary">
+                        Cancelar
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {abiertoClave && (
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      guardarClave(u);
                     }}
-                    className="min-h-[40px] px-3 rounded-control border-2 border-ink/60 text-ink text-sm font-bold hover:bg-ink hover:text-carbon transition"
+                    className="flex flex-col sm:flex-row gap-2 border-t border-carbon-border pt-4"
                   >
-                    🔑 Contraseña
-                  </button>
-                  {u.id !== miId && (
-                    <button
-                      type="button"
-                      onClick={() => borrar(u)}
-                      className="min-h-[40px] px-3 rounded-control border-2 border-terracota text-terracota text-sm font-bold hover:bg-terracota hover:text-ink transition"
-                    >
-                      Borrar
+                    <input
+                      autoFocus
+                      type="text"
+                      value={claveCambio}
+                      onChange={(e) => setClaveCambio(e.target.value)}
+                      autoComplete="new-password"
+                      placeholder="Nueva contraseña (mínimo 6)"
+                      className="campo-input flex-1"
+                    />
+                    <button type="submit" className="btn-admin-primary">
+                      Guardar
                     </button>
-                  )}
-                </div>
+                  </form>
+                )}
+                {yo && !sinSQL && <p className="text-sm text-ink-muted">Tus propios permisos solo los puede cambiar otro dueño.</p>}
               </div>
-              {cambiandoId === u.id && (
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    guardarClave(u);
-                  }}
-                  className="flex flex-col sm:flex-row gap-2"
-                >
-                  <input
-                    autoFocus
-                    type="text"
-                    value={claveCambio}
-                    onChange={(e) => setClaveCambio(e.target.value)}
-                    autoComplete="new-password"
-                    placeholder="Nueva contraseña (mínimo 6)"
-                    className="campo-input flex-1"
-                  />
-                  <button type="submit" className="btn-admin-primary">Guardar</button>
-                </form>
-              )}
-            </div>
-          ))}
+            );
+          })}
       </div>
     </div>
   );

@@ -77,7 +77,7 @@ function BarraGuardado({ sucio, guardando, mensaje, onGuardar, etiqueta }) {
     <div
       className={[
         "flex flex-wrap items-center gap-3 rounded-control transition-all",
-        sucio ? "sticky bottom-3 z-10 bg-carbon/95 backdrop-blur border border-gold/50 shadow-lg shadow-black/40 p-3" : "",
+        sucio ? "sticky bottom-[calc(var(--alto-nav,0px)+0.75rem)] z-10 bg-carbon/95 backdrop-blur border border-gold/50 shadow-lg shadow-black/40 p-3" : "",
       ].join(" ")}
     >
       <button type="button" onClick={onGuardar} disabled={guardando} className="btn-admin-primary">
@@ -252,7 +252,7 @@ export default function AdminContenido() {
 
       <nav
         aria-label="Secciones"
-        className="sticky top-[6.6rem] z-20 -mx-4 sm:mx-0 px-4 sm:px-2 py-2 bg-carbon/95 backdrop-blur border-y sm:border border-carbon-border sm:rounded-control flex gap-2 overflow-x-auto no-scrollbar -mt-6"
+        className="sticky top-[var(--alto-barra,6.6rem)] z-20 -mx-4 sm:mx-0 px-4 sm:px-2 py-2 bg-carbon/95 backdrop-blur border-y sm:border border-carbon-border sm:rounded-control flex gap-2 overflow-x-auto no-scrollbar -mt-6"
       >
         {indice.map((it) => (
           <a

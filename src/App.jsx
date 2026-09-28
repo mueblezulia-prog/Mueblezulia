@@ -22,6 +22,9 @@ import AdminAcceso from "./admin/AdminAcceso";
 import AdminOpiniones from "./admin/AdminOpiniones";
 import AdminEstadisticas from "./admin/AdminEstadisticas";
 import AdminUsuarios from "./admin/AdminUsuarios";
+import Requiere from "./admin/Requiere";
+import { TABS as TABS_ADMIN } from "./admin/AdminHeader";
+import { usePermisos } from "./lib/permisos";
 import { registrarVisita } from "./lib/estadisticas";
 
 // Íconos de pestaña (favicon): el logo de la mueblería en el sitio público,
@@ -114,17 +117,18 @@ export default function App() {
           {/* Rutas viejas: redirigen para no romper enlaces guardados */}
           <Route path="/ubicacion" element={<Navigate to="/contacto" replace />} />
           <Route path="/metodos-pago" element={<Navigate to="/contacto" replace />} />
-          <Route path="/admin/productos" element={<AdminProductosLista />} />
-          <Route path="/admin/productos/nuevo" element={<NuevoProducto />} />
-          <Route path="/admin/productos/:id/editar" element={<EditarProducto />} />
-          <Route path="/admin/categorias" element={<AdminCategorias />} />
-          <Route path="/admin/telas" element={<AdminTelas />} />
-          <Route path="/admin/etiquetas" element={<AdminEtiquetas />} />
-          <Route path="/admin/contenido" element={<AdminContenido />} />
-          <Route path="/admin/opiniones" element={<AdminOpiniones />} />
-          <Route path="/admin/estadisticas" element={<AdminEstadisticas />} />
-          <Route path="/admin/usuarios" element={<AdminUsuarios />} />
-          <Route path="/admin" element={<Navigate to="/admin/productos" replace />} />
+          {/* Panel de la página: cada sección pide su permiso (ver Usuarios). */}
+          <Route path="/admin/productos" element={<Requiere permiso="catalogo"><AdminProductosLista /></Requiere>} />
+          <Route path="/admin/productos/nuevo" element={<Requiere permiso="catalogo"><NuevoProducto /></Requiere>} />
+          <Route path="/admin/productos/:id/editar" element={<Requiere permiso="catalogo"><EditarProducto /></Requiere>} />
+          <Route path="/admin/categorias" element={<Requiere permiso="catalogo"><AdminCategorias /></Requiere>} />
+          <Route path="/admin/telas" element={<Requiere permiso="catalogo"><AdminTelas /></Requiere>} />
+          <Route path="/admin/etiquetas" element={<Requiere permiso="catalogo"><AdminEtiquetas /></Requiere>} />
+          <Route path="/admin/contenido" element={<Requiere permiso="contenido"><AdminContenido /></Requiere>} />
+          <Route path="/admin/opiniones" element={<Requiere permiso="contenido"><AdminOpiniones /></Requiere>} />
+          <Route path="/admin/estadisticas" element={<Requiere permiso="estadisticas"><AdminEstadisticas /></Requiere>} />
+          <Route path="/admin/usuarios" element={<Requiere permiso="usuarios"><AdminUsuarios /></Requiere>} />
+          <Route path="/admin" element={<InicioPanel />} />
           <Route path="*" element={<NoEncontrado />} />
         </Routes>
       </div>
@@ -141,6 +145,13 @@ export default function App() {
       {esAdmin ? <AdminAcceso>{contenido}</AdminAcceso> : contenido}
     </div>
   );
+}
+
+// /admin → primera sección que el usuario tenga permitida.
+function InicioPanel() {
+  const { puede } = usePermisos();
+  const primera = TABS_ADMIN.find((t) => puede(t.permiso));
+  return <Navigate to={primera?.ruta ?? "/admin/productos"} replace />;
 }
 
 function NuevoProducto() {

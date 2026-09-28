@@ -1,6 +1,10 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
+import { PermisosContexto, cargarMiPerfil, crearPuede } from "../lib/permisos";
+
+// Secciones del panel de la PÁGINA (lo del negocio está en la app de gestión).
+export const PERMISOS_PANEL_WEB = ["catalogo", "contenido", "estadisticas", "usuarios"];
 
 /**
  * Puerta del panel: si no has iniciado sesión, muestra la pantalla de
@@ -11,6 +15,8 @@ import { supabase } from "../lib/supabaseClient";
  */
 export default function AdminAcceso({ children }) {
   const [sesion, setSesion] = useState(undefined); // undefined = revisando
+  const [perfil, setPerfil] = useState(undefined); // undefined = cargando
+  const [errorPerfil, setErrorPerfil] = useState(null);
 
   useEffect(() => {
     let activo = true;
@@ -36,7 +42,25 @@ export default function AdminAcceso({ children }) {
     }
   }, [sesion]);
 
-  if (sesion === undefined) {
+  // Rol y permisos del usuario que entró.
+  const idUsuario = sesion?.user?.id ?? (sesion ? "sesion" : null);
+  const recargar = useCallback(() => {
+    if (!idUsuario) {
+      setPerfil(undefined);
+      return;
+    }
+    setErrorPerfil(null);
+    cargarMiPerfil()
+      .then(setPerfil)
+      .catch((e) => setErrorPerfil(e?.message ?? "No se pudieron cargar tus permisos."));
+  }, [idUsuario]);
+  useEffect(() => {
+    recargar();
+  }, [recargar]);
+
+  const valor = useMemo(() => ({ perfil, puede: crearPuede(perfil), recargar }), [perfil, recargar]);
+
+  if (sesion === undefined || (sesion && perfil === undefined && !errorPerfil)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="w-10 h-10 rounded-full border-4 border-carbon-border border-t-gold animate-spin" aria-label="Cargando" />
@@ -46,7 +70,55 @@ export default function AdminAcceso({ children }) {
 
   if (!sesion) return <PantallaLogin />;
 
-  return children;
+  if (errorPerfil) {
+    return (
+      <Aviso titulo="No se pudieron cargar tus permisos" texto={errorPerfil}>
+        <button type="button" onClick={recargar} className="btn-admin-primary">
+          Reintentar
+        </button>
+      </Aviso>
+    );
+  }
+
+  if (perfil.activo === false) {
+    return <Aviso titulo="Tu usuario está desactivado" texto="Pídele al dueño que lo vuelva a activar desde Usuarios." />;
+  }
+
+  if (!valor.puede(PERMISOS_PANEL_WEB)) {
+    const urlApp = import.meta.env.VITE_URL_APP;
+    return (
+      <Aviso
+        titulo="Tu usuario es para la app de gestión"
+        texto="Este panel es para editar la página web, y tu usuario no tiene permisos aquí. Entra desde la app de Mueble Zulia."
+      >
+        {urlApp && (
+          <a href={urlApp} className="btn-admin-primary inline-flex items-center">
+            Abrir la app
+          </a>
+        )}
+      </Aviso>
+    );
+  }
+
+  return <PermisosContexto.Provider value={valor}>{children}</PermisosContexto.Provider>;
+}
+
+function Aviso({ titulo, texto, children }) {
+  return (
+    <div className="min-h-screen flex items-center justify-center px-4">
+      <div className="max-w-sm w-full glass rounded-card p-6 flex flex-col items-center text-center gap-3">
+        <img src="/assets/logo.png" alt="" className="w-12 h-12 object-contain" />
+        <h1 className="text-xl font-extrabold text-ink">{titulo}</h1>
+        <p className="text-ink-muted">{texto}</p>
+        <div className="flex flex-wrap justify-center gap-2 mt-1">
+          {children}
+          <button type="button" onClick={() => supabase.auth.signOut()} className="btn-admin-secondary">
+            Salir
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 // Por dentro Supabase necesita un correo: el usuario "maria" se guarda
