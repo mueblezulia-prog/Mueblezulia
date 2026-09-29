@@ -16,6 +16,23 @@
 
 create extension if not exists pgcrypto;
 
+-- Si ya existía una tabla "pedidos" de una función vieja del sitio (un
+-- formulario de compra que ya no se usa), se guarda a un lado con otro
+-- nombre para no perder nada, y se crea la "pedidos" nueva de este
+-- sistema. No borra ningún dato.
+do $$
+begin
+  if to_regclass('public.pedidos') is not null
+     and not exists (
+       select 1 from information_schema.columns
+       where table_schema = 'public' and table_name = 'pedidos' and column_name = 'cliente_id'
+     )
+  then
+    execute 'alter table public.pedidos rename to pedidos_web_antiguo';
+    raise notice 'Tenías una tabla "pedidos" antigua (de un formulario que ya no usa la página). Se guardó como "pedidos_web_antiguo" y se creó una "pedidos" nueva.';
+  end if;
+end $$;
+
 -- ---------- CLIENTES ----------
 create table if not exists public.clientes (
   id uuid primary key default gen_random_uuid(),
