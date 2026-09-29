@@ -10,6 +10,8 @@ export const PERMISOS = [
   { id: "pedidos", icono: "🧾", label: "Pedidos", detalle: "Ver pedidos, registrarlos y cambiar su estado" },
   { id: "dinero", icono: "💵", label: "Precios y pagos", detalle: "Ver montos, totales y registrar abonos" },
   { id: "clientes", icono: "👥", label: "Clientes", detalle: "La libreta completa: editar y borrar clientes" },
+  { id: "inventario", icono: "📦", label: "Inventario", detalle: "Agregar artículos, entradas y conteos de la tienda" },
+  { id: "finanzas", icono: "📈", label: "Números del negocio", detalle: "Tablero, costos, anular abonos y entregar con deuda" },
   { id: "catalogo", icono: "🛋️", label: "Catálogo de la página", detalle: "Muebles, categorías, telas y etiquetas" },
   { id: "contenido", icono: "🖼️", label: "Contenido de la página", detalle: "Textos, fotos, secciones y opiniones" },
   { id: "estadisticas", icono: "📊", label: "Estadísticas", detalle: "Visitas de la página y qué miran" },
@@ -19,7 +21,7 @@ export const PERMISOS = [
 /** Roles listos: al elegir uno se marcan sus permisos (luego se pueden ajustar). */
 export const ROLES = [
   { id: "dueno", icono: "👑", label: "Dueño", detalle: "Todo, incluido crear usuarios", permisos: PERMISOS.map((p) => p.id) },
-  { id: "vendedor", icono: "🤝", label: "Vendedor", detalle: "Pedidos, clientes, precios y pagos", permisos: ["pedidos", "dinero", "clientes"] },
+  { id: "vendedor", icono: "🤝", label: "Vendedor", detalle: "Factura, registra clientes y abonos, ve el inventario", permisos: ["pedidos", "dinero", "clientes"] },
   { id: "taller", icono: "🔨", label: "Taller", detalle: "Ve los pedidos y cambia su estado, sin precios", permisos: ["pedidos"] },
   { id: "web", icono: "🌐", label: "Página web", detalle: "Muebles, telas, contenido y estadísticas", permisos: ["catalogo", "contenido", "estadisticas"] },
   { id: "personalizado", icono: "⚙️", label: "Personalizado", detalle: "Tú eliges cada permiso", permisos: [] },
