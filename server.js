@@ -7,6 +7,7 @@ import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
 import multer from "multer";
+import { montarR2 } from "./r2.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -35,6 +36,25 @@ if (process.env.SUPABASE_URL && process.env.SUPABASE_KEY) {
   const { createClient } = await import("@supabase/supabase-js");
   supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 }
+
+// Comprueba que quien llama inició sesión en el panel (token de Supabase).
+async function requireSesion(req, res, next) {
+  const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+  const clave = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_KEY;
+  if (!url || !clave) return res.status(500).json({ ok: false, error: "Faltan las variables de Supabase en Railway." });
+  const token = (req.header("authorization") || "").replace(/^Bearer\s+/i, "");
+  if (!token) return res.status(401).json({ ok: false, error: "Inicia sesión para subir fotos." });
+  try {
+    const r = await fetch(`${url}/auth/v1/user`, { headers: { apikey: clave, Authorization: `Bearer ${token}` } });
+    if (!r.ok) return res.status(401).json({ ok: false, error: "Tu sesión venció. Vuelve a iniciar sesión." });
+    next();
+  } catch {
+    res.status(503).json({ ok: false, error: "No se pudo verificar la sesión." });
+  }
+}
+
+// Fotos en Cloudflare R2 (si las variables R2_* están en Railway)
+montarR2(app, requireSesion);
 
 function requireAdmin(req, res, next) {
   const password = req.header("x-admin-password");
