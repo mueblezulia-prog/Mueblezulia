@@ -87,6 +87,21 @@ export default function AdminProductosLista() {
     }
   }
 
+  // Entrega inmediata ⇄ bajo pedido, sin entrar al mueble.
+  async function alternarEntrega(producto) {
+    const nuevo = producto.disponible_entrega === false;
+    setOcupadoId(producto.id);
+    setProductos((actual) => actual.map((p) => (p.id === producto.id ? { ...p, disponible_entrega: nuevo } : p)));
+    const { error: e } = await supabase.from("productos").update({ disponible_entrega: nuevo }).eq("id", producto.id);
+    setOcupadoId(null);
+    if (e) {
+      setProductos((actual) => actual.map((p) => (p.id === producto.id ? { ...p, disponible_entrega: !nuevo } : p)));
+      setAviso({ tipo: "error", texto: `No se pudo cambiar: ${e.message}` });
+    } else {
+      setAviso({ tipo: "ok", texto: `"${producto.titulo}": ${nuevo ? "entrega inmediata" : "bajo pedido"} en la página.` });
+    }
+  }
+
   // Mueve un mueble una posición arriba/abajo y renumera el orden
   // (0, 1, 2…) — solo se guardan las filas cuyo número cambió.
   async function mover(indice, direccion) {
@@ -255,8 +270,22 @@ export default function AdminProductosLista() {
                     <div className="flex-1 min-w-0">
                       <p className="text-lg font-bold text-ink truncate">{producto.titulo}</p>
                       <p className="text-sm text-ink-muted truncate">{producto.categorias?.nombre ?? "Sin categoría"}</p>
-                      <div className="flex items-center gap-2 mt-0.5">
+                      <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                         <span className="text-gold font-bold">{formatearPrecio(producto.precio)}</span>
+                        <button
+                          type="button"
+                          onClick={() => alternarEntrega(producto)}
+                          disabled={ocupado}
+                          title="Toca para cambiar cómo sale en la página"
+                          className={[
+                            "min-h-[36px] px-2.5 rounded-full border text-xs font-bold whitespace-nowrap transition disabled:opacity-50",
+                            producto.disponible_entrega === false
+                              ? "border-sky-400/50 bg-sky-500/10 text-sky-300"
+                              : "border-emerald-400/50 bg-emerald-500/10 text-emerald-300",
+                          ].join(" ")}
+                        >
+                          {producto.disponible_entrega === false ? "🕐 Bajo pedido" : "✅ Entrega inmediata"} ⇄
+                        </button>
                         {oculto && (
                           <span className="text-xs font-bold uppercase tracking-wide bg-white/10 text-ink-muted rounded-full px-2 py-0.5">
                             Oculto

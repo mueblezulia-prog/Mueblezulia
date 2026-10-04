@@ -5,6 +5,7 @@ import ColorSwatchSelector from "../components/ColorSwatchSelector";
 import EtiquetasBadges from "../components/EtiquetasBadges";
 import BadgeDisponibilidad from "../components/BadgeDisponibilidad";
 import TelaRealDetalle from "../components/TelaRealDetalle";
+import ImagenConPuntos from "../components/ImagenConPuntos";
 import IconoWhatsApp from "../components/IconoWhatsApp";
 import { obtenerEtiquetasProducto } from "../lib/etiquetas";
 import { sonidoConfirmar } from "../lib/sonido";
@@ -34,6 +35,8 @@ export default function ProductoDetalle() {
   const [error, setError] = useState(null);
   const [indiceImagen, setIndiceImagen] = useState(0);
   const [intento, setIntento] = useState(0);
+  const [enFoto, setEnFoto] = useState([]); // muebles marcados en las fotos / para combinar
+  const [puntoActivo, setPuntoActivo] = useState(null);
   const scrollRef = useRef(null);
 
   useEffect(() => {
@@ -41,6 +44,7 @@ export default function ProductoDetalle() {
 
     async function cargar() {
       setCargando(true);
+      setPuntoActivo(null);
       setError(null);
 
       const [
@@ -65,6 +69,24 @@ export default function ProductoDetalle() {
         const galeriaExtra = !errorImagenes && imagenesData?.length ? imagenesData.map((im) => im.url) : [];
         const portada = productoData.imagen_recortada_url;
         setImagenes(portada ? [portada, ...galeriaExtra.filter((url) => url !== portada)] : galeriaExtra);
+
+        // Muebles en esta foto (fase_1_24). Si la tabla no existe, no pasa nada.
+        supabase
+          .from("producto_en_foto")
+          .select("*")
+          .eq("producto_id", id)
+          .order("orden")
+          .then(async ({ data: filas, error: errFilas }) => {
+            if (!activo || errFilas || !filas?.length) {
+              if (activo) setEnFoto([]);
+              return;
+            }
+            const ids = [...new Set(filas.map((f) => f.relacionado_id))];
+            const { data: rel } = await supabase.from("productos").select("id, titulo, precio, imagen_recortada_url, activo").in("id", ids);
+            if (!activo) return;
+            const porId = Object.fromEntries((rel ?? []).filter((r) => r.activo !== false).map((r) => [String(r.id), r]));
+            setEnFoto(filas.filter((f) => porId[String(f.relacionado_id)]).map((f) => ({ ...f, mueble: porId[String(f.relacionado_id)] })));
+          });
 
         const listaColores = !errorColores && coloresData?.length ? coloresData : [];
         setColores(listaColores);
@@ -119,6 +141,15 @@ export default function ProductoDetalle() {
     if (window.history.state?.idx > 0) navigate(-1);
     else navigate("/catalogo");
   }
+
+  // Puntos de "muebles en esta foto" para cada foto de la galería.
+  function puntosDe(url, i) {
+    return enFoto
+      .filter((f) => f.x !== null && f.x !== undefined && ((!f.imagen_url && i === 0) || f.imagen_url === url))
+      .map((f, n) => ({ id: f.id, x: Number(f.x), y: Number(f.y), numero: n + 1, etiqueta: `Ver ${f.mueble.titulo}`, mueble: f.mueble }));
+  }
+  // "Completa el ambiente": los muebles marcados o sugeridos, sin repetir.
+  const combinaCon = [...new Map(enFoto.map((f) => [String(f.mueble.id), f.mueble])).values()];
 
   if (cargando) return <EsqueletoDetalle />;
 
@@ -219,17 +250,46 @@ export default function ProductoDetalle() {
                       style={{ backgroundImage: `url(${url})` }}
                       aria-hidden="true"
                     />
-                    <img
-                      src={url}
-                      alt={`${producto.titulo} — foto ${i + 1}`}
-                      className="relative w-full h-full object-contain"
-                      loading={i === 0 ? "eager" : "lazy"}
-                    />
+                    {puntosDe(url, i).length > 0 ? (
+                      <ImagenConPuntos
+                        src={url}
+                        alt={`${producto.titulo} — foto ${i + 1}`}
+                        loading={i === 0 ? "eager" : "lazy"}
+                        puntos={puntosDe(url, i)}
+                        activo={puntoActivo?.id}
+                        onTocarPunto={(p) => setPuntoActivo(puntoActivo?.id === p.id ? null : p)}
+                      />
+                    ) : (
+                      <img
+                        src={url}
+                        alt={`${producto.titulo} — foto ${i + 1}`}
+                        className="relative w-full h-full object-contain"
+                        loading={i === 0 ? "eager" : "lazy"}
+                      />
+                    )}
                   </>
                 )}
               </div>
             ))}
           </div>
+
+          {puntoActivo && (
+            <Link
+              to={`/producto/${puntoActivo.mueble.id}`}
+              onClick={() => setPuntoActivo(null)}
+              className="absolute left-3 right-3 top-20 z-20 glass-dark rounded-card p-2.5 flex items-center gap-3 shadow-xl shadow-black/40"
+            >
+              <span className="w-14 h-14 shrink-0 rounded-control overflow-hidden bg-carbon-light">
+                {puntoActivo.mueble.imagen_recortada_url && <img src={puntoActivo.mueble.imagen_recortada_url} alt="" className="w-full h-full object-cover" />}
+              </span>
+              <span className="flex-1 min-w-0">
+                <span className="block text-xs text-gold font-bold uppercase tracking-wide">En esta foto</span>
+                <span className="block font-bold text-white truncate">{puntoActivo.mueble.titulo}</span>
+                <span className="block text-sm text-gold font-bold">{formatearPrecio(puntoActivo.mueble.precio)}</span>
+              </span>
+              <span className="text-white font-bold text-sm pr-1">Ver ›</span>
+            </Link>
+          )}
 
           {imagenes.length > 1 && (
             <>
@@ -320,6 +380,25 @@ export default function ProductoDetalle() {
             )}
 
             <ColorSwatchSelector colores={colores} seleccionado={colorSeleccionado} onSeleccionar={setColorSeleccionado} />
+
+            {combinaCon.length > 0 && (
+              <div className="flex flex-col gap-3 border-t border-white/10 pt-5">
+                <h2 className="text-lg font-bold text-ink">✨ Completa el ambiente</h2>
+                <div className="flex gap-3 overflow-x-auto no-scrollbar -mx-5 px-5 sm:-mx-7 sm:px-7 snap-x">
+                  {combinaCon.map((m) => (
+                    <Link key={m.id} to={`/producto/${m.id}`} className="snap-start shrink-0 block w-36 glass rounded-card overflow-hidden hover:border-gold/50">
+                      <span className="block aspect-square bg-carbon-light">
+                        {m.imagen_recortada_url && <img src={m.imagen_recortada_url} alt="" loading="lazy" className="w-full h-full object-cover" />}
+                      </span>
+                      <span className="block p-2">
+                        <span className="block text-sm font-bold text-ink leading-tight line-clamp-2">{m.titulo}</span>
+                        <span className="block text-sm font-bold text-gold">{formatearPrecio(m.precio)}</span>
+                      </span>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* En computador el botón vive aquí dentro (no hace falta una
                 barra fija abajo en una pantalla grande). */}

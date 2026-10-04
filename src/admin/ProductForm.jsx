@@ -8,6 +8,7 @@ import ImageCropModule from "./ImageCropModule";
 import GaleriaImagenes from "./GaleriaImagenes";
 import SelectorTelas from "./SelectorTelas";
 import SelectorTelaReal from "./SelectorTelaReal";
+import EditorMueblesEnFoto from "./EditorMueblesEnFoto";
 import EtiquetasSelector from "./EtiquetasSelector";
 import PreviewModal from "./PreviewModal";
 import MejorarConIA from "./MejorarConIA";
@@ -569,6 +570,11 @@ export default function ProductForm({ productoExistente, onGuardado }) {
           <EtiquetasSelector seleccionadas={etiquetasSeleccionadas} onChange={setEtiquetasSeleccionadas} />
 
           <GaleriaImagenes fotos={fotos} onChange={setFotos} />
+
+          <EditorMueblesEnFoto
+            productoId={productoExistente?.id}
+            fotos={[productoExistente?.imagen_recortada_url, ...fotos.map((f) => f.url)]}
+          />
         </div>
       </div>
 
