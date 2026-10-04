@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { subirAlmacen, urlAlmacen } from "../lib/almacen";
 import { supabase } from "../lib/supabaseClient";
 import { prepararImagen } from "../lib/imagenOptimizada";
 import EditorTiraTela from "./EditorTiraTela";
@@ -79,9 +80,9 @@ export default function AdminTelas() {
       const fileListo = await prepararImagen(file);
       const extension = fileListo.type === "image/webp" ? "webp" : "jpg";
       const nombreArchivo = `telas/${crypto.randomUUID()}.${extension}`;
-      const { error: errorSubida } = await supabase.storage.from(BUCKET).upload(nombreArchivo, fileListo, { contentType: fileListo.type });
+      const { error: errorSubida } = await subirAlmacen(BUCKET, nombreArchivo, fileListo, { contentType: fileListo.type });
       if (errorSubida) throw errorSubida;
-      const url = supabase.storage.from(BUCKET).getPublicUrl(nombreArchivo).data.publicUrl;
+      const url = urlAlmacen(BUCKET, nombreArchivo);
       const { error } = await supabase.from("telas").update({ imagen: url }).eq("id", tela.id);
       if (error) throw error;
       actualizarLocal(tela.id, { imagen: url });

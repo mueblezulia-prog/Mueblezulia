@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { subirAlmacen, urlAlmacen } from "../lib/almacen";
 import Cropper from "react-easy-crop";
 import { supabase } from "../lib/supabaseClient";
 import { convertirSiEsHeic } from "../lib/heic";
@@ -285,11 +286,9 @@ export default function EditorTiraTela({ archivo, familia, ordenInicial, onCerra
         const optimizado = await optimizarBlob(blobFinal);
         const extension = optimizado.type === "image/webp" ? "webp" : "jpg";
         const nombreArchivo = `telas/${crypto.randomUUID()}.${extension}`;
-        const { error: errorSubida } = await supabase.storage
-          .from(BUCKET)
-          .upload(nombreArchivo, optimizado, { contentType: optimizado.type });
+        const { error: errorSubida } = await subirAlmacen(BUCKET, nombreArchivo, optimizado, { contentType: optimizado.type });
         if (errorSubida) throw errorSubida;
-        const url = supabase.storage.from(BUCKET).getPublicUrl(nombreArchivo).data.publicUrl;
+        const url = urlAlmacen(BUCKET, nombreArchivo);
         filasNuevas.push({
           nombre: pin.nombre.trim(),
           hex,
@@ -312,11 +311,9 @@ export default function EditorTiraTela({ archivo, familia, ordenInicial, onCerra
           const optimizadaCompleta = await optimizarBlob(tiraBlob);
           const extCompleta = optimizadaCompleta.type === "image/webp" ? "webp" : "jpg";
           const nombreCompleta = `telas/${crypto.randomUUID()}.${extCompleta}`;
-          const { error: errorFotoCompleta } = await supabase.storage
-            .from(BUCKET)
-            .upload(nombreCompleta, optimizadaCompleta, { contentType: optimizadaCompleta.type });
+          const { error: errorFotoCompleta } = await subirAlmacen(BUCKET, nombreCompleta, optimizadaCompleta, { contentType: optimizadaCompleta.type });
           if (!errorFotoCompleta) {
-            const urlCompleta = supabase.storage.from(BUCKET).getPublicUrl(nombreCompleta).data.publicUrl;
+            const urlCompleta = urlAlmacen(BUCKET, nombreCompleta);
             const { error: errorFamilia } = await supabase
               .from("telas_familias")
               .update({ foto_completa: urlCompleta })

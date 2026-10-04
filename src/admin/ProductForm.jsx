@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { subirAlmacen, urlAlmacen } from "../lib/almacen";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 import { getCroppedImageBlob } from "../lib/cropImage";
@@ -198,9 +199,9 @@ export default function ProductForm({ productoExistente, onGuardado }) {
     const listo = await optimizarBlob(imagenOriginalFile);
     const extension = listo.type === "image/webp" ? "webp" : "jpg";
     const nombreArchivo = `originales/${crypto.randomUUID()}.${extension}`;
-    const { error } = await supabase.storage.from(BUCKET).upload(nombreArchivo, listo, { contentType: listo.type || "image/jpeg" });
+    const { error } = await subirAlmacen(BUCKET, nombreArchivo, listo, { contentType: listo.type || "image/jpeg" });
     if (error) throw error;
-    return supabase.storage.from(BUCKET).getPublicUrl(nombreArchivo).data.publicUrl;
+    return urlAlmacen(BUCKET, nombreArchivo);
   }
 
   // ¿Cambió la foto o el encuadre respecto a lo guardado?
@@ -216,11 +217,11 @@ export default function ProductForm({ productoExistente, onGuardado }) {
     const blob = await optimizarBlob(recorte);
     const extension = blob.type === "image/webp" ? "webp" : "jpg";
     const nombreArchivo = `recortes/${crypto.randomUUID()}.${extension}`;
-    const { error } = await supabase.storage.from(BUCKET).upload(nombreArchivo, blob, {
+    const { error } = await subirAlmacen(BUCKET, nombreArchivo, blob, {
       contentType: blob.type || "image/jpeg",
     });
     if (error) throw error;
-    return supabase.storage.from(BUCKET).getPublicUrl(nombreArchivo).data.publicUrl;
+    return urlAlmacen(BUCKET, nombreArchivo);
   }
 
   function construirProductoPreview() {

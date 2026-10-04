@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { subirAlmacen, urlAlmacen } from "../lib/almacen";
 import { supabase } from "../lib/supabaseClient";
 import { getCroppedImageBlob } from "../lib/cropImage";
 import { convertirSiEsHeic } from "../lib/heic";
@@ -63,11 +64,11 @@ export default function GaleriaImagenes({ fotos, onChange }) {
           const id = crypto.randomUUID();
           const extension = (file.name.match(/\.\w+$/)?.[0] ?? ".mp4").toLowerCase();
           const nombreArchivo = `galeria/${id}${extension}`;
-          const { error: errorSubida } = await supabase.storage.from(BUCKET).upload(nombreArchivo, file, {
+          const { error: errorSubida } = await subirAlmacen(BUCKET, nombreArchivo, file, {
             contentType: file.type || "video/mp4",
           });
           if (errorSubida) throw errorSubida;
-          const url = supabase.storage.from(BUCKET).getPublicUrl(nombreArchivo).data.publicUrl;
+          const url = urlAlmacen(BUCKET, nombreArchivo);
           onChange((actual) => [...actual, { id, url, orden: actual.length }]);
         }
       } catch (err) {
@@ -108,12 +109,12 @@ export default function GaleriaImagenes({ fotos, onChange }) {
       blob = await optimizarBlob(blob);
       const extension = blob.type === "image/webp" ? "webp" : "jpg";
       const nombreArchivo = `galeria/${editando.id}.${extension}`;
-      const { error: errorSubida } = await supabase.storage.from(BUCKET).upload(nombreArchivo, blob, {
+      const { error: errorSubida } = await subirAlmacen(BUCKET, nombreArchivo, blob, {
         contentType: blob.type || "image/jpeg",
         upsert: true,
       });
       if (errorSubida) throw errorSubida;
-      const url = supabase.storage.from(BUCKET).getPublicUrl(nombreArchivo).data.publicUrl;
+      const url = urlAlmacen(BUCKET, nombreArchivo);
 
       onChange([...fotos, { id: editando.id, url, orden: fotos.length }]);
       setCola((c) => c.slice(1));

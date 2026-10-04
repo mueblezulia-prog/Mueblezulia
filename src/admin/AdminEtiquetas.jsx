@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { subirAlmacen, urlAlmacen } from "../lib/almacen";
 import { supabase } from "../lib/supabaseClient";
 import { prepararImagen } from "../lib/imagenOptimizada";
 
@@ -8,9 +9,9 @@ async function subirIconoEtiqueta(file) {
   const fileListo = await prepararImagen(file);
   const extension = fileListo.type === "image/webp" ? "webp" : "jpg";
   const nombreArchivo = `etiquetas/${crypto.randomUUID()}.${extension}`;
-  const { error } = await supabase.storage.from(BUCKET).upload(nombreArchivo, fileListo, { contentType: fileListo.type });
+  const { error } = await subirAlmacen(BUCKET, nombreArchivo, fileListo, { contentType: fileListo.type });
   if (error) throw error;
-  return supabase.storage.from(BUCKET).getPublicUrl(nombreArchivo).data.publicUrl;
+  return urlAlmacen(BUCKET, nombreArchivo);
 }
 
 /**

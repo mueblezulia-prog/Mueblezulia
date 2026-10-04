@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { subirAlmacen, urlAlmacen } from "../lib/almacen";
 import { createPortal } from "react-dom";
 import Cropper from "react-easy-crop";
 import { supabase } from "../lib/supabaseClient";
@@ -16,18 +17,18 @@ const BUCKET = "productos"; // mismo bucket que ya usan fotos de mueble y catego
 async function subirBlobContenido(blob) {
   const extension = blob.type === "image/webp" ? "webp" : "jpg";
   const nombreArchivo = `contenido/${crypto.randomUUID()}.${extension}`;
-  const { error } = await supabase.storage.from(BUCKET).upload(nombreArchivo, blob, { contentType: blob.type || "image/jpeg" });
+  const { error } = await subirAlmacen(BUCKET, nombreArchivo, blob, { contentType: blob.type || "image/jpeg" });
   if (error) throw error;
-  return supabase.storage.from(BUCKET).getPublicUrl(nombreArchivo).data.publicUrl;
+  return urlAlmacen(BUCKET, nombreArchivo);
 }
 
 async function subirImagenContenido(file) {
   const fileListo = await prepararImagen(file);
   const extension = fileListo.type === "image/webp" ? "webp" : "jpg";
   const nombreArchivo = `contenido/${crypto.randomUUID()}.${extension}`;
-  const { error } = await supabase.storage.from(BUCKET).upload(nombreArchivo, fileListo, { contentType: fileListo.type });
+  const { error } = await subirAlmacen(BUCKET, nombreArchivo, fileListo, { contentType: fileListo.type });
   if (error) throw error;
-  return supabase.storage.from(BUCKET).getPublicUrl(nombreArchivo).data.publicUrl;
+  return urlAlmacen(BUCKET, nombreArchivo);
 }
 
 // Límite del video para que la página no cargue lenta en el celular del
@@ -42,9 +43,9 @@ async function subirVideoContenido(file) {
   }
   const extension = file.name?.split(".").pop()?.toLowerCase() || "mp4";
   const nombreArchivo = `contenido/${crypto.randomUUID()}.${extension}`;
-  const { error } = await supabase.storage.from(BUCKET).upload(nombreArchivo, file, { contentType: file.type || "video/mp4" });
+  const { error } = await subirAlmacen(BUCKET, nombreArchivo, file, { contentType: file.type || "video/mp4" });
   if (error) throw error;
-  return supabase.storage.from(BUCKET).getPublicUrl(nombreArchivo).data.publicUrl;
+  return urlAlmacen(BUCKET, nombreArchivo);
 }
 /**
  * ¿Hay cambios sin guardar? Compara lo que hay ahora con lo último que se
