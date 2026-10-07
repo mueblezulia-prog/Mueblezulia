@@ -94,6 +94,9 @@ export function montarR2(app, requireSesion) {
     const nombre = req.body?.nombre;
     if (!base || !nombreValido(nombre)) return res.status(400).json({ ok: false, error: "Datos no válidos." });
     try {
+      // Si ya está en R2, no se vuelve a bajar de Supabase (no gasta tráfico).
+      const ya = await fetch(`${c.publica}/${nombre.split("/").map(enc).join("/")}`, { method: "HEAD" }).catch(() => null);
+      if (ya && ya.ok) return res.json({ ok: true, url: `${c.publica}/${nombre}`, ya: true });
       const origen = await fetch(`${base}/storage/v1/object/public/productos/${nombre.split("/").map(enc).join("/")}`);
       if (!origen.ok) return res.status(404).json({ ok: false, error: `No se pudo leer ${nombre} (${origen.status}).` });
       const buf = Buffer.from(await origen.arrayBuffer());
