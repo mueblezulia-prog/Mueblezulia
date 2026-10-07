@@ -16,6 +16,7 @@ export default function ImageCropModule({
   zoomInicial = 1,
   areaInicial = null,
   onChange,
+  onTocado,
 }) {
   const aspecto = 4 / 5;
   const [crop, setCrop] = useState(cropInicial);
@@ -51,6 +52,7 @@ export default function ImageCropModule({
           aspect={aspecto}
           onCropChange={setCrop}
           onZoomChange={setZoom}
+          onInteractionStart={() => onTocado?.()}
           onCropComplete={handleCropComplete}
           objectFit="contain"
           // Al editar, arranca con el MISMO encuadre que ya estaba guardado.
@@ -69,7 +71,10 @@ export default function ImageCropModule({
           max={3}
           step={0.01}
           value={zoom}
-          onChange={(e) => setZoom(Number(e.target.value))}
+          onChange={(e) => {
+            setZoom(Number(e.target.value));
+            onTocado?.();
+          }}
           className="w-full accent-gold h-8"
         />
       </div>

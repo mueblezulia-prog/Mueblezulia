@@ -70,6 +70,23 @@ export function montarR2(app, requireSesion) {
     }
   });
 
+  // Trae una foto de R2 desde nuestro mismo sitio, para poder recortarla
+  // en el navegador (R2 no manda el permiso CORS). Solo fotos de nuestro bucket.
+  app.get("/api/r2/proxy", async (req, res) => {
+    const publica = (process.env.R2_PUBLIC_URL || "").replace(/\/+$/, "");
+    const u = String(req.query.u || "");
+    if (!publica || !u.startsWith(publica + "/") || u.includes("..")) return res.status(400).end();
+    try {
+      const r = await fetch(u);
+      if (!r.ok) return res.status(r.status).end();
+      res.setHeader("Content-Type", r.headers.get("content-type") || "application/octet-stream");
+      res.setHeader("Cache-Control", "public, max-age=3600");
+      res.end(Buffer.from(await r.arrayBuffer()));
+    } catch {
+      res.status(502).end();
+    }
+  });
+
   app.post("/api/r2/copiar", requireSesion, express.json(), async (req, res) => {
     const c = config();
     if (!c) return res.status(503).json({ ok: false, codigo: "r2_no_configurado", error: "R2 todavía no está configurado en Railway." });

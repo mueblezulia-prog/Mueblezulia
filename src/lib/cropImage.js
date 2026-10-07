@@ -2,14 +2,29 @@
 // a partir del `croppedAreaPixels` que entrega react-easy-crop.
 // Devuelve un Blob JPEG listo para subir a Supabase Storage.
 
-function createImage(url) {
+function cargar(url) {
   return new Promise((resolve, reject) => {
     const image = new Image();
     image.addEventListener("load", () => resolve(image));
-    image.addEventListener("error", (err) => reject(err));
-    image.crossOrigin = "anonymous"; // necesario si la imagen viene de Supabase Storage
+    image.addEventListener("error", () => reject(new Error("No se pudo abrir la foto para recortarla.")));
+    image.crossOrigin = "anonymous"; // necesario si la imagen viene de otro sitio (Supabase / R2)
     image.src = url;
   });
+}
+
+// Las fotos guardadas en Cloudflare R2 no traen permiso para que el
+// navegador las "lea" en un canvas. Por eso se piden a través de nuestro
+// propio servidor (/api/r2/proxy), que sí es del mismo sitio.
+async function createImage(url) {
+  const esR2 = /^https:\/\/[^/]+\.r2\.dev\//i.test(url || "");
+  if (esR2) {
+    try {
+      return await cargar(`/api/r2/proxy?u=${encodeURIComponent(url)}`);
+    } catch {
+      /* si el servidor no responde, se intenta directo */
+    }
+  }
+  return cargar(url);
 }
 
 /**

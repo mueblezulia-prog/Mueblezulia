@@ -21,6 +21,19 @@ export default function CatalogoProductos() {
   const [intento, setIntento] = useState(0);
   const [busqueda, setBusqueda] = useState("");
   const [buscadorAbierto, setBuscadorAbierto] = useState(false);
+  const [categorias, setCategorias] = useState([]);
+  const [categoriaSel, setCategoriaSel] = useState("todas");
+
+  useEffect(() => {
+    supabase
+      .from("categorias")
+      .select("id, nombre, orden")
+      .order("orden", { ascending: true })
+      .then(({ data }) => setCategorias(data ?? []));
+  }, []);
+  const nombreCategoria = (id) => categorias.find((c) => String(c.id) === String(id))?.nombre;
+  // Solo se muestran las categorías que tienen muebles.
+  const categoriasConMuebles = categorias.filter((c) => productos.some((p) => String(p.categoria_id) === String(c.id)));
 
   useEffect(() => {
     let activo = true;
@@ -58,9 +71,9 @@ export default function CatalogoProductos() {
   // Búsqueda sin importar mayúsculas ni acentos ("comedor" encuentra "Comedor").
   const normalizar = (t) => (t ?? "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
   const texto = normalizar(busqueda.trim());
-  const filtrados = texto
-    ? productos.filter((p) => normalizar(`${p.titulo} ${p.descripcion_corta ?? ""}`).includes(texto))
-    : productos;
+  const filtrados = productos
+    .filter((p) => categoriaSel === "todas" || String(p.categoria_id) === String(categoriaSel))
+    .filter((p) => !texto || normalizar(`${p.titulo} ${p.descripcion_corta ?? ""} ${nombreCategoria(p.categoria_id) ?? ""}`).includes(texto));
 
   return (
     // `isolate`: sin esto, las fotos de fondo (-z-10) quedaban DETRÁS del
@@ -153,6 +166,29 @@ export default function CatalogoProductos() {
               </div>
             )}
 
+            {/* Categorías: tocar una deja solo esos muebles. */}
+            {!cargando && !error && categoriasConMuebles.length > 1 && (
+              <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-3 px-3 sm:mx-0 sm:px-0 sm:flex-wrap mb-4" role="group" aria-label="Filtrar por categoría">
+                {[{ id: "todas", nombre: "Todos" }, ...categoriasConMuebles].map((c) => {
+                  const activa = String(categoriaSel) === String(c.id);
+                  return (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => setCategoriaSel(c.id)}
+                      aria-pressed={activa}
+                      className={[
+                        "shrink-0 min-h-[40px] px-4 rounded-full text-sm font-bold border transition",
+                        activa ? "bg-gold text-carbon border-gold" : "bg-black/35 border-white/15 text-ink hover:border-gold/50",
+                      ].join(" ")}
+                    >
+                      {c.nombre}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
             {cargando && <EsqueletoTarjetas />}
 
             {!cargando && error && (
@@ -165,8 +201,10 @@ export default function CatalogoProductos() {
 
             {!cargando && !error && productos.length > 0 && (
               <>
-              {busqueda.trim() && filtrados.length === 0 && (
-                <MensajeVacio>No encontramos muebles con "{busqueda.trim()}". Prueba con otra palabra.</MensajeVacio>
+              {filtrados.length === 0 && (
+                <MensajeVacio>
+                  {busqueda.trim() ? `No encontramos muebles con "${busqueda.trim()}". Prueba con otra palabra.` : "No hay muebles en esta categoría por ahora."}
+                </MensajeVacio>
               )}
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-4">
                 {(soloEntrega
@@ -176,7 +214,7 @@ export default function CatalogoProductos() {
                   : filtrados
                 ).map((producto, i) => (
                   <Reveal key={producto.id} delay={(i % 8) * 60}>
-                    <ProductCard producto={producto} />
+                    <ProductCard producto={producto} categoria={nombreCategoria(producto.categoria_id)} />
                   </Reveal>
                 ))}
               </div>

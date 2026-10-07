@@ -24,9 +24,12 @@ export async function subirAlmacen(bucket, nombre, archivo, opciones = {}) {
           urls.set(nombre, j.url);
           return { error: null, url: j.url };
         }
-      } else if (r.status !== 503 && r.status !== 404) {
-        const j = await r.json().catch(() => ({}));
-        return { error: new Error(j.error || `No se pudo subir (${r.status}).`) };
+      } else {
+        const j = await r.clone().json().catch(() => ({}));
+        // Solo se usa Supabase si R2 no está configurado (o el servidor es viejo).
+        if (!(r.status === 404 || j.codigo === "r2_no_configurado")) {
+          return { error: new Error(j.error || `No se pudo subir (${r.status}).`) };
+        }
       }
     }
   } catch {
@@ -38,4 +41,12 @@ export async function subirAlmacen(bucket, nombre, archivo, opciones = {}) {
 
 export function urlAlmacen(bucket, nombre) {
   return urls.get(nombre) ?? supabase.storage.from(bucket).getPublicUrl(nombre).data.publicUrl;
+}
+
+/**
+ * Dirección que el navegador puede "leer" (para recortar en un canvas o fetch):
+ * las fotos de R2 se piden a través de nuestro servidor porque R2 no manda permiso CORS.
+ */
+export function urlLeible(url) {
+  return /^https:\/\/[^/]+\.r2\.dev\//i.test(url || "") ? `/api/r2/proxy?u=${encodeURIComponent(url)}` : url;
 }

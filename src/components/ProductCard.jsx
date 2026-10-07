@@ -10,7 +10,7 @@ import BadgeDisponibilidad from "./BadgeDisponibilidad";
  * degradado y precio superpuesto estilo "badge", título debajo. Toda la
  * tarjeta es un solo link al detalle del producto.
  */
-export default function ProductCard({ producto }) {
+export default function ProductCard({ producto, categoria }) {
   const { id, titulo, precio, imagen_recortada_url, medida } = producto;
   const etiquetas = obtenerEtiquetasProducto(producto);
 
@@ -48,6 +48,9 @@ export default function ProductCard({ producto }) {
         <BadgeDisponibilidad disponible={producto.disponible_entrega ?? true} hacia="abajo" compacto />
       </span>
       <div className="p-2.5 sm:p-3 flex flex-col gap-1.5 flex-1 min-w-0 bg-white/[0.03] backdrop-blur-sm border-t border-white/10 rounded-b-card">
+        {categoria && (
+          <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wide text-gold/90 truncate">{categoria}</span>
+        )}
         <h3 className="text-base sm:text-lg font-bold text-ink leading-snug line-clamp-2 group-hover:text-gold transition-colors duration-200">
           {titulo}
         </h3>

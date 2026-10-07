@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { subirAlmacen, urlAlmacen } from "../lib/almacen";
+import { subirAlmacen, urlAlmacen, urlLeible } from "../lib/almacen";
 import { createPortal } from "react-dom";
 import Cropper from "react-easy-crop";
 import { supabase } from "../lib/supabaseClient";
@@ -505,7 +505,8 @@ function SeccionSede({ sede, onGuardado }) {
     if (!url) return;
     setMensaje(null);
     try {
-      const resp = await fetch(url);
+      const resp = await fetch(urlLeible(url));
+      if (!resp.ok) throw new Error(String(resp.status));
       const blob = await resp.blob();
       setColaFotos((c) => [{ id: crypto.randomUUID(), file: blob, reemplazarIndice: i }, ...c]);
     } catch {
@@ -1680,7 +1681,8 @@ function EditorBloque({ bloque, onCambiar }) {
     const url = bloque.imagenes?.[index];
     if (!url) return;
     try {
-      const resp = await fetch(url);
+      const resp = await fetch(urlLeible(url));
+      if (!resp.ok) throw new Error(String(resp.status));
       const blob = await resp.blob();
       setCola((c) => [...c, { id: crypto.randomUUID(), modo: "reemplazar", index, file: blob }]);
     } catch {

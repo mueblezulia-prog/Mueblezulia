@@ -69,6 +69,7 @@ export default function ProductForm({ productoExistente, onGuardado }) {
   // Se usa el ÁREA recortada en pixeles de la foto (no la posición en
   // pantalla), así el encuadre se recupera igual en celular o computador.
   const areaGuardada = productoExistente?.crop_data?.croppedAreaPixels ?? null;
+  const [encuadreTocado, setEncuadreTocado] = useState(false);
   const [cropState, setCropState] = useState({
     crop: { x: 0, y: 0 },
     zoom: 1,
@@ -205,7 +206,11 @@ export default function ProductForm({ productoExistente, onGuardado }) {
   }
 
   // ¿Cambió la foto o el encuadre respecto a lo guardado?
-  const encuadreCambio = !productoExistente || !!imagenOriginalFile || areaDistinta(cropState.croppedAreaPixels, areaGuardada);
+  // Si el mueble no tenía encuadre guardado, solo cuenta como cambio si la
+  // persona movió o hizo zoom en la foto (así cambiar el precio no vuelve
+  // a recortar ni a subir la foto).
+  const encuadreCambio =
+    !productoExistente || !!imagenOriginalFile || (areaGuardada ? areaDistinta(cropState.croppedAreaPixels, areaGuardada) : encuadreTocado);
 
   async function generarYSubirRecorte(urlOriginalFinal) {
     // Si no se cambió ni la foto ni el encuadre, se reutiliza el recorte
@@ -213,7 +218,15 @@ export default function ProductForm({ productoExistente, onGuardado }) {
     if (!cropState.croppedAreaPixels || (!encuadreCambio && productoExistente?.imagen_recortada_url)) {
       return productoExistente?.imagen_recortada_url ?? urlOriginalFinal;
     }
-    const recorte = await getCroppedImageBlob(imagenOriginalUrl, cropState.croppedAreaPixels);
+    let recorte;
+    try {
+      recorte = await getCroppedImageBlob(imagenOriginalUrl, cropState.croppedAreaPixels);
+    } catch (e) {
+      // Si la foto no cambió y ya hay un recorte guardado, se usa ese:
+      // un problema al abrir la foto no debe impedir guardar precio/textos.
+      if (!imagenOriginalFile && productoExistente?.imagen_recortada_url) return productoExistente.imagen_recortada_url;
+      throw e;
+    }
     const blob = await optimizarBlob(recorte);
     const extension = blob.type === "image/webp" ? "webp" : "jpg";
     const nombreArchivo = `recortes/${crypto.randomUUID()}.${extension}`;
@@ -371,13 +384,13 @@ export default function ProductForm({ productoExistente, onGuardado }) {
 
       const advertencias = [];
       if (resultadoColores.status === "rejected") {
-        advertencias.push(`colores (${resultadoColores.reason.message})`);
+        advertencias.push(`colores (${textoError(resultadoColores.reason)})`);
       }
       if (resultadoFotos.status === "rejected") {
-        advertencias.push(`fotos de la galería (${resultadoFotos.reason.message})`);
+        advertencias.push(`fotos de la galería (${textoError(resultadoFotos.reason)})`);
       }
       if (resultadoEtiquetas.status === "rejected") {
-        advertencias.push(`etiquetas (${resultadoEtiquetas.reason.message})`);
+        advertencias.push(`etiquetas (${textoError(resultadoEtiquetas.reason)})`);
       }
 
       yaGuardadoRef.current = true;
@@ -401,7 +414,7 @@ export default function ProductForm({ productoExistente, onGuardado }) {
         });
       }
     } catch (err) {
-      setMensaje(`Error al guardar: ${err.message}`);
+      setMensaje(`Error al guardar: ${textoError(err)}`);
     } finally {
       setGuardando(false);
     }
@@ -466,6 +479,7 @@ export default function ProductForm({ productoExistente, onGuardado }) {
             imagenOriginalUrl={imagenOriginalUrl}
             areaInicial={imagenOriginalFile ? null : areaGuardada}
             onChange={(nuevo) => setCropState((s) => ({ ...s, ...nuevo }))}
+            onTocado={() => setEncuadreTocado(true)}
           />
         </div>
 
@@ -606,6 +620,12 @@ export default function ProductForm({ productoExistente, onGuardado }) {
 }
 
 /** ¿Dos áreas de recorte son distintas? (tolerancia de 2px por redondeo) */
+function textoError(e) {
+  if (!e) return "error desconocido";
+  if (typeof e === "string") return e;
+  return e.message || e.error_description || e.details || e.hint || (e.type === "error" ? "no se pudo abrir una foto" : "error desconocido");
+}
+
 function areaDistinta(a, b) {
   if (!a || !b) return !!a !== !!b;
   return ["x", "y", "width", "height"].some((k) => Math.abs((a[k] ?? 0) - (b[k] ?? 0)) > 2);
